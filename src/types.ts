@@ -47,6 +47,7 @@ export interface User {
 }
 
 export interface StrainContribution {
+  id: string;
   userId: string;
   strainName: string;
   type: StrainPreference;
@@ -89,4 +90,19 @@ export interface Toast {
     id: number;
     message: string;
     type: ToastType;
+}
+
+export enum NotificationType {
+  NewRsvp = 'NEW_RSVP',
+  EventReminder = 'EVENT_REMINDER',
+}
+
+export interface Notification {
+  id: string;
+  userId: string; // The user who should receive the notification
+  type: NotificationType;
+  message: string;
+  relatedId: string; // ID of the event
+  timestamp: string;
+  isRead: boolean;
 }

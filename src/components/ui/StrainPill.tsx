@@ -1,10 +1,11 @@
 
 import React from 'react';
 import { StrainContribution, StrainPreference } from '../../types';
-import { LeafIcon, SunIcon, SparklesIcon } from '../icons';
+import { LeafIcon, SunIcon, SparklesIcon, Trash2Icon } from '../icons';
 
 interface StrainPillProps {
   strain: StrainContribution;
+  onRemove?: () => void;
 }
 
 const StrainIcon: React.FC<{type: StrainPreference}> = ({ type }) => {
@@ -21,7 +22,7 @@ const StrainIcon: React.FC<{type: StrainPreference}> = ({ type }) => {
     }
 }
 
-const StrainPill: React.FC<StrainPillProps> = ({ strain }) => {
+const StrainPill: React.FC<StrainPillProps> = ({ strain, onRemove }) => {
   const typeColors: Record<string, string> = {
     [StrainPreference.Indica]: 'text-purple-400 border-purple-400/50 bg-purple-400/10',
     [StrainPreference.Sativa]: 'text-yellow-400 border-yellow-400/50 bg-yellow-400/10',
@@ -30,9 +31,18 @@ const StrainPill: React.FC<StrainPillProps> = ({ strain }) => {
   };
 
   return (
-    <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border ${typeColors[strain.type] || typeColors[StrainPreference.Any]}`}>
+    <div className={`inline-flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-full border ${typeColors[strain.type] || typeColors[StrainPreference.Any]}`}>
       <StrainIcon type={strain.type} />
-      <span className="font-semibold">{strain.strainName}</span>
+      <span className="font-semibold text-sm">{strain.strainName}</span>
+      {onRemove && (
+        <button 
+          onClick={(e) => { e.stopPropagation(); onRemove(); }} 
+          className="ml-1 p-1 rounded-full hover:bg-red-500/20 text-dark-text/60 hover:text-red-400 transition-colors"
+          aria-label={`Remove ${strain.strainName}`}
+        >
+          <Trash2Icon className="w-4 h-4" />
+        </button>
+      )}
     </div>
   );
 };

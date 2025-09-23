@@ -17,8 +17,8 @@ const Messaging: React.FC = () => {
 
   if (!currentUser) return null;
 
-  const userConversations = conversations
-    .filter(c => c.participantIds.includes(currentUser.id))
+  // Display all conversations for demo purposes
+  const userConversations = [...conversations]
     .sort((a, b) => {
         const lastMsgA = a.messages[a.messages.length - 1];
         const lastMsgB = b.messages[b.messages.length - 1];
@@ -38,7 +38,9 @@ const Messaging: React.FC = () => {
             {userConversations.map(convo => {
               const otherUserId = convo.participantIds.find(id => id !== currentUser.id);
               const otherUser = users.find(u => u.id === otherUserId);
-              if (!otherUser) return null;
+              // Fallback for conversations where the current user is not a participant (for demo)
+              const displayUser = otherUser || users.find(u => u.id === convo.participantIds[0]);
+              if (!displayUser) return null;
               
               const lastMessage = convo.messages[convo.messages.length - 1];
 
@@ -51,9 +53,9 @@ const Messaging: React.FC = () => {
                     selectedConversation?.id === convo.id ? 'bg-brand-primary/10' : 'hover:bg-dark-surface'
                   )}
                 >
-                  <img src={otherUser.avatarUrl} alt={otherUser.name} className="w-12 h-12 rounded-full mr-4 border-2 border-brand-secondary" />
+                  <img src={displayUser.avatarUrl} alt={displayUser.name} className="w-12 h-12 rounded-full mr-4 border-2 border-brand-secondary" />
                   <div className="flex-grow overflow-hidden">
-                    <h3 className="font-bold text-brand-secondary truncate">{otherUser.name}</h3>
+                    <h3 className="font-bold text-brand-secondary truncate">{displayUser.name}</h3>
                     <p className="text-sm text-dark-text/70 truncate">
                       {lastMessage ? `${lastMessage.senderId === currentUser.id ? 'You: ' : ''}${lastMessage.text}` : 'No messages yet'}
                     </p>
@@ -106,28 +108,40 @@ const ChatWindow: React.FC<{conversation: Conversation}> = ({ conversation }) =>
         setNewMessage('');
     };
 
-    if (!currentUser || !otherUser) return null;
+    if (!currentUser) return null;
 
     return (
       <div className="flex flex-col h-full p-4">
         <div className="flex-grow overflow-y-auto pr-2 space-y-4 p-2">
-          {conversation.messages.map((msg: Message) => (
-            <div key={msg.id} className={cn("flex items-start gap-3", msg.senderId === currentUser.id ? 'justify-end' : 'justify-start')}>
-              {msg.senderId !== currentUser.id && (
-                <img src={otherUser.avatarUrl} alt={otherUser.name} className="w-8 h-8 rounded-full"/>
-              )}
-              <div 
-                className={cn(
-                  "max-w-md p-3 rounded-xl",
-                  msg.senderId === currentUser.id 
-                    ? 'bg-brand-primary text-black rounded-br-none'
-                    : 'bg-dark-surface text-dark-text rounded-bl-none'
+          {conversation.messages.map((msg: Message) => {
+            const sender = users.find(u => u.id === msg.senderId);
+            if (!sender) return null;
+            
+            // To make the demo look good, even for conversations the current user is not in,
+            // we'll style one person as the sender and one as the receiver.
+            const isCurrentUserInConversation = conversation.participantIds.includes(currentUser.id);
+            const isStyledAsSender = isCurrentUserInConversation
+                ? sender.id === currentUser.id
+                : sender.id === conversation.participantIds[0];
+
+            return (
+              <div key={msg.id} className={cn("flex items-start gap-3", isStyledAsSender ? 'justify-end' : 'justify-start')}>
+                {!isStyledAsSender && (
+                  <img src={sender.avatarUrl} alt={sender.name} className="w-8 h-8 rounded-full"/>
                 )}
-              >
-                <p>{msg.text}</p>
+                <div 
+                  className={cn(
+                    "max-w-md p-3 rounded-xl",
+                    isStyledAsSender 
+                      ? 'bg-brand-primary text-black rounded-br-none'
+                      : 'bg-dark-surface text-dark-text rounded-bl-none'
+                  )}
+                >
+                  <p>{msg.text}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           <div ref={messagesEndRef} />
         </div>
 

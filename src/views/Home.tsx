@@ -5,10 +5,11 @@ import EventCard from '../components/EventCard';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
-import { SearchIcon, PlusCircleIcon } from '../components/icons';
-import { EventType, User } from '../types';
+import { SearchIcon, PlusCircleIcon, Trash2Icon } from '../components/icons';
+import { EventType, User, StrainPreference, StrainContribution } from '../types';
 import SkeletonCard from '../components/ui/SkeletonCard';
 import { cn } from '../lib/utils';
+import StrainPill from '../components/ui/StrainPill';
 
 const Home: React.FC = () => {
   const { events, users, setSelectedEvent, currentUser, isLoading } = useContext(AppContext);
@@ -101,6 +102,10 @@ const Home: React.FC = () => {
 
 const CreateEventWizard: React.FC<{isOpen: boolean, onClose: () => void, currentUser: User}> = ({ isOpen, onClose, currentUser }) => {
     const { onCreateEvent, showToast } = useContext(AppContext);
+    const [strains, setStrains] = useState<Omit<StrainContribution, 'userId'>[]>([]);
+    const [newStrainName, setNewStrainName] = useState('');
+    const [newStrainType, setNewStrainType] = useState<StrainPreference>(StrainPreference.Hybrid);
+
     const [formData, setFormData] = useState({
         title: '',
         eventType: EventType.Chill,
@@ -115,26 +120,24 @@ const CreateEventWizard: React.FC<{isOpen: boolean, onClose: () => void, current
         const { name, value } = e.target;
         setFormData(prev => ({...prev, [name]: value}));
     };
+
+    const handleAddStrain = () => {
+        if (!newStrainName.trim()) {
+            showToast("Please enter a strain name.", ToastType.Warning);
+            return;
+        }
+        setStrains(prev => [...prev, { id: `temp-${Date.now()}`, strainName: newStrainName, type: newStrainType }]);
+        setNewStrainName('');
+        setNewStrainType(StrainPreference.Hybrid);
+    };
+
+    const handleRemoveStrain = (id: string) => {
+        setStrains(prev => prev.filter(s => s.id !== id));
+    };
     
     const handleSubmit = () => {
-        if (!formData.title.trim()) {
-            showToast("Please provide a title for your session.", ToastType.Error);
-            return;
-        }
-        if (!formData.date) {
-            showToast("Please select a date for the session.", ToastType.Error);
-            return;
-        }
-        if (!formData.time) {
-            showToast("Please select a time for the session.", ToastType.Error);
-            return;
-        }
-        if (!formData.location.trim()) {
-            showToast("Please provide a location for the session.", ToastType.Error);
-            return;
-        }
-        if (!formData.description.trim()) {
-            showToast("Please write a short description for the session.", ToastType.Error);
+        if (!formData.title.trim() || !formData.date || !formData.time || !formData.location.trim() || !formData.description.trim()) {
+            showToast("Please fill out all required fields.", ToastType.Error);
             return;
         }
 
@@ -142,12 +145,12 @@ const CreateEventWizard: React.FC<{isOpen: boolean, onClose: () => void, current
             id: `e${Date.now()}`,
             ...formData,
             hostId: currentUser.id,
-            attendees: [],
-            strainsOnDeck: [],
+            attendees: [currentUser.id], // Host automatically attends
+            strainsOnDeck: strains.map(s => ({...s, id: `s${Date.now()}${Math.random()}`, userId: currentUser.id})),
             tags: formData.tags.split(',').map(t => t.trim()).filter(t => t),
         };
         onCreateEvent(newEvent);
-        onClose();
+        handleClose();
     }
     
     const handleClose = () => {
@@ -155,12 +158,15 @@ const CreateEventWizard: React.FC<{isOpen: boolean, onClose: () => void, current
             title: '', eventType: EventType.Chill, date: '', time: '',
             location: '', description: '', tags: '',
         });
+        setStrains([]);
+        setNewStrainName('');
+        setNewStrainType(StrainPreference.Hybrid);
         onClose();
     }
 
     return (
         <Modal isOpen={isOpen} onClose={handleClose} title="Create a New Session">
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
                 <Input name="title" label="Session Title" placeholder="e.g., Sunset Vibes & Vinyls" value={formData.title} onChange={handleInputChange} required />
                 <div>
                     <label htmlFor="eventType" className="block text-sm font-medium text-brand-primary/80 mb-1">Event Type</label>
@@ -180,7 +186,39 @@ const CreateEventWizard: React.FC<{isOpen: boolean, onClose: () => void, current
                     <textarea name="description" id="description" rows={3} value={formData.description} onChange={handleInputChange} className="w-full bg-dark-surface border-2 border-brand-primary/30 rounded-md px-3 py-2 text-dark-text placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-all duration-300" placeholder="Describe the session..." required></textarea>
                 </div>
                 
-                <Button onClick={handleSubmit} className="w-full">Publish Session</Button>
+                {/* Strain Contribution Section */}
+                <div className="border-t-2 border-brand-primary/20 pt-4 space-y-3">
+                    <label className="block text-sm font-medium text-brand-primary/80">Strains You're Bringing (Optional)</label>
+                    <div className="flex items-end gap-2">
+                        <Input 
+                            name="strainName" 
+                            label="Strain Name" 
+                            value={newStrainName}
+                            onChange={(e) => setNewStrainName(e.target.value)}
+                            placeholder="e.g., Blue Dream"
+                        />
+                         <div className="flex-shrink-0">
+                             <label htmlFor="strainType" className="block text-sm font-medium text-brand-primary/80 mb-1">Type</label>
+                            <select 
+                                name="strainType" 
+                                id="strainType" 
+                                value={newStrainType} 
+                                onChange={(e) => setNewStrainType(e.target.value as StrainPreference)} 
+                                className="h-11 bg-dark-surface border-2 border-brand-primary/30 rounded-md px-3 py-2 text-dark-text focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary"
+                            >
+                                {Object.values(StrainPreference).filter(v => v !== StrainPreference.Any).map(type => <option key={type} value={type}>{type}</option>)}
+                            </select>
+                        </div>
+                        <Button variant="secondary" onClick={handleAddStrain} className="h-11">Add</Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {strains.map(s => (
+                            <StrainPill key={s.id} strain={{...s, userId: currentUser.id}} onRemove={() => handleRemoveStrain(s.id)} />
+                        ))}
+                    </div>
+                </div>
+                
+                <Button onClick={handleSubmit} className="w-full mt-4">Publish Session</Button>
             </div>
         </Modal>
     )

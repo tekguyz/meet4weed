@@ -1,13 +1,92 @@
 
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { AppContext, ToastType } from '../context/AppContext';
-import { User, StrainContribution } from '../types';
+import { User, StrainContribution, StrainPreference } from '../types';
 import Button from '../components/ui/Button';
 import StrainPill from '../components/ui/StrainPill';
 import { CopyIcon, MapPinIcon } from '../components/icons';
+import Modal from '../components/ui/Modal';
+import Input from '../components/ui/Input';
+
+const AddStrainModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    onAddStrain: (strainName: string, strainType: StrainPreference) => void;
+}> = ({ isOpen, onClose, onAddStrain }) => {
+    const [strainName, setStrainName] = useState('');
+    const [strainType, setStrainType] = useState<StrainPreference>(StrainPreference.Hybrid);
+
+    const handleSubmit = () => {
+        if (!strainName.trim()) {
+            return;
+        }
+        onAddStrain(strainName, strainType);
+        setStrainName('');
+        setStrainType(StrainPreference.Hybrid);
+        onClose();
+    };
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title="Add Your Strain">
+            <div className="space-y-4">
+                <Input 
+                    label="Strain Name" 
+                    value={strainName} 
+                    onChange={(e) => setStrainName(e.target.value)} 
+                    placeholder="e.g., OG Kush"
+                />
+                <div>
+                    <label htmlFor="strainTypeModal" className="block text-sm font-medium text-brand-primary/80 mb-1">Strain Type</label>
+                    <select 
+                        id="strainTypeModal"
+                        value={strainType} 
+                        onChange={(e) => setStrainType(e.target.value as StrainPreference)} 
+                        className="w-full bg-dark-surface border-2 border-brand-primary/30 rounded-md px-3 py-2 text-dark-text focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary"
+                    >
+                        {Object.values(StrainPreference).filter(v => v !== StrainPreference.Any).map(type => <option key={type} value={type}>{type}</option>)}
+                    </select>
+                </div>
+                <Button onClick={handleSubmit} className="w-full">Contribute Strain</Button>
+            </div>
+        </Modal>
+    );
+}
+
+const AskToContributeModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    onConfirm: () => void;
+    onDecline: () => void;
+}> = ({ isOpen, onClose, onConfirm, onDecline }) => {
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title="Share Your Vibe?">
+            <div className="space-y-6 text-center">
+                <p className="text-dark-text/80">
+                    Are you planning to bring any strains to the session? Contributing helps everyone know what's on deck!
+                </p>
+                <div className="flex justify-center gap-4">
+                    <Button onClick={onConfirm} variant="primary">Yes, I'll Share</Button>
+                    <Button onClick={onDecline} variant="secondary">No, Just Vibing</Button>
+                </div>
+            </div>
+        </Modal>
+    );
+}
 
 const EventDetails: React.FC = () => {
-    const { selectedEvent, users, currentUser, onRsvp, onUnRsvp, setSelectedUser, showToast } = useContext(AppContext);
+    const { 
+        selectedEvent, 
+        users, 
+        currentUser, 
+        onRsvp, 
+        onUnRsvp, 
+        setSelectedUser, 
+        showToast,
+        addStrainContribution,
+        removeStrainContribution
+    } = useContext(AppContext);
+    const [isAddStrainModalOpen, setAddStrainModalOpen] = useState(false);
+    const [isAskToContributeModalOpen, setAskToContributeModalOpen] = useState(false);
 
     if (!selectedEvent) {
         return <div className="text-center p-8">Event not found.</div>;
@@ -17,12 +96,29 @@ const EventDetails: React.FC = () => {
     const attendees = users.filter(u => selectedEvent.attendees.includes(u.id));
     const isAttending = currentUser ? selectedEvent.attendees.includes(currentUser.id) : false;
 
-    const handleRsvp = () => {
-        if (currentUser) {
+    const rsvpToEvent = () => {
+        if (currentUser && selectedEvent) {
             onRsvp(selectedEvent.id, currentUser.id);
         }
     };
     
+    const handleRsvpClick = () => {
+        if (currentUser) {
+            setAskToContributeModalOpen(true);
+        }
+    };
+    
+    const handleConfirmContribution = () => {
+        rsvpToEvent();
+        setAskToContributeModalOpen(false);
+        setAddStrainModalOpen(true);
+    };
+
+    const handleDeclineContribution = () => {
+        rsvpToEvent();
+        setAskToContributeModalOpen(false);
+    };
+
     const handleUnRsvp = () => {
         if(currentUser) {
             onUnRsvp(selectedEvent.id, currentUser.id);
@@ -39,11 +135,32 @@ const EventDetails: React.FC = () => {
             showToast('Failed to copy location.', ToastType.Error);
           });
       };
+
+    const handleAddStrain = (strainName: string, strainType: StrainPreference) => {
+        addStrainContribution(selectedEvent.id, { strainName, type: strainType });
+        showToast("Strain added!", ToastType.Success);
+    };
+
+    const handleRemoveStrain = (strainId: string) => {
+        removeStrainContribution(selectedEvent.id, strainId);
+        showToast("Strain removed.", ToastType.Warning);
+    }
   
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedEvent.location)}`;
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-4xl">
+            <AskToContributeModal
+                isOpen={isAskToContributeModalOpen}
+                onClose={() => setAskToContributeModalOpen(false)}
+                onConfirm={handleConfirmContribution}
+                onDecline={handleDeclineContribution}
+            />
+            <AddStrainModal 
+                isOpen={isAddStrainModalOpen}
+                onClose={() => setAddStrainModalOpen(false)}
+                onAddStrain={handleAddStrain}
+            />
             <div className="bg-dark-surface border-2 border-brand-primary/20 rounded-lg p-8">
                 <div className="border-b-2 border-brand-primary/20 pb-6 mb-6">
                     <p className="text-brand-secondary font-semibold">{selectedEvent.eventType}</p>
@@ -81,16 +198,29 @@ const EventDetails: React.FC = () => {
                         </Section>
 
                         <Section title="Strains on Deck">
-                            <div className="flex flex-wrap gap-4 items-start">
-                                {selectedEvent.strainsOnDeck.length > 0 ? selectedEvent.strainsOnDeck.map((s: StrainContribution, i: number) => {
-                                    const user = users.find(u => u.id === s.userId);
-                                    return (
-                                        <div key={i} className="flex flex-col items-center">
-                                            <StrainPill strain={s} />
-                                            <span className="text-xs text-dark-text/60 mt-1.5">from {user?.name}</span>
-                                        </div>
-                                    );
-                                }) : <p className="text-sm text-dark-text/60">None yet. Be the first to share!</p>}
+                            <div className="flex flex-col items-start gap-4">
+                                <div className="flex flex-wrap gap-4 items-start">
+                                    {selectedEvent.strainsOnDeck.length > 0 ? selectedEvent.strainsOnDeck.map((s: StrainContribution) => {
+                                        const user = users.find(u => u.id === s.userId);
+                                        return (
+                                            <div key={s.id} className="flex flex-col items-center text-center">
+                                                <StrainPill 
+                                                    strain={s}
+                                                    onRemove={currentUser?.id === s.userId ? () => handleRemoveStrain(s.id) : undefined}
+                                                />
+                                                <span className="text-xs text-dark-text/60 mt-1.5">
+                                                    from {user?.name === currentUser?.name ? "You" : user?.name.split(" ")[0]}
+                                                    {s.userId === host?.id && ' (Host)'}
+                                                </span>
+                                            </div>
+                                        );
+                                    }) : <p className="text-sm text-dark-text/60">None yet. Be the first to share!</p>}
+                                </div>
+                                {isAttending && (
+                                    <Button variant="secondary" size="sm" onClick={() => setAddStrainModalOpen(true)}>
+                                        Add My Strain
+                                    </Button>
+                                )}
                             </div>
                         </Section>
                     </div>
@@ -111,7 +241,7 @@ const EventDetails: React.FC = () => {
                         <div className="mt-6 flex flex-col gap-2">
                             {currentUser && (isAttending ? 
                                 <Button onClick={handleUnRsvp} variant="destructive">Can't Make It</Button> 
-                                : <Button onClick={handleRsvp}>RSVP</Button>)}
+                                : <Button onClick={handleRsvpClick}>RSVP</Button>)}
                         </div>
                     </div>
                 </div>

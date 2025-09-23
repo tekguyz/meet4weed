@@ -1,6 +1,7 @@
+
 import React, { createContext, useState, ReactNode, useEffect } from 'react';
-import { User, Event, Message, Conversation, Page, Toast, ToastType } from '../types';
-import { USERS, EVENTS, MESSAGES, CONVERSATIONS } from '../constants';
+import { User, Event, Message, Conversation, Page, Toast, ToastType, Notification, NotificationType, StrainContribution, StrainPreference } from '../types';
+import { USERS, EVENTS, MESSAGES, CONVERSATIONS, NOTIFICATIONS } from '../constants';
 
 // For convenience, we export ToastType from here as well.
 export { ToastType };
@@ -18,13 +19,16 @@ interface AppContextState {
   toasts: Toast[];
   isHowItWorksModalOpen: boolean;
   isLoading: boolean;
+  notifications: Notification[];
+  markNotificationAsRead: (notificationId: string) => void;
+  markAllNotificationsAsRead: () => void;
   setHowItWorksModalOpen: (isOpen: boolean) => void;
   showToast: (message: string, type: ToastType) => void;
   handleLogin: (email: string, pass: string) => boolean;
   handleSignUp: (details: any) => boolean;
   onLogout: () => void;
   onNavigate: (page: Page) => void;
-  onCreateEvent: (event: Omit<Event, 'id' | 'hostId' | 'attendees' | 'strainsOnDeck'>) => void;
+  onCreateEvent: (event: Event) => void;
   onRsvp: (eventId: string, userId: string) => void;
   onUnRsvp: (eventId: string, userId: string) => void;
   sendMessage: (conversationId: string, text: string) => void;
@@ -33,6 +37,8 @@ interface AppContextState {
   setSelectedUser: (userId: string | null) => void;
   setSelectedConversation: (conversationId: string | null) => void;
   updateUserProfile: (userId: string, updates: Partial<User>) => boolean;
+  addStrainContribution: (eventId: string, strain: Omit<StrainContribution, 'id' | 'userId'>) => void;
+  removeStrainContribution: (eventId: string, strainId: string) => void;
 }
 
 export const AppContext = createContext<AppContextState>({} as AppContextState);
@@ -45,6 +51,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [users, setUsers] = useState<User[]>(USERS);
   const [events, setEvents] = useState<Event[]>(EVENTS);
   const [conversations, setConversations] = useState<Conversation[]>(CONVERSATIONS);
+  const [notifications, setNotifications] = useState<Notification[]>(NOTIFICATIONS);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
@@ -63,6 +70,46 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         return () => clearTimeout(timer);
     }
   }, [isAuthenticated]);
+
+  // Event Reminder Notifications
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const reminderNotifications: Notification[] = [];
+    const now = new Date();
+    const oneDayInMs = 24 * 60 * 60 * 1000;
+
+    events.forEach(event => {
+      if (event.attendees.includes(currentUser.id)) {
+        const eventDate = new Date(event.date);
+        const timeDiff = eventDate.getTime() - now.getTime();
+
+        if (timeDiff > 0 && timeDiff <= oneDayInMs) {
+          const existingReminder = notifications.find(n => 
+              n.type === NotificationType.EventReminder && 
+              n.relatedId === event.id && 
+              n.userId === currentUser.id
+          );
+          
+          if (!existingReminder) {
+            reminderNotifications.push({
+              id: `notif-reminder-${event.id}-${currentUser.id}`,
+              userId: currentUser.id,
+              type: NotificationType.EventReminder,
+              message: `Reminder: Your session "${event.title}" is starting soon.`,
+              relatedId: event.id,
+              timestamp: new Date().toISOString(),
+              isRead: false,
+            });
+          }
+        }
+      }
+    });
+
+    if (reminderNotifications.length > 0) {
+      setNotifications(prev => [...reminderNotifications, ...prev]);
+    }
+  }, [currentUser, events]);
 
   const showToast = (message: string, type: ToastType) => {
     const newToast: Toast = { id: Date.now(), message, type };
@@ -145,26 +192,35 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setSelectedConversationId(conversationId);
   };
 
-  const onCreateEvent = (eventData: Omit<Event, 'id' | 'hostId' | 'attendees' | 'strainsOnDeck'>) => {
+  const onCreateEvent = (newEvent: Event) => {
     if (!currentUser) return;
-    const newEvent: Event = {
-      ...eventData,
-      id: `e${Date.now()}`,
-      hostId: currentUser.id,
-      attendees: [],
-      strainsOnDeck: [],
-    };
     setEvents(prev => [newEvent, ...prev]);
     showToast('Session created successfully!', ToastType.Success);
   };
   
   const onRsvp = (eventId: string, userId: string) => {
-    setEvents(prevEvents => prevEvents.map(event => {
-      if (event.id === eventId && !event.attendees.includes(userId)) {
-        showToast(`You're going to "${event.title}"!`, ToastType.Success);
-        return { ...event, attendees: [...event.attendees, userId] };
+    const event = events.find(e => e.id === eventId);
+    const rsvpingUser = users.find(u => u.id === userId);
+
+    if (event && rsvpingUser && event.hostId !== userId) {
+        const newNotification: Notification = {
+            id: `notif-${Date.now()}`,
+            userId: event.hostId,
+            type: NotificationType.NewRsvp,
+            message: `${rsvpingUser.name} has RSVP'd to your session "${event.title}".`,
+            relatedId: event.id,
+            timestamp: new Date().toISOString(),
+            isRead: false,
+        };
+        setNotifications(prev => [newNotification, ...prev]);
+    }
+
+    setEvents(prevEvents => prevEvents.map(e => {
+      if (e.id === eventId && !e.attendees.includes(userId)) {
+        showToast(`You're going to "${e.title}"!`, ToastType.Success);
+        return { ...e, attendees: [...e.attendees, userId] };
       }
-      return event;
+      return e;
     }));
   };
 
@@ -232,6 +288,37 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
     return true;
   };
+
+  const addStrainContribution = (eventId: string, strain: Omit<StrainContribution, 'id' | 'userId'>) => {
+    if (!currentUser) return;
+    const newContribution: StrainContribution = {
+      ...strain,
+      id: `s${Date.now()}`,
+      userId: currentUser.id,
+    };
+    setEvents(prev => prev.map(e => 
+      e.id === eventId ? { ...e, strainsOnDeck: [...e.strainsOnDeck, newContribution] } : e
+    ));
+  };
+
+  const removeStrainContribution = (eventId: string, strainId: string) => {
+    setEvents(prev => prev.map(e => 
+      e.id === eventId ? { ...e, strainsOnDeck: e.strainsOnDeck.filter(s => s.id !== strainId) } : e
+    ));
+  };
+
+  const markNotificationAsRead = (notificationId: string) => {
+    setNotifications(prev => prev.map(n => 
+        n.id === notificationId ? { ...n, isRead: true } : n
+    ));
+  };
+  
+  const markAllNotificationsAsRead = () => {
+    if (!currentUser) return;
+    setNotifications(prev => prev.map(n => 
+        n.userId === currentUser.id ? { ...n, isRead: true } : n
+    ));
+  };
   
   const selectedEvent = events.find(e => e.id === selectedEventId) || null;
   const selectedUser = users.find(u => u.id === selectedUserId) || null;
@@ -250,6 +337,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     toasts,
     isHowItWorksModalOpen,
     isLoading,
+    notifications,
     setHowItWorksModalOpen,
     showToast,
     handleLogin,
@@ -265,6 +353,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setSelectedUser,
     setSelectedConversation,
     updateUserProfile,
+    markNotificationAsRead,
+    markAllNotificationsAsRead,
+    addStrainContribution,
+    removeStrainContribution,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
