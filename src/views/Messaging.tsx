@@ -34,7 +34,7 @@ const Messaging: React.FC = () => {
         "w-full md:w-1/3 md:flex flex-col border-r-2 border-brand-primary/20",
         selectedConversation ? 'hidden md:flex' : 'flex'
       )}>
-        <div className="overflow-y-auto flex-grow p-2">
+        <div className="overflow-y-auto flex-grow p-2 pb-16">
             {userConversations.map(convo => {
               const otherUserId = convo.participantIds.find(id => id !== currentUser.id);
               const otherUser = users.find(u => u.id === otherUserId);
@@ -111,7 +111,7 @@ const ChatWindow: React.FC<{conversation: Conversation}> = ({ conversation }) =>
     if (!currentUser) return null;
 
     return (
-      <div className="flex flex-col h-full p-4">
+      <div className="flex flex-col h-full p-4 pb-20">
         <div className="flex-grow overflow-y-auto pr-2 space-y-4 p-2">
           {conversation.messages.map((msg: Message) => {
             const sender = users.find(u => u.id === msg.senderId);

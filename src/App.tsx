@@ -2,6 +2,7 @@
 import React, { useContext } from 'react';
 import { AppContext } from './context/AppContext';
 import { Page } from './types';
+import { cn } from './lib/utils';
 
 import Header from './components/Header';
 import ToastContainer from './components/ui/Toast';
@@ -24,7 +25,6 @@ const App: React.FC = () => {
     setHowItWorksModalOpen,
     selectedConversation,
     setSelectedConversation,
-    selectedEvent,
     selectedUser,
     onNavigate,
     users,
@@ -89,10 +89,15 @@ const App: React.FC = () => {
     );
   }
 
+  const hasPageSpecificLayout = currentPage === Page.Messaging;
+
   return (
     <div className="flex flex-col h-screen bg-dark-bg">
       <Header title={getHeaderTitle()} onBack={getOnBack()} />
-      <main className="flex-grow overflow-y-auto pb-16">
+      <main className={cn(
+        "flex-grow",
+        hasPageSpecificLayout ? "overflow-y-hidden" : "overflow-y-auto pb-16"
+      )}>
         <div className="h-full">
           {renderCurrentPage()}
         </div>

@@ -1,16 +1,46 @@
-import React, { useContext } from 'react';
+
+import React, { useContext, useMemo } from 'react';
 import { AppContext } from '../context/AppContext';
 import Button from '../components/ui/Button';
 import { MessageSquareIcon } from '../components/icons';
+import { User } from '../types';
+import MiniUserCard from '../components/MiniUserCard';
 
 const UserProfile: React.FC = () => {
-    const { selectedUser, currentUser, startChat } = useContext(AppContext);
+    const { selectedUser, currentUser, startChat, users, setSelectedUser } = useContext(AppContext);
+
+    const vibeMatches = useMemo(() => {
+        if (!selectedUser) return [];
+
+        const calculateMatchScore = (userA: User, userB: User): number => {
+            if (!userA || !userB || !userA.vibe || !userB.vibe) return 0;
+            
+            const sharedStrains = userA.vibe.strainPreference.filter(pref =>
+                userB.vibe.strainPreference.includes(pref)
+            ).length;
+
+            const sharedMethods = userA.vibe.consumptionMethod.filter(method =>
+                userB.vibe.consumptionMethod.includes(method)
+            ).length;
+
+            return sharedStrains + sharedMethods;
+        };
+
+        return users
+            .filter(user => user.id !== selectedUser.id)
+            .map(user => ({
+                user,
+                score: calculateMatchScore(selectedUser, user),
+            }))
+            .filter(match => match.score > 0)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 4);
+    }, [selectedUser, users]);
 
     if (!selectedUser) {
         return <div className="text-center p-8">User not found.</div>;
     }
     
-    // Don't show message button for own profile if somehow navigated here
     const isCurrentUser = currentUser?.id === selectedUser.id;
 
     return (
@@ -51,6 +81,24 @@ const UserProfile: React.FC = () => {
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <div className="mt-10 border-t-2 border-brand-primary/20 pt-6">
+                    <h2 className="text-2xl font-bold text-brand-primary mb-4">Vibe Matches</h2>
+                    {vibeMatches.length > 0 ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                            {vibeMatches.map(({ user, score }) => (
+                                <MiniUserCard 
+                                    key={user.id} 
+                                    user={user} 
+                                    matchScore={score}
+                                    onClick={() => setSelectedUser(user.id)}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-dark-text/60">No similar vibes found yet. Check back later!</p>
+                    )}
                 </div>
             </div>
         </div>
