@@ -1,0 +1,11 @@
+<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <title>Meet4Weed Logomark</title>
+    <circle cx="12" cy="12" r="10" stroke="#39FF14" stroke-width="1.5"/>
+    <path d="M12 17C12 17 15 12.5 15 9.5C15 6.5 12 3 12 3C12 3 9 6.5 9 9.5C9 12.5 12 17 12 17Z" stroke="#39FF14" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M15.535 15.535C15.535 15.535 15.6 11 14.121 9.5C12.643 8 9 8.464 9 8.464" stroke="#39FF14" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M8.465 15.535C8.465 15.535 8.4 11 9.879 9.5C11.357 8 15 8.464 15 8.464" stroke="#39FF14" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M17 12C17 12 13 11.5 11 13" stroke="#39FF14" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M7 12C7 12 11 11.5 13 13" stroke="#39FF14" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M16.5 14C16.5 14 14 11 12 10.5" stroke="#39FF14" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M7.5 14C7.5 14 10 11 12 10.5" stroke="#39FF14" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,17 +1,21 @@
 import { GoogleGenAI, Type } from '@google/genai';
 
-if (!process.env.API_KEY) {
-  throw new Error("API_KEY environment variable not set");
-}
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 export const verifyMedicalCardImage = async (
     base64Image: string, 
     mimeType: string,
     patientId: string, 
     expiryDate: string
 ): Promise<{ isVerified: boolean; reason: string }> => {
+  if (!process.env.API_KEY) {
+    console.error("API_KEY environment variable not set");
+    return {
+      isVerified: false,
+      reason: 'Verification service is currently unavailable. Please check the configuration.',
+    };
+  }
+
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
   try {
     const imagePart = {
       inlineData: {
