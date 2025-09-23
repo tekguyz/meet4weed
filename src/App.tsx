@@ -96,9 +96,9 @@ const App: React.FC = () => {
       <Header title={getHeaderTitle()} onBack={getOnBack()} />
       <main className={cn(
         "flex-grow",
-        hasPageSpecificLayout ? "overflow-y-hidden" : "overflow-y-auto pb-16"
+        hasPageSpecificLayout ? "overflow-y-hidden" : "overflow-y-auto pb-24"
       )}>
-        <div className="h-full">
+        <div className={hasPageSpecificLayout ? "h-full" : ""}>
           {renderCurrentPage()}
         </div>
       </main>
