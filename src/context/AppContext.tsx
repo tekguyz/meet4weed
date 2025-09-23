@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, ReactNode, useEffect } from 'react';
-import { User, Event, Message, Conversation, Page, Toast, ToastType, Notification, NotificationType, StrainContribution, StrainPreference } from '../types';
+import { User, Event, Message, Conversation, Page, Toast, ToastType, Notification, NotificationType, StrainContribution } from '../types';
 import { USERS, EVENTS, MESSAGES, CONVERSATIONS, NOTIFICATIONS } from '../constants';
 
 // For convenience, we export ToastType from here as well.
@@ -29,6 +29,8 @@ interface AppContextState {
   onLogout: () => void;
   onNavigate: (page: Page) => void;
   onCreateEvent: (event: Event) => void;
+  onUpdateEvent: (eventId: string, updates: Partial<Omit<Event, 'id' | 'hostId' | 'attendees'>>) => void;
+  onDeleteEvent: (eventId: string) => void;
   onRsvp: (eventId: string, userId: string) => void;
   onUnRsvp: (eventId: string, userId: string) => void;
   sendMessage: (conversationId: string, text: string) => void;
@@ -199,6 +201,60 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (!currentUser) return;
     setEvents(prev => [newEvent, ...prev]);
     showToast('Session created successfully!', ToastType.Success);
+  };
+
+  const onUpdateEvent = (eventId: string, updates: Partial<Omit<Event, 'id' | 'hostId' | 'attendees'>>) => {
+    let updatedEvent: Event | undefined;
+    setEvents(prev => prev.map(e => {
+        if (e.id === eventId) {
+            updatedEvent = { ...e, ...updates };
+            return updatedEvent;
+        }
+        return e;
+    }));
+
+    if (updatedEvent) {
+        const attendeesToNotify = updatedEvent.attendees.filter(id => id !== updatedEvent!.hostId);
+        const newNotifications: Notification[] = attendeesToNotify.map(userId => ({
+            id: `notif-update-${Date.now()}-${userId}`,
+            userId: userId,
+            senderId: currentUser?.id,
+            type: NotificationType.EventUpdated,
+            message: `The session "${updatedEvent!.title}" has been updated.`,
+            relatedId: updatedEvent!.id,
+            timestamp: new Date().toISOString(),
+            isRead: false,
+        }));
+        setNotifications(prev => [...newNotifications, ...prev]);
+        showToast('Session updated successfully!', ToastType.Success);
+    }
+  };
+
+  const onDeleteEvent = (eventId: string) => {
+    const eventToDelete = events.find(e => e.id === eventId);
+    if (!eventToDelete) return;
+
+    const attendeesToNotify = eventToDelete.attendees.filter(id => id !== eventToDelete!.hostId);
+    const newNotifications: Notification[] = attendeesToNotify.map(userId => ({
+        id: `notif-cancel-${Date.now()}-${userId}`,
+        userId: userId,
+        senderId: currentUser?.id,
+        type: NotificationType.EventCancelled,
+        message: `The session "${eventToDelete!.title}" has been cancelled.`,
+        relatedId: '', // Event is deleted, so no relatedId
+        timestamp: new Date().toISOString(),
+        isRead: false,
+    }));
+    setNotifications(prev => [...newNotifications, ...prev]);
+
+    setEvents(prev => prev.filter(e => e.id !== eventId));
+    
+    // If the user is viewing the deleted event, navigate them away
+    if (selectedEventId === eventId) {
+        onNavigate(Page.Home);
+    }
+
+    showToast('Session cancelled.', ToastType.Warning);
   };
   
   const onRsvp = (eventId: string, userId: string) => {
@@ -413,6 +469,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     onLogout,
     onNavigate,
     onCreateEvent,
+    onUpdateEvent,
+    onDeleteEvent,
     onRsvp,
     onUnRsvp,
     sendMessage,

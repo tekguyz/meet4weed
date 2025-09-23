@@ -97,6 +97,8 @@ export enum NotificationType {
   EventReminder = 'EVENT_REMINDER',
   CrewInvite = 'CREW_INVITE',
   EventInvite = 'EVENT_INVITE',
+  EventUpdated = 'EVENT_UPDATED',
+  EventCancelled = 'EVENT_CANCELLED',
 }
 
 export interface Notification {

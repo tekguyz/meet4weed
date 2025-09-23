@@ -4,10 +4,12 @@ import { AppContext, ToastType } from '../context/AppContext';
 import { User, StrainContribution, StrainPreference } from '../types';
 import Button from '../components/ui/Button';
 import StrainPill from '../components/ui/StrainPill';
-import { CopyIcon, MapPinIcon, UserPlusIcon } from '../components/icons';
+import { CopyIcon, MapPinIcon, UserPlusIcon, EditIcon, Trash2Icon } from '../components/icons';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import InviteModal from '../components/InviteModal';
+import EventEditorModal from '../components/EventEditorModal';
+import ConfirmationModal from '../components/ui/ConfirmationModal';
 
 const AddStrainModal: React.FC<{
     isOpen: boolean;
@@ -86,10 +88,14 @@ const EventDetails: React.FC = () => {
         addStrainContribution,
         removeStrainContribution,
         sendEventInvites,
+        onDeleteEvent,
     } = useContext(AppContext);
+    
     const [isAddStrainModalOpen, setAddStrainModalOpen] = useState(false);
     const [isAskToContributeModalOpen, setAskToContributeModalOpen] = useState(false);
     const [isInviteModalOpen, setInviteModalOpen] = useState(false);
+    const [isEditModalOpen, setEditModalOpen] = useState(false);
+    const [isConfirmCancelOpen, setConfirmCancelOpen] = useState(false);
 
     if (!selectedEvent) {
         return <div className="text-center p-8">Event not found.</div>;
@@ -98,6 +104,7 @@ const EventDetails: React.FC = () => {
     const host = users.find(u => u.id === selectedEvent.hostId);
     const attendees = users.filter(u => selectedEvent.attendees.includes(u.id));
     const isAttending = currentUser ? selectedEvent.attendees.includes(currentUser.id) : false;
+    const isHost = currentUser?.id === selectedEvent.hostId;
 
     const rsvpToEvent = () => {
         if (currentUser && selectedEvent) {
@@ -175,6 +182,24 @@ const EventDetails: React.FC = () => {
                 title="Invite to Session"
                 existingParticipantIds={selectedEvent.attendees}
             />
+            {isHost && (
+                <EventEditorModal
+                    isOpen={isEditModalOpen}
+                    onClose={() => setEditModalOpen(false)}
+                    eventToEdit={selectedEvent}
+                />
+            )}
+            <ConfirmationModal
+                isOpen={isConfirmCancelOpen}
+                onClose={() => setConfirmCancelOpen(false)}
+                onConfirm={() => {
+                    onDeleteEvent(selectedEvent.id);
+                    setConfirmCancelOpen(false);
+                }}
+                title="Cancel Session"
+                message="Are you sure you want to cancel this session? This action cannot be undone and all attendees will be notified."
+            />
+
             <div className="bg-dark-surface border-2 border-brand-primary/20 rounded-lg p-8">
                 <div className="border-b-2 border-brand-primary/20 pb-6 mb-6">
                     <p className="text-brand-secondary font-semibold">{selectedEvent.eventType}</p>
@@ -253,13 +278,28 @@ const EventDetails: React.FC = () => {
                             </div>
                         </Section>
                         <div className="mt-6 flex flex-col gap-2">
-                            {currentUser && (isAttending ? 
-                                <Button onClick={handleUnRsvp} variant="destructive">Can't Make It</Button> 
-                                : <Button onClick={handleRsvpClick}>RSVP</Button>)}
-                             <Button variant="secondary" onClick={() => setInviteModalOpen(true)} className="flex items-center justify-center gap-2">
-                                <UserPlusIcon className="w-5 h-5" />
-                                Invite
-                            </Button>
+                           {isHost ? (
+                                <>
+                                    <Button onClick={() => setEditModalOpen(true)} variant="secondary" className="flex items-center justify-center gap-2">
+                                        <EditIcon className="w-5 h-5" />
+                                        Edit Session
+                                    </Button>
+                                    <Button onClick={() => setConfirmCancelOpen(true)} variant="destructive" className="flex items-center justify-center gap-2">
+                                        <Trash2Icon className="w-5 h-5" />
+                                        Cancel Session
+                                    </Button>
+                                </>
+                            ) : (
+                                <>
+                                    {currentUser && (isAttending ? 
+                                        <Button onClick={handleUnRsvp} variant="destructive">Can't Make It</Button> 
+                                        : <Button onClick={handleRsvpClick}>RSVP</Button>)}
+                                    <Button variant="secondary" onClick={() => setInviteModalOpen(true)} className="flex items-center justify-center gap-2">
+                                        <UserPlusIcon className="w-5 h-5" />
+                                        Invite
+                                    </Button>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>

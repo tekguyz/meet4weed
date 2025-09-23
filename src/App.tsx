@@ -117,7 +117,8 @@ const HowItWorksModal: React.FC<{isOpen: boolean, onClose: () => void}> = ({isOp
                 <ol className="list-decimal list-inside space-y-2">
                     <li><strong className="text-brand-secondary">Get Verified:</strong> Use our AI-powered system to securely verify your FL OMMU card for safe access.</li>
                     <li><strong className="text-brand-secondary">Discover Sessions:</strong> Browse and RSVP to private get-togethers hosted by other verified members.</li>
-                    <li><strong className="text-brand-secondary">Host Your Own:</strong> Create your own sessions, from chill game nights to creative workshops.</li>
+                    <li><strong className="text-brand-secondary">Host Your Own:</strong> Create sessions, from chill game nights to creative workshops.</li>
+                    <li><strong className="text-brand-secondary">Manage Your Vibe:</strong> As a host, you can easily edit details or cancel a session, automatically notifying all attendees of any changes.</li>
                     <li><strong className="text-brand-secondary">Connect & Chat:</strong> Message other users to coordinate details and build your trusted crew.</li>
                 </ol>
                 <p>It's all about finding your vibe in a safe, private, and verified community.</p>

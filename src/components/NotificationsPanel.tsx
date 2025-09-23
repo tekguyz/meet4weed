@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Notification, NotificationType } from '../types';
-import { ClockIcon, UserPlusIcon, Share2Icon } from './icons';
+import { ClockIcon, UserPlusIcon, Share2Icon, EditIcon, XCircleIcon } from './icons';
 import { cn } from '../lib/utils';
 import Button from './ui/Button';
 
@@ -23,6 +23,10 @@ const NotificationIcon: React.FC<{ type: NotificationType }> = ({ type }) => {
             return <UserPlusIcon {...iconProps} />;
         case NotificationType.EventInvite:
             return <Share2Icon {...iconProps} />;
+        case NotificationType.EventUpdated:
+            return <EditIcon {...iconProps} />;
+        case NotificationType.EventCancelled:
+            return <XCircleIcon {...iconProps} />;
         default:
             return null;
     }
