@@ -27,11 +27,6 @@
     <link rel="icon" type="image/svg+xml" href="/icon.svg">
     <link rel="manifest" href="/site.webmanifest">
     
-    <!-- Injects the API_KEY from Netlify's build environment into the browser -->
-    <script>
-      window.process = { env: { API_KEY: "__API_KEY_PLACEHOLDER__" } };
-    </script>
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -86,7 +81,8 @@
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
     "clsx": "https://aistudiocdn.com/clsx@^2.1.1",
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.20.0",
-    "tailwind-merge": "https://aistudiocdn.com/tailwind-merge@^3.3.1"
+    "tailwind-merge": "https://aistudiocdn.com/tailwind-merge@^3.3.1",
+    "@netlify/functions": "https://aistudiocdn.com/@netlify/functions@^4.2.6"
   }
 }
 </script>

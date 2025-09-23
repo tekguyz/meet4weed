@@ -1,4 +1,3 @@
-import { GoogleGenAI, Type } from '@google/genai';
 
 export const verifyMedicalCardImage = async (
     base64Image: string, 
@@ -6,66 +5,36 @@ export const verifyMedicalCardImage = async (
     patientId: string, 
     expiryDate: string
 ): Promise<{ isVerified: boolean; reason: string }> => {
-  if (!process.env.API_KEY) {
-    console.error("API_KEY environment variable not set");
-    return {
-      isVerified: false,
-      reason: 'Verification service is currently unavailable. Please check the configuration.',
-    };
-  }
-
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
   try {
-    const imagePart = {
-      inlineData: {
-        data: base64Image,
-        mimeType: mimeType,
+    // The fetch request points to our new, secure serverless function.
+    const response = await fetch('/.netlify/functions/verify-card', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-    };
-
-    const textPart = {
-      text: `
-        You are an automated verification system for the "Meet4Weed" app. Your task is to verify a Florida Office of Medical Marijuana Use (OMMU) card.
-        
-        Strictly perform the following checks:
-        1.  Confirm the image provided is a legitimate, unaltered Florida OMMU medical marijuana card. It should have the official state seal and layout.
-        2.  Verify that the "Patient ID" on the card EXACTLY matches the user-provided ID: "${patientId}".
-        3.  Verify that the "Expiration Date" on the card EXACTLY matches the user-provided date: "${expiryDate}".
-        
-        Based on these checks, provide a JSON response.
-      `,
-    };
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: { parts: [imagePart, textPart] },
-      config: {
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            isVerified: {
-              type: Type.BOOLEAN,
-              description: 'True if all checks pass, otherwise false.'
-            },
-            reason: {
-              type: Type.STRING,
-              description: 'If verified, state "Verification successful." If not, provide a brief, clear reason for failure (e.g., "Patient ID mismatch.", "Image is not a valid FL OMMU card.", "Expiration date does not match.").'
-            },
-          },
-        },
-      },
+      body: JSON.stringify({
+        base64Image,
+        mimeType,
+        patientId,
+        expiryDate,
+      }),
     });
 
-    const jsonResponse = JSON.parse(response.text);
-    return jsonResponse;
+    const result = await response.json();
+
+    if (!response.ok) {
+      // Use the reason from the function's error response, or provide a generic one.
+      throw new Error(result.reason || 'The verification request failed. Please try again.');
+    }
+    
+    return result;
 
   } catch (error) {
-    console.error("Error verifying medical card:", error);
+    console.error("Error calling verification service:", error);
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
     return {
       isVerified: false,
-      reason: 'An unexpected error occurred during verification. Please try again later.',
+      reason: errorMessage,
     };
   }
 };

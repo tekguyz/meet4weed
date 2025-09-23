@@ -13,7 +13,8 @@
     "react-dom": "^19.1.1",
     "clsx": "^2.1.1",
     "@google/genai": "^1.20.0",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "@netlify/functions": "^4.2.6"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
