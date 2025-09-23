@@ -22,7 +22,7 @@ export const verifyMedicalCardImage = async (
 
     const textPart = {
       text: `
-        You are an automated verification system for the "meet4weed" app. Your task is to verify a Florida Office of Medical Marijuana Use (OMMU) card.
+        You are an automated verification system for the "Meet4Weed" app. Your task is to verify a Florida Office of Medical Marijuana Use (OMMU) card.
         
         Strictly perform the following checks:
         1.  Confirm the image provided is a legitimate, unaltered Florida OMMU medical marijuana card. It should have the official state seal and layout.

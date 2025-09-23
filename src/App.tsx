@@ -44,7 +44,7 @@ const App: React.FC = () => {
       case Page.Profile: return 'My Profile';
       case Page.UserProfile: return selectedUser?.name || 'Profile';
       case Page.EventDetails: return 'Session Details';
-      default: return 'meet4weed';
+      default: return 'Meet4Weed';
     }
   }
 
@@ -113,7 +113,7 @@ const HowItWorksModal: React.FC<{isOpen: boolean, onClose: () => void}> = ({isOp
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="How It Works">
             <div className="text-sm space-y-4 text-dark-text/90">
-                <p>Welcome to <span className="text-brand-primary font-bold">meet4weed</span>, the exclusive hub for Florida's medical cannabis community.</p>
+                <p>Welcome to <span className="text-brand-primary font-bold">Meet4Weed</span>, the exclusive hub for Florida's medical cannabis community.</p>
                 <ol className="list-decimal list-inside space-y-2">
                     <li><strong className="text-brand-secondary">Get Verified:</strong> Use our AI-powered system to securely verify your FL OMMU card for safe access.</li>
                     <li><strong className="text-brand-secondary">Discover Sessions:</strong> Browse and RSVP to private get-togethers hosted by other verified members.</li>
