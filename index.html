@@ -1,0 +1,95 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>meet4weed - Find Your Vibe</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="An exclusive social platform for verified medical marijuana cardholders in Florida to discover and host private get-togethers ('sessions'). Features AI-powered user verification." />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="meet4weed - Find Your Vibe">
+    <meta property="og:description" content="The exclusive network for Florida's medical cannabis community.">
+    <!-- Note: Use an absolute URL for the production image -->
+    <meta property="og:image" content="/og-image.png"> 
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="meet4weed - Find Your Vibe">
+    <meta property="twitter:description" content="The exclusive network for Florida's medical cannabis community.">
+    <!-- Note: Use an absolute URL for the production image -->
+    <meta property="twitter:image" content="/og-image.png">
+
+    <!-- Favicon and PWA -->
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      @keyframes gradient-flow {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+      .animate-gradient-flow {
+        background: linear-gradient(-45deg, #0D0D0D, #1A1A1A, #0a2e04, #1A1A1A);
+        background-size: 400% 400%;
+        animation: gradient-flow 15s ease infinite;
+      }
+      @keyframes fade-in {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fade-in {
+        animation: fade-in 0.5s ease-out forwards;
+      }
+    </style>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              mono: ['Fira Code', 'monospace'],
+            },
+            colors: {
+              'brand-primary': '#39FF14',
+              'brand-secondary': '#40C0E7',
+              'dark-bg': '#0D0D0D',
+              'dark-surface': '#1A1A1A',
+              'dark-text': '#E0E0E0',
+            },
+            boxShadow: {
+              'glow-primary': '0 0 15px rgba(57, 255, 20, 0.5)',
+              'glow-secondary': '0 0 15px rgba(64, 192, 231, 0.5)',
+            }
+          },
+        },
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "clsx": "https://aistudiocdn.com/clsx@^2.1.1",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.20.0",
+    "tailwind-merge": "https://aistudiocdn.com/tailwind-merge@^3.3.1"
+  }
+}
+</script>
+</head>
+  <body class="dark bg-dark-bg text-dark-text font-mono">
+    <div id="root"></div>
+    <script type="module" src="/src/index.tsx"></script>
+  </body>
+</html>
