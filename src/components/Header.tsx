@@ -2,8 +2,9 @@
 import React, { useContext, useState, useEffect, useRef } from 'react';
 import { AppContext } from '../context/AppContext';
 import { ArrowLeftIcon, BellIcon } from './icons';
-import { Notification } from '../types';
+import { Notification, Page } from '../types';
 import NotificationsPanel from './NotificationsPanel';
+import Logo from './Logo';
 
 interface HeaderProps {
   title: string;
@@ -16,7 +17,8 @@ const Header: React.FC<HeaderProps> = ({ title, onBack }) => {
     notifications, 
     markNotificationAsRead, 
     markAllNotificationsAsRead, 
-    setSelectedEvent 
+    setSelectedEvent,
+    onNavigate,
   } = useContext(AppContext);
   const [isPanelOpen, setPanelOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -51,20 +53,33 @@ const Header: React.FC<HeaderProps> = ({ title, onBack }) => {
 
   return (
     <header className="sticky top-0 z-40 w-full h-16 bg-dark-bg/80 backdrop-blur-sm border-b-2 border-brand-primary/20 flex items-center">
-      <div className="container mx-auto flex items-center justify-center relative px-4">
-        {onBack && (
-          <button
-            onClick={onBack}
-            className="absolute left-4 text-brand-primary hover:text-brand-primary/80 transition-colors"
-            aria-label="Go back"
-          >
-            <ArrowLeftIcon className="w-6 h-6" />
-          </button>
-        )}
-        <h1 className="text-xl font-bold text-brand-primary tracking-wider truncate">
-          {title}
-        </h1>
-        <div className="absolute right-4" ref={panelRef}>
+      <div className="container mx-auto flex items-center justify-between px-4 h-full">
+        {/* Left Column */}
+        <div className="flex-1 min-w-0">
+          {onBack ? (
+            <button
+              onClick={onBack}
+              className="text-brand-primary hover:text-brand-primary/80 transition-colors"
+              aria-label="Go back"
+            >
+              <ArrowLeftIcon className="w-6 h-6" />
+            </button>
+          ) : (
+            <Logo onClick={() => onNavigate(Page.Home)} />
+          )}
+        </div>
+        
+        {/* Center Column */}
+        <div className="flex-1 min-w-0 text-center">
+          {onBack && (
+            <h1 className="text-xl font-bold text-brand-primary tracking-wider truncate">
+              {title}
+            </h1>
+          )}
+        </div>
+
+        {/* Right Column */}
+        <div className="flex-1 min-w-0 flex justify-end relative" ref={panelRef}>
             <button 
                 onClick={() => setPanelOpen(prev => !prev)}
                 className="relative text-brand-primary hover:text-brand-primary/80 transition-colors"

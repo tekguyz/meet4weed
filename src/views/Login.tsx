@@ -6,6 +6,7 @@ import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import { verifyMedicalCardImage } from '../services/geminiService';
 import { MadeByTekguyz } from '../components/MadeByTekguyzBadge';
+import Logo from '../components/Logo';
 
 const Login: React.FC = () => {
   const { handleLogin, handleSignUp } = useContext(AppContext);
@@ -20,6 +21,7 @@ const Login: React.FC = () => {
     <div className="min-h-screen bg-dark-bg flex flex-col animate-gradient-flow">
       <main className="flex-grow flex flex-col items-center justify-center text-center px-4">
         <div className="max-w-4xl animate-fade-in" style={{animationDelay: '200ms'}}>
+          <Logo className="mb-8 justify-center" />
           <h1 className="text-5xl md:text-7xl font-bold text-brand-primary tracking-widest leading-tight">
             FIND YOUR VIBE.
           </h1>
