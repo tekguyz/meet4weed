@@ -39,6 +39,9 @@ interface AppContextState {
   updateUserProfile: (userId: string, updates: Partial<User>) => boolean;
   addStrainContribution: (eventId: string, strain: Omit<StrainContribution, 'id' | 'userId'>) => void;
   removeStrainContribution: (eventId: string, strainId: string) => void;
+  sendCrewInvite: (recipientId: string) => void;
+  sendEventInvites: (eventId: string, recipientIds: string[]) => void;
+  acceptCrewInvite: (notificationId: string) => void;
 }
 
 export const AppContext = createContext<AppContextState>({} as AppContextState);
@@ -206,6 +209,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const newNotification: Notification = {
             id: `notif-${Date.now()}`,
             userId: event.hostId,
+            senderId: userId,
             type: NotificationType.NewRsvp,
             message: `${rsvpingUser.name} has RSVP'd to your session "${event.title}".`,
             relatedId: event.id,
@@ -319,6 +323,70 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         n.userId === currentUser.id ? { ...n, isRead: true } : n
     ));
   };
+
+  const sendCrewInvite = (recipientId: string) => {
+    if (!currentUser || currentUser.id === recipientId) return;
+
+    const newNotification: Notification = {
+      id: `notif-crew-${Date.now()}`,
+      userId: recipientId,
+      senderId: currentUser.id,
+      type: NotificationType.CrewInvite,
+      message: `${currentUser.name} wants to add you to their crew.`,
+      relatedId: currentUser.id, // Related ID is the sender
+      timestamp: new Date().toISOString(),
+      isRead: false,
+    };
+    setNotifications(prev => [newNotification, ...prev]);
+    showToast('Crew invite sent!', ToastType.Success);
+  }
+
+  const sendEventInvites = (eventId: string, recipientIds: string[]) => {
+    if (!currentUser) return;
+    const event = events.find(e => e.id === eventId);
+    if (!event) return;
+
+    const newNotifications: Notification[] = recipientIds.map(userId => ({
+      id: `notif-event-${Date.now()}-${userId}`,
+      userId: userId,
+      senderId: currentUser.id,
+      type: NotificationType.EventInvite,
+      message: `${currentUser.name} invited you to "${event.title}".`,
+      relatedId: event.id,
+      timestamp: new Date().toISOString(),
+      isRead: false,
+    }));
+    
+    setNotifications(prev => [...newNotifications, ...prev]);
+    showToast(`Sent ${recipientIds.length} invite(s)!`, ToastType.Success);
+  }
+
+  const acceptCrewInvite = (notificationId: string) => {
+    const notification = notifications.find(n => n.id === notificationId);
+    if (!notification || !notification.senderId || !currentUser) return;
+
+    const senderId = notification.senderId;
+    const recipientId = currentUser.id;
+
+    // Add each user to the other's crew
+    setUsers(prev => prev.map(user => {
+      if (user.id === senderId) {
+        return { ...user, crew: [...new Set([...user.crew, recipientId])] };
+      }
+      if (user.id === recipientId) {
+        const updatedUser = { ...user, crew: [...new Set([...user.crew, senderId])] };
+        setCurrentUser(updatedUser); // Update current user state as well
+        return updatedUser;
+      }
+      return user;
+    }));
+
+    // Remove notification
+    setNotifications(prev => prev.filter(n => n.id !== notificationId));
+    
+    const sender = users.find(u => u.id === senderId);
+    showToast(`You and ${sender?.name || 'user'} are now in each other's crew!`, ToastType.Success);
+  };
   
   const selectedEvent = events.find(e => e.id === selectedEventId) || null;
   const selectedUser = users.find(u => u.id === selectedUserId) || null;
@@ -357,6 +425,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     markAllNotificationsAsRead,
     addStrainContribution,
     removeStrainContribution,
+    sendCrewInvite,
+    sendEventInvites,
+    acceptCrewInvite,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

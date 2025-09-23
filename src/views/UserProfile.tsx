@@ -2,12 +2,12 @@
 import React, { useContext, useMemo } from 'react';
 import { AppContext } from '../context/AppContext';
 import Button from '../components/ui/Button';
-import { MessageSquareIcon } from '../components/icons';
+import { MessageSquareIcon, UserPlusIcon } from '../components/icons';
 import { User } from '../types';
 import MiniUserCard from '../components/MiniUserCard';
 
 const UserProfile: React.FC = () => {
-    const { selectedUser, currentUser, startChat, users, setSelectedUser } = useContext(AppContext);
+    const { selectedUser, currentUser, startChat, users, setSelectedUser, sendCrewInvite } = useContext(AppContext);
 
     const vibeMatches = useMemo(() => {
         if (!selectedUser) return [];
@@ -42,6 +42,7 @@ const UserProfile: React.FC = () => {
     }
     
     const isCurrentUser = currentUser?.id === selectedUser.id;
+    const isFriend = currentUser?.crew.includes(selectedUser.id);
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -53,10 +54,18 @@ const UserProfile: React.FC = () => {
                         <p className="text-brand-secondary mt-1">{selectedUser.location}</p>
                         <p className="text-dark-text/80 mt-4">{selectedUser.bio}</p>
                         {!isCurrentUser && (
-                          <Button onClick={() => startChat(selectedUser.id)} size="sm" className="mt-6 flex items-center gap-2">
-                            <MessageSquareIcon className="w-4 h-4" />
-                            Message {selectedUser.name.split(' ')[0]}
-                          </Button>
+                          <div className="mt-6 flex items-center gap-2">
+                            <Button onClick={() => startChat(selectedUser.id)} size="sm" className="flex items-center gap-2">
+                              <MessageSquareIcon className="w-4 h-4" />
+                              Message {selectedUser.name.split(' ')[0]}
+                            </Button>
+                            {!isFriend && (
+                               <Button onClick={() => sendCrewInvite(selectedUser.id)} variant="secondary" size="sm" className="flex items-center gap-2">
+                                    <UserPlusIcon className="w-4 h-4" />
+                                    Add to Crew
+                               </Button>
+                            )}
+                          </div>
                         )}
                     </div>
                 </div>

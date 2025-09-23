@@ -4,9 +4,10 @@ import { AppContext, ToastType } from '../context/AppContext';
 import { User, StrainContribution, StrainPreference } from '../types';
 import Button from '../components/ui/Button';
 import StrainPill from '../components/ui/StrainPill';
-import { CopyIcon, MapPinIcon } from '../components/icons';
+import { CopyIcon, MapPinIcon, UserPlusIcon } from '../components/icons';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
+import InviteModal from '../components/InviteModal';
 
 const AddStrainModal: React.FC<{
     isOpen: boolean;
@@ -83,10 +84,12 @@ const EventDetails: React.FC = () => {
         setSelectedUser, 
         showToast,
         addStrainContribution,
-        removeStrainContribution
+        removeStrainContribution,
+        sendEventInvites,
     } = useContext(AppContext);
     const [isAddStrainModalOpen, setAddStrainModalOpen] = useState(false);
     const [isAskToContributeModalOpen, setAskToContributeModalOpen] = useState(false);
+    const [isInviteModalOpen, setInviteModalOpen] = useState(false);
 
     if (!selectedEvent) {
         return <div className="text-center p-8">Event not found.</div>;
@@ -146,6 +149,10 @@ const EventDetails: React.FC = () => {
         showToast("Strain removed.", ToastType.Warning);
     }
   
+    const handleSendInvites = (userIds: string[]) => {
+        sendEventInvites(selectedEvent.id, userIds);
+    };
+
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedEvent.location)}`;
 
     return (
@@ -160,6 +167,13 @@ const EventDetails: React.FC = () => {
                 isOpen={isAddStrainModalOpen}
                 onClose={() => setAddStrainModalOpen(false)}
                 onAddStrain={handleAddStrain}
+            />
+            <InviteModal
+                isOpen={isInviteModalOpen}
+                onClose={() => setInviteModalOpen(false)}
+                onInvite={handleSendInvites}
+                title="Invite to Session"
+                existingParticipantIds={selectedEvent.attendees}
             />
             <div className="bg-dark-surface border-2 border-brand-primary/20 rounded-lg p-8">
                 <div className="border-b-2 border-brand-primary/20 pb-6 mb-6">
@@ -242,6 +256,10 @@ const EventDetails: React.FC = () => {
                             {currentUser && (isAttending ? 
                                 <Button onClick={handleUnRsvp} variant="destructive">Can't Make It</Button> 
                                 : <Button onClick={handleRsvpClick}>RSVP</Button>)}
+                             <Button variant="secondary" onClick={() => setInviteModalOpen(true)} className="flex items-center justify-center gap-2">
+                                <UserPlusIcon className="w-5 h-5" />
+                                Invite
+                            </Button>
                         </div>
                     </div>
                 </div>

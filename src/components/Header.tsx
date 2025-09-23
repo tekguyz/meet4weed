@@ -17,6 +17,7 @@ const Header: React.FC<HeaderProps> = ({ title, onBack }) => {
     notifications, 
     markNotificationAsRead, 
     markAllNotificationsAsRead, 
+    acceptCrewInvite,
     setSelectedEvent,
     onNavigate,
   } = useContext(AppContext);
@@ -100,6 +101,7 @@ const Header: React.FC<HeaderProps> = ({ title, onBack }) => {
                 notifications={userNotifications}
                 onNotificationClick={handleNotificationClick}
                 onMarkAllAsRead={handleMarkAllAsRead}
+                onAcceptCrewInvite={acceptCrewInvite}
                 />
             )}
         </div>

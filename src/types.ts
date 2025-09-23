@@ -95,14 +95,17 @@ export interface Toast {
 export enum NotificationType {
   NewRsvp = 'NEW_RSVP',
   EventReminder = 'EVENT_REMINDER',
+  CrewInvite = 'CREW_INVITE',
+  EventInvite = 'EVENT_INVITE',
 }
 
 export interface Notification {
   id: string;
   userId: string; // The user who should receive the notification
+  senderId?: string; // The user who triggered the notification (e.g., sent the invite)
   type: NotificationType;
   message: string;
-  relatedId: string; // ID of the event
+  relatedId: string; // ID of the event or user
   timestamp: string;
   isRead: boolean;
 }

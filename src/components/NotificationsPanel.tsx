@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Notification, NotificationType } from '../types';
-import { ClockIcon, UserPlusIcon } from './icons';
+import { ClockIcon, UserPlusIcon, Share2Icon } from './icons';
 import { cn } from '../lib/utils';
 import Button from './ui/Button';
 
@@ -9,6 +9,7 @@ interface NotificationsPanelProps {
   notifications: Notification[];
   onNotificationClick: (notification: Notification) => void;
   onMarkAllAsRead: () => void;
+  onAcceptCrewInvite: (notificationId: string) => void;
 }
 
 const NotificationIcon: React.FC<{ type: NotificationType }> = ({ type }) => {
@@ -18,6 +19,10 @@ const NotificationIcon: React.FC<{ type: NotificationType }> = ({ type }) => {
             return <UserPlusIcon {...iconProps} />;
         case NotificationType.EventReminder:
             return <ClockIcon {...iconProps} />;
+        case NotificationType.CrewInvite:
+            return <UserPlusIcon {...iconProps} />;
+        case NotificationType.EventInvite:
+            return <Share2Icon {...iconProps} />;
         default:
             return null;
     }
@@ -39,7 +44,13 @@ const timeAgo = (date: string) => {
     return Math.floor(seconds) + "s ago";
 }
 
-const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifications, onNotificationClick, onMarkAllAsRead }) => {
+const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifications, onNotificationClick, onMarkAllAsRead, onAcceptCrewInvite }) => {
+    
+    const handleAccept = (e: React.MouseEvent, notificationId: string) => {
+        e.stopPropagation();
+        onAcceptCrewInvite(notificationId);
+    }
+    
     return (
         <div className="absolute top-full right-0 mt-2 w-80 md:w-96 bg-dark-surface border-2 border-brand-primary/30 rounded-lg shadow-lg z-50 animate-fade-in-down">
             <div className="flex justify-between items-center p-3 border-b border-brand-primary/20">
@@ -63,6 +74,11 @@ const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifications, 
                                     <div className="flex-1">
                                         <p className="text-sm text-dark-text">{notification.message}</p>
                                         <p className="text-xs text-dark-text/60 mt-1">{timeAgo(notification.timestamp)}</p>
+                                        {notification.type === NotificationType.CrewInvite && (
+                                            <Button size="sm" variant="secondary" className="mt-2" onClick={(e) => handleAccept(e, notification.id)}>
+                                                Accept
+                                            </Button>
+                                        )}
                                     </div>
                                     {!notification.isRead && (
                                         <div className="w-2.5 h-2.5 bg-brand-secondary rounded-full self-center flex-shrink-0"></div>
