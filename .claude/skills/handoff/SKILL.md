@@ -14,9 +14,11 @@ what was rejected, what is uncommitted, and what needs a human. That is what
 this block carries, and it is the only thing it should carry.
 
 > **Adapted from `tekguyz-squid-ink`'s handoff skill on 2026-09-16.** That repo
-> has a `CLAUDE.md`, a `docs/KNOWN_GAPS.md`, a `docs/ROADMAP.md` and a
+> has a `docs/KNOWN_GAPS.md`, a `docs/ROADMAP.md` and a
 > `scripts/check-docs.mjs`. **Meet4Weed has none of them.** Do not look for
-> them, and do not invent their equivalents. The sources below are the ones
+> them, and do not invent their equivalents. Meet4Weed **does** have a
+> `CLAUDE.md` (added 2026-09-16) holding the hard rules; it loads into every
+> session, so do not re-read it for the block. The sources below are the ones
 > that exist.
 
 ## Which session to run this in
@@ -144,6 +146,8 @@ file.** Keep it under roughly 450 words.
   copied into a skill stops tracking its source. The sources, as of this
   skill's writing:
   - `README.md` → `### The rule that will bite you` — the `service_role` grant.
+  - `CLAUDE.md` → `## Database rules` — RLS not forced, column grants, the
+    whole-UPDATE failure.
   - Spec `### 4.1 Flow` — every member approved by a human.
   - Spec `### 4.4 Abuse and cost controls` — the daily ceiling and the
     server-only key.
