@@ -48,6 +48,14 @@ reason so nobody has to rediscover it.
 - **An UPDATE that names a non-granted column fails whole** with `42501`, even
   when the value does not change. Send only the granted columns. See
   `app/onboarding/actions.ts`.
+- **Revoke EXECUTE on every new function**: `revoke execute on function … from
+  public, anon` (and `authenticated` for service-only functions). *Why:*
+  Postgres grants EXECUTE to PUBLIC by default, and "Automatically expose new
+  tables" does not change that — a SECURITY DEFINER function left alone is
+  callable with the anon key.
+- **Policy helpers live in schema `private`**, which the Data API does not
+  expose. `authenticated` still needs USAGE on the schema and EXECUTE on the
+  helper, because a policy runs with the caller's privileges.
 - Wrap `auth.uid()` as `(select auth.uid())` in policies. Index every column a
   policy reads and every foreign key. User-facing primary keys are `uuid`.
   Load `supabase:supabase-postgres-best-practices` before writing SQL.
