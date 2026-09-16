@@ -1,7 +1,17 @@
 node_modules
 .next
+# Secrets. This repository is PUBLIC. Every env file is ignored except the
+# example, which holds names only, never values.
 .env
-.env.local
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+
+# Real card or face photos must never be committed (spec §9). Anything used
+# for a live test run on a real document goes here, outside every fixture path.
+private/
 .DS_Store
 *.tsbuildinfo
 .vercel
