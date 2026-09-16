@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:push": "supabase db push --linked"
+    "db:push": "supabase db push --linked",
+    "fixtures:vision": "node scripts/make-vision-fixtures.mjs",
+    "test:vision-live": "vitest run lib/verification/__tests__/vision.live.test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.126.0",
