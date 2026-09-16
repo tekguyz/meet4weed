@@ -2,11 +2,17 @@ import { redirect } from "next/navigation";
 import { AttestationForm } from "@/components/onboarding/attestation-form";
 import { ProfileForm } from "@/components/onboarding/profile-form";
 import { getMyProfile } from "@/lib/profiles/queries";
+import { RESERVED_HANDLE_PREFIX } from "@/lib/profiles/schema";
 import { APP_NAME } from "@/lib/env";
 
 export default async function OnboardingPage() {
   const profile = await getMyProfile();
   if (!profile) redirect("/login");
+
+  // Already through both steps. Without this, a back button or a stale link
+  // drops a finished member back into the setup form.
+  const finished = profile.attestedAt && !profile.handle.startsWith(RESERVED_HANDLE_PREFIX);
+  if (finished) redirect("/");
 
   const step = profile.attestedAt ? 2 : 1;
 

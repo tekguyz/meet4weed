@@ -19,6 +19,11 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
+// The real redirect() throws to unwind the request. Here it is a spy, so the
+// assertion is "the flow ended by going home", not "an exception happened".
+const redirect = vi.fn();
+vi.mock("next/navigation", () => ({ redirect: (to: string) => redirect(to) }));
+
 describe("recordAttestation", () => {
   beforeEach(() => {
     vi.resetModules();
@@ -85,6 +90,7 @@ describe("saveProfile", () => {
     getUser.mockReset();
     update.mockReset();
     eq.mockReset().mockResolvedValue({ error: null });
+    redirect.mockReset();
     getUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
   });
 
@@ -99,15 +105,35 @@ describe("saveProfile", () => {
     fd.set("vibeTags", "vinyl, board games");
 
     const { saveProfile } = await import("@/app/onboarding/actions");
-    const result = await saveProfile(null, fd);
+    await saveProfile(null, fd);
 
-    expect(result.ok).toBe(true);
     expect(update.mock.calls[0][0]).toMatchObject({
       handle: "ryder",
       display_name: "Ryder",
       strain_prefs: ["indica"],
       vibe_tags: ["vinyl", "board games"],
     });
+  });
+
+  it("sends the member home rather than leaving them on the finished form", async () => {
+    const fd = new FormData();
+    fd.set("handle", "ryder");
+
+    const { saveProfile } = await import("@/app/onboarding/actions");
+    await saveProfile(null, fd);
+
+    expect(redirect).toHaveBeenCalledWith("/");
+  });
+
+  it("does not redirect when the save failed", async () => {
+    eq.mockResolvedValue({ error: { code: "23505", message: "duplicate key" } });
+    const fd = new FormData();
+    fd.set("handle", "ryder");
+
+    const { saveProfile } = await import("@/app/onboarding/actions");
+    await saveProfile(null, fd);
+
+    expect(redirect).not.toHaveBeenCalled();
   });
 
   it("never sends status or card_expires_on, which the column grant forbids", async () => {

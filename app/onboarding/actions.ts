@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { profileInputSchema } from "@/lib/profiles/schema";
@@ -120,5 +121,9 @@ export async function saveProfile(
   if (error) return { ok: false, message: "Could not save that. Try again." };
 
   revalidatePath("/");
-  return { ok: true, message: "Saved." };
+
+  // Onboarding's last step. Returning a "Saved." string leaves the member
+  // staring at the form they just completed with no way forward, so the
+  // action ends the flow itself. redirect() throws, so nothing runs after it.
+  redirect("/");
 }
