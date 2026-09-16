@@ -170,7 +170,7 @@ the account to manual review rather than letting it retry forever.
 
 ---
 
-## 4.5 Authentication (decided 2026-09-16)
+### 4.5 Authentication (decided 2026-09-16)
 
 Magic-link sign-in is **retired**. It shipped in Plan 01 and is replaced before
 any later plan builds on it.
