@@ -2,8 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 /** Paths a signed-out visitor may reach. Everything else redirects to /login.
- *  The auth callback MUST be here: it runs before a session exists, and
- *  redirecting it would make sign-in impossible. */
+ *  /auth MUST be here: /auth/confirm opens an emailed link before a session
+ *  exists, and redirecting it would make confirming an account impossible. */
 const PUBLIC_PREFIXES = ["/login", "/auth", "/legal", "/invite"];
 
 function isPublic(pathname: string) {

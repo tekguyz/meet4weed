@@ -10,7 +10,7 @@ valid, unexpired OMMU card, and nobody else gets in.
 **It is a place to meet, never a place to buy or sell.** No cart, no payments
 for cannabis, no dispensary ordering. That constraint is load-bearing.
 
-> **Status: early rebuild.** Sign-in, attestation and member profiles work.
+> **Status: early rebuild.** Password sign-in, attestation and member profiles work.
 > Card verification, sessions and everything else are designed but not built.
 > See [Build status](#build-status).
 
@@ -22,7 +22,7 @@ for cannabis, no dispensary ordering. That constraint is load-bearing.
 | :-- | :-- |
 | App | Next.js 16.3 (App Router), React 19.2, TypeScript |
 | Data | Supabase Postgres, hosted |
-| Auth | Supabase Auth. Magic link today; **moving to email + password** (spec §4.5) |
+| Auth | Supabase Auth, email + password. Email carries links only to confirm an account and reset a password (spec §4.5) |
 | Authorization | Postgres row-level security + column-level grants |
 | Styling | Tailwind CSS v4, "Warm Ink" design tokens, dark by default |
 | Validation | zod |
@@ -30,9 +30,10 @@ for cannabis, no dispensary ordering. That constraint is load-bearing.
 | CI | GitHub Actions |
 | Hosting | Vercel *(planned — not deployed yet)* |
 
-**Configured, not yet used by code:** Resend SMTP sends auth email from
-`Meet4Weed <no-reply@tekguyz.com>` (set in the Supabase dashboard). Keys for
-Claude, Upstash and the Resend API are in `.env.local`, ready for Plan 02.
+Auth email goes through Resend SMTP from `Meet4Weed <no-reply@tekguyz.com>`,
+set in the Supabase dashboard, with the branded templates in
+`supabase/templates/`. Keys for Claude, Upstash and the Resend API are in
+`.env.local`, ready for Plan 02.
 
 **Decided, not installed:** Claude vision for card reading, Mapbox, web push,
 Sentry — see the spec.
@@ -88,9 +89,25 @@ npm run dev
 
 Open `http://localhost:3000`. Signed out, you land on `/login`.
 
-For the magic link to work locally, the Supabase project must list
+For emailed links to work locally, the Supabase project must list
 `http://localhost:3000/**` under **Authentication → URL Configuration →
-Redirect URLs**.
+Redirect URLs**. Supabase silently swaps in the Site URL for any address not on
+that list.
+
+### Auth settings live in two places
+
+The hosted dashboard is what runs. `supabase/config.toml` and
+`supabase/templates/` mirror it, and a test fails if they disagree with the
+link lifetime the screens state. This repo never runs `supabase config push`,
+so a change means editing both:
+
+| Setting | Dashboard | Value |
+| :-- | :-- | :-- |
+| Confirm email | Authentication → Sign In / Providers → Email | on |
+| Email OTP expiration | same page | 3600 seconds |
+| Password rules | same page | 8 characters minimum; lower, upper, digit, symbol |
+| Confirm signup template | Authentication → Emails | `supabase/templates/confirmation.html` |
+| Reset password template | Authentication → Emails | `supabase/templates/recovery.html` |
 
 ---
 
@@ -157,12 +174,14 @@ anything that touches a migration.
 ## Project layout
 
 ```
-app/                  routes: /login, /onboarding, /auth/callback, /auth/sign-out
+app/                  routes: /login, /login/new-password, /onboarding, /auth/confirm, /auth/sign-out
 components/           UI; ui/ holds the primitives
+lib/auth/             auth error mapping, link lifetime, safe redirects
 lib/supabase/         browser client, server client, session refresh
 lib/profiles/         zod schemas, types, queries
 proxy.ts              refreshes the session and gates signed-out visitors
 supabase/migrations/  every schema change, in order
+supabase/templates/   branded auth emails, mirrored in the dashboard
 supabase/tests/       database security tests
 docs/superpowers/     the design spec and the implementation plans
 ```

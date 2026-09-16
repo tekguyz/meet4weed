@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="supported-color-schemes" content="dark">
+<title>Confirm your email</title>
+<!--
+  Meet4Weed brand, "Warm Ink" dark theme (the app's default). Email clients read
+  neither CSS variables nor, mostly, web fonts, so every colour is the sRGB value
+  of a dark token in app/globals.css, copied from the hex beside each oklch():
+  bg #14120E, surface #1D1913, rule #302A20, ink #F5F0E4, ink-muted #A79B87,
+  primary #B4D982, on-primary #11150B.
+  Fonts: Fraunces / Inter where the client loads them, Georgia / Arial where not.
+  The href must stay exactly {{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=email
+  and the copy must say "60 minutes": lib/auth/__tests__/email-link-policy.test.ts.
+-->
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body style="margin:0; padding:0; background-color:#14120E;">
+<div style="display:none; max-height:0; overflow:hidden; mso-hide:all;">Finish creating your Meet4Weed account. The link expires in 60 minutes.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#14120E" style="background-color:#14120E;">
+  <tr>
+    <td align="center" style="padding:40px 16px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#1D1913" style="max-width:440px; background-color:#1D1913; border:1px solid #302A20; border-radius:18px;">
+        <tr>
+          <td style="padding:34px 32px 30px 32px;">
+            <p style="margin:0; font-family:'Fraunces', Georgia, serif; font-size:20px; font-weight:600; color:#F5F0E4;">Meet4Weed</p>
+            <h1 style="margin:26px 0 0 0; font-family:'Fraunces', Georgia, serif; font-size:26px; line-height:1.2; font-weight:600; color:#F5F0E4;">Confirm your email</h1>
+            <p style="margin:12px 0 0 0; font-family:'Inter', Arial, Helvetica, sans-serif; font-size:15px; line-height:1.6; color:#F5F0E4;">Tap the button to finish creating your Meet4Weed account. Then sign in with your password.</p>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:26px;">
+              <tr>
+                <td align="center" bgcolor="#B4D982" style="background-color:#B4D982; border-radius:14px;">
+                  <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=email" style="display:block; padding:14px 16px; font-family:'Inter', Arial, Helvetica, sans-serif; font-size:15px; font-weight:600; color:#11150B; text-decoration:none;">Confirm my email</a>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:24px 0 0 0; font-family:'Inter', Arial, Helvetica, sans-serif; font-size:13px; line-height:1.6; color:#A79B87;">The link expires in 60 minutes. If you did not sign up, ignore this email.</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:14px 32px; border-top:1px solid #302A20; font-family:'Inter', Arial, Helvetica, sans-serif; font-size:12px; line-height:1.6; color:#A79B87;">A private circle for verified Florida patients. A place to meet, never a place to buy or sell.</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

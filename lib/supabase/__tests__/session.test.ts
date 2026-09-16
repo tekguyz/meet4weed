@@ -48,11 +48,11 @@ describe("updateSession", () => {
     expect(res.status).toBe(200);
   });
 
-  it("never redirects the auth callback, which must run signed out", async () => {
+  it("never redirects an emailed link, which must open signed out", async () => {
     getUser.mockResolvedValue({ data: { user: null } });
     const { updateSession } = await import("@/lib/supabase/session");
 
-    const res = await updateSession(new NextRequest("http://localhost:3000/auth/callback?code=x"));
+    const res = await updateSession(new NextRequest("http://localhost:3000/auth/confirm?token_hash=x&type=email"));
 
     expect(res.status).toBe(200);
   });
