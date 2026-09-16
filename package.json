@@ -1,25 +1,41 @@
 {
-  "name": "meet4weed-beta",
+  "name": "meet4weed",
+  "version": "0.1.0",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:start": "supabase start",
+    "db:reset": "supabase db reset",
+    "db:diff": "supabase db diff -f",
+    "db:test": "supabase test db"
   },
   "dependencies": {
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
-    "clsx": "^2.1.1",
-    "@google/genai": "^1.20.0",
-    "tailwind-merge": "^3.3.1",
-    "@netlify/functions": "^4.2.6"
+    "@supabase/ssr": "0.12.5",
+    "@supabase/supabase-js": "2.112.4",
+    "next": "16.3.5",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zod": "4.5.4",
+    "zustand": "5.0.15"
   },
   "devDependencies": {
-    "@types/node": "^22.14.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "@tailwindcss/postcss": "4.3.3",
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.6",
+    "@types/node": "26.4.0",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.5",
+    "@vitejs/plugin-react": "6.1.1",
+    "jsdom": "30.0.1",
+    "tailwindcss": "4.3.3",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11"
   }
 }
