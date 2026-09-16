@@ -667,10 +667,16 @@ A token typo in `@theme inline` produces no error — the class simply does not 
 
 ```bash
 npm run build
-grep -c "\-\-color-primary" .next/static/css/*.css
+CSS=$(find .next -name "*.css" -not -path "*/cache/*" | head -1)
+grep -o ":root{[^}]*}" "$CSS" | head -1
+grep -o "\.light{[^}]*}" "$CSS" | head -1
 ```
 
-Expected: build exits 0 and the grep count is at least 1. Paste both.
+Expected: build exits 0, and both greps print a block containing `--primary`.
+
+Do **not** grep for `oklch`. Lightning CSS compiles every `oklch()` down to a
+hex value plus a `lab()` fallback, so the string never survives the build. The
+hex it emits is the proof — `--primary:#b4d982` is the approved sage.
 
 - [ ] **Step 8: Commit**
 

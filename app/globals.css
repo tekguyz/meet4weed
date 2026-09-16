@@ -1,1 +1,96 @@
 @import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Warm Ink — Level 2. The approved direction (spec §7).
+
+   Every colour in this app resolves here. Components use token classes and
+   never write oklch() or a hex value inline.
+
+   `@theme inline` maps Tailwind's namespace onto indirection variables; the
+   real values sit on :root and are re-set under .light, so the theme swaps at
+   runtime without any component knowing which theme is active.
+
+   Dark is the default: :root IS dark.
+--------------------------------------------------------------------------- */
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-rule: var(--rule);
+
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+
+  --color-primary: var(--primary);
+  --color-primary-pressed: var(--primary-pressed);
+  --color-on-primary: var(--on-primary);
+  --color-secondary: var(--secondary);
+  --color-danger: var(--danger);
+
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-body: var(--font-inter), system-ui, sans-serif;
+
+  --radius-card: 1.125rem;
+  --radius-control: 0.875rem;
+}
+
+:root {
+  /* dark — the default */
+  --bg: oklch(18.31% 0.0085 84.57);               /* #14120E */
+  --surface: oklch(21.60% 0.0129 77.94);          /* #1D1913 */
+  --surface-2: oklch(24.26% 0.0149 76.18);        /* #241F18 */
+  --rule: oklch(28.83% 0.0195 80.41);             /* #302A20 */
+
+  --ink: oklch(95.58% 0.0168 88.00);              /* #F5F0E4 */
+  --ink-muted: oklch(69.43% 0.0317 80.59);        /* #A79B87 */
+
+  --primary: oklch(83.85% 0.1202 127.58);         /* #B4D982 sage */
+  --primary-pressed: oklch(77.35% 0.1204 127.99); /* #9FC46E */
+  --on-primary: oklch(18.79% 0.0203 125.99);      /* #11150B */
+  --secondary: oklch(81.04% 0.1127 80.25);        /* #E7B968 honey */
+  --danger: oklch(68.35% 0.1405 35.10);           /* #E2765B */
+}
+
+.light {
+  /* Same token names, re-pointed. Derived on day one — retrofitting a second
+     theme later is a rewrite, not a feature. Primary darkens sharply here so
+     white-on-primary clears 4.5:1; the dark sage would not. */
+  --bg: oklch(97.35% 0.0139 88.68);               /* #FAF6EC */
+  --surface: oklch(100% 0 89.88);                 /* #FFFFFF */
+  --surface-2: oklch(94.37% 0.0209 88.72);        /* #F2ECDD */
+  --rule: oklch(88.10% 0.0286 86.65);             /* #E0D7C3 */
+
+  --ink: oklch(21.47% 0.0122 84.54);              /* #1C1913 */
+  --ink-muted: oklch(49.99% 0.0270 82.01);        /* #6B6252 */
+
+  --primary: oklch(55.50% 0.1076 129.11);         /* #5F7F36 */
+  --primary-pressed: oklch(48.62% 0.0984 129.59); /* #4D6A29 */
+  --on-primary: oklch(100% 0 89.88);              /* #FFFFFF */
+  --secondary: oklch(60.36% 0.1161 75.43);        /* #A9761F */
+  --danger: oklch(52.60% 0.1547 33.86);           /* #B23F26 */
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+/* Respect the OS setting for people who never touch the toggle. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
