@@ -1,0 +1,344 @@
+# Meet4Weed — Rebuild Design Spec
+
+**Date:** 2026-09-16
+**Status:** Approved for planning
+**Supersedes:** the `meet4weed-beta` prototype (React 19 + Vite + Netlify, mock in-memory state)
+
+---
+
+## 1. Purpose
+
+A private, invite-conscious social app for **verified Florida OMMU medical
+cannabis cardholders** to host and join small private gatherings ("seshes") at
+private residences.
+
+Florida law permits qualified patients to consume at a private residence. The
+app's entire reason to exist is the **verification gate**: every member is a
+cardholder with a valid, unexpired card. Nobody else gets in.
+
+**The app never facilitates a sale.** No cart, no payments for cannabis, no
+dispensary ordering, no "who's selling." This is a social layer only. This
+constraint is product-defining, not a footnote — it is what keeps the app
+lawful and keeps it off platform blocklists.
+
+### 1.1 Why a rebuild, not an upgrade
+
+The prototype has no persistence, no real auth (`pass === 'password'`), a
+serverless function that cannot run locally, a Tailwind CDN script instead of a
+build, and two React roots mounting simultaneously. Its **ideas** are good; its
+**code** is not a foundation. We take the ideas and rebuild.
+
+### 1.2 Launch posture
+
+Private / small launch first: friends and a closed group, not a public
+marketplace. Build to a production bar, but do not gold-plate scale, trust &
+safety tooling, or moderation staffing before there are users.
+
+---
+
+## 2. Tech stack
+
+Matches the house conventions already proven in `tekguyz-squid-ink`.
+
+| Layer | Choice | Why |
+| :-- | :-- | :-- |
+| App framework | **Next.js 16.3** (App Router) | Server components keep the phone bundle small; house standard |
+| Runtime | React 19.2 | House standard |
+| Language | TypeScript | House standard |
+| Hosting | **Vercel** | Vercel CLI already in use |
+| Database | **Supabase Postgres** | Supabase CLI already in use; declarative schemas + migrations + seed |
+| Auth | **Supabase Auth — email magic link** | No password to forget; no unverified-OAuth warning screen |
+| Files | Supabase Storage (private buckets) | Only used for the review queue, see §4 |
+| Realtime | Supabase Realtime | Live RSVP counts in v1; DM chat in v2 |
+| Authorization | **Postgres RLS** | Address privacy enforced in the DB, not the UI |
+| Styling | **Tailwind v4** (`@tailwindcss/postcss`) + shadcn/ui | House standard; primitives only, not the look |
+| Design direction | **Warm Ink, Level 2** (see §7) | Approved |
+| Motion | Motion (`motion/react`) | Micro-interactions |
+| Validation | **zod** | Shared between client, server actions, and DB boundaries |
+| Client state | **zustand** | Only for genuinely client-side state (filters, camera flow) |
+| Maps | **Mapbox GL JS** | Fuzzy circles and avatar pins; cheaper and more styleable than Google Maps |
+| Card reading | **Claude vision** (`claude-sonnet-5`) | Structured output via zod schema |
+| Push | Web Push (VAPID) + service worker | PWA, no app store |
+| Email | Resend | Magic links + the single expiry email |
+| Rate limiting | Upstash Redis | Verification attempts, RSVP spam, report spam |
+| Errors | Sentry | |
+| Analytics | PostHog | |
+| Tests | **vitest** + Testing Library | House standard |
+
+**Explicitly not now:** React Native / Expo (Play Store is hostile to cannabis
+apps and demands report+block tooling we would be building anyway), and a
+browser extension (dropped by the user — do not revive it).
+
+---
+
+## 3. Architecture
+
+Three layers, deliberately thin:
+
+1. **App (Next.js on Vercel).** Server Components render feeds and detail
+   pages. Server Actions handle writes. Route Handlers exist only where a
+   third party must POST to us or where we stream a file.
+2. **Data (Supabase Postgres).** Every table carries RLS. Authorization is a
+   database property. A UI bug cannot leak a home address because the row
+   never leaves Postgres.
+3. **Jobs.** Vercel Cron hits protected route handlers:
+   - daily expiry sweep (flip expired accounts to read-only, send the one email)
+   - session reminder dispatch (24h before)
+   - review-queue reaper (delete card images older than 7 days)
+
+### 3.1 Design for isolation
+
+Each unit below must be understandable and testable on its own.
+
+| Unit | Does | Depends on |
+| :-- | :-- | :-- |
+| `auth` | Magic-link sign-in, session, sign-out | Supabase Auth |
+| `verification` | Card capture UI, vision call, decision, review queue | Claude API, Storage, `member` |
+| `member` | Profile, preferences, card status, read-only gate | `verification` |
+| `sesh` | Create / edit / cancel a session, capacity, fuzzy geo | `member` |
+| `rsvp` | Request, host approve/deny, address unlock, expiry-aware block | `sesh`, `member` |
+| `ondeck` | Strain contributions and bring-list items | `sesh`, `rsvp` |
+| `invite` | Signed, expiring share links | `sesh` |
+| `notify` | In-app feed + web push fan-out | all of the above |
+| `safety` | Report, block, host kick | `member`, `sesh` |
+
+Nothing imports another unit's internals. Cross-unit calls go through each
+unit's exported server functions.
+
+---
+
+## 4. Verification (the gate)
+
+This is the highest-risk and highest-value flow. It gets the most design care.
+
+### 4.1 Flow
+
+1. Sign in with email magic link.
+2. Attest: 21 or older, Florida resident, holder of a valid OMMU card, and
+   agreement to the no-sales rule. Recorded with a timestamp.
+3. Enter **patient ID** and **card expiry date** by hand.
+4. **Capture the card** with a real camera UI — live viewfinder, card-shaped
+   guide frame, glare and blur warnings, retake. Not a file input.
+5. **Capture a live selfie** — "stay still and look at the camera," on-screen
+   ring, countdown.
+6. Both images POST to a server route. The route calls Claude vision with a
+   zod-typed structured schema and receives:
+   `{ nameOnCard, patientId, expiryDate, faceMatchesCardPhoto, looksAuthentic,
+   confidence, reason }`.
+7. Decision:
+   - **Confident, authentic, face matches, typed fields match, not expired** →
+     approved immediately.
+   - **Anything else** → `pending_review`, queued for the admin screen.
+
+### 4.2 Image retention — the honest rule
+
+- Images are streamed to the server route and held **in memory only**. They are
+  **never** written to a bucket on the happy path.
+- **Approved → the images are discarded.** Only the extracted fields persist
+  (patient ID, expiry, verified-at).
+- **Pending review → only then** are images written to a private, encrypted
+  Supabase bucket, readable by service role alone. They are deleted the moment
+  an admin decides, and unconditionally after 7 days by the reaper job.
+
+The screen states this plainly, and the statement is true:
+
+> We read your card and delete the photo. We only keep a copy if a person needs
+> to check it, and it is gone within 7 days.
+
+### 4.3 Expiry handling
+
+The real protection is **contextual, not nagging**.
+
+- **Expiry-aware RSVP (primary control).** A member cannot request or hold a
+  spot at a session dated after their card expiry. The block appears at the
+  moment of RSVP: *"Your card expires Mar 4. This sesh is Mar 11. Renew to
+  join."* One tap to the renew flow.
+- **Host visibility.** If an already-approved guest's card will expire before
+  the session date, the host gets one notice and the guest is auto-dropped
+  unless renewed.
+- **Reminders (deliberately few).** In-app banner from 30 days out. Push at
+  7 days and at 1 day. **Exactly one email**, on the expiry date.
+- **On expiry: read-only.** The member can browse and see their own history.
+  They cannot RSVP, host, see any unlocked address, or message. Uploading a
+  valid card restores full access immediately.
+
+### 4.4 Abuse controls
+
+Rate limit verification attempts per account and per IP. Three failures sends
+the account to manual review rather than letting it retry forever.
+
+---
+
+## 5. v1 feature scope
+
+**In scope.**
+
+- Magic-link auth + 21+/OMMU attestation
+- Card verification, admin review queue, expiry lifecycle
+- Profile: handle, avatar, bio, city, preferred strain types, consumption
+  methods, vibe tags
+- Sesh create / edit / cancel with capacity and session type
+- Feed with type-chip filters and text search; map view with fuzzy circles
+- **Fuzzy location:** public view shows neighbourhood + a randomized offset
+  circle. Exact address, unit number, and gate code unlock **only** for
+  approved RSVPs. Enforced by RLS.
+- **Host-approved RSVP:** request → host approves or denies → address unlocks
+- **On deck:** strain contributions (name, type) and a bring-list (snacks,
+  drinks, papers). Includes an explicit, judgement-free *"bringing none"*
+  option.
+- **Invite links:** signed, expiring, single-sesh. The recipient still must be
+  a verified member to get in.
+- Notifications: in-app feed + web push for RSVP requested, RSVP approved or
+  denied, sesh edited, sesh cancelled, 24h reminder, card expiry
+- Installable PWA with offline shell
+- Safety: report user, report sesh, block user, host kick, and the no-sales
+  rule surfaced in terms and at sesh creation
+- Light and dark themes, built on tokens from day one
+
+**Out of scope for v1 — deferred deliberately.**
+
+- v2: direct messages, crews, vibe matching, strain locker + PWA share-target
+  import, **event photos** (attendees only, never public, auto-delete at 30
+  days, self-removal from any photo)
+- v3: Expo native client on the same Supabase backend
+- **Never:** browser extension; any sales, cart, or dispensary ordering feature
+
+---
+
+## 6. Data model (shape, not final DDL)
+
+Final types and constraints are decided during the Postgres pass; that pass
+must load `supabase:supabase-postgres-best-practices`.
+
+- `profiles` — one per auth user. Handle, avatar, bio, city, prefs, vibe tags,
+  `status` (`unverified` | `pending_review` | `verified` | `expired` |
+  `suspended`).
+- `verifications` — patient ID, expiry date, decision, model confidence,
+  reason, reviewer, timestamps. **No image column on the happy path.**
+- `verification_documents` — review-queue only. Storage path + `expires_at`.
+  Rows and objects deleted by the reaper.
+- `seshes` — host, title, description, type, `starts_at`, capacity, status.
+  Holds **both** `exact_location` and a derived `fuzzy_point` + `fuzzy_radius_m`.
+- `rsvps` — sesh, member, `status` (`requested` | `approved` | `denied` |
+  `cancelled` | `kicked`), timestamps. **The address-unlock predicate.**
+- `contributions` — sesh, member, kind (`strain` | `item` | `none`), label,
+  strain type.
+- `invites` — sesh, token hash, `expires_at`, creator, use count.
+- `notifications` — recipient, type, payload, read state.
+- `push_subscriptions` — endpoint, keys, user agent.
+- `reports` / `blocks` — reporter, target, reason, state.
+
+### 6.1 The RLS rule that matters most
+
+`seshes.exact_location` is never selectable in a public query. Reads go through
+a view or a security-definer function that returns the exact location **only**
+when the caller has an `approved` RSVP or is the host. Expired members are
+excluded even if previously approved. This rule gets its own test file.
+
+---
+
+## 7. Design direction
+
+**"Warm Ink", Level 2.** Approved from the side-by-side comparison.
+
+Warm brown-black base, cream ink, brighter sage as the primary action colour,
+honey-gold as the secondary. Serif display face (Fraunces) for headings against
+a neutral sans (Inter) for body. Reference tokens:
+
+| Token | Dark | Note |
+| :-- | :-- | :-- |
+| `bg` | `#14120E` | warm, not neutral black |
+| `surface` | `#1D1913` | cards |
+| `border` | `#302A20` | |
+| `primary` (sage) | `#B4D982` | buttons, active nav |
+| `secondary` (honey) | `#E7B968` | strain tags, accents |
+| `ink` | `#F5F0E4` | |
+| `ink-muted` | `#A79B87` | |
+
+These are starting values, expressed in **OKLCH** as Tailwind v4 theme tokens.
+Light mode is derived from the same token names on day one — retrofitting it
+later is a rewrite. **Dark is the default.**
+
+**Logo direction: "The Grin."** A simple round face whose eyes are two
+half-closed leaves — reads as both a smile and a plant, works at favicon size,
+and does not announce cannabis to someone glancing at a phone. Paired with a
+Fraunces wordmark.
+
+**Rejected and why:** the prototype's cold neon-green-on-black terminal look
+(reads as a tool, tiring at night); Razer-style hot green (same); Material You
+(well-made, but it is Google's brand rather than ours).
+
+**Structural cues taken from the reference set:** big rounded cards on a dark
+field, one hero card per screen, a horizontal filter chip row, a "who's going"
+overlapping avatar row, fat pill CTAs, map with avatar pins, and a KYC-style
+one-job-per-screen stepper with an illustration instead of a wall of text.
+
+The **impeccable** skill drives the visual build. It is not a Tailwind default
+look.
+
+---
+
+## 8. Error handling
+
+- **Verification failures** never dead-end. Every failure names the reason
+  ("the photo is blurry", "the expiry date does not match what you typed") and
+  offers a retake or a path to manual review.
+- **Vision API down** → the submission queues as `pending_review` rather than
+  failing. The user sees "a person will check this shortly," not an error.
+- **Address leaks** are treated as a security defect class, not a bug. The RLS
+  test file is a release gate.
+- **Push failures** are silent to the user; the in-app notification feed is the
+  source of truth and push is best-effort.
+- **Offline** → the PWA shell renders with cached feed data and a clear
+  "you are offline" state. Writes are blocked, not queued, in v1.
+
+---
+
+## 9. Testing
+
+- **Unit (vitest):** zod schemas, the expiry-aware RSVP predicate, fuzzy-point
+  derivation, invite token signing and expiry.
+- **RLS (pgTAP or SQL test harness):** the address-unlock matrix — host,
+  approved guest, requested guest, denied guest, stranger, expired member,
+  blocked user. This file gates releases.
+- **Component (Testing Library):** the camera/selfie stepper, the RSVP flow,
+  the on-deck editor.
+- **Vision:** fixture-based. A folder of synthetic card images — clean, blurry,
+  expired, mismatched name, obvious fake — asserted against expected decisions.
+  The model is mocked in CI; the fixtures run against the live API on demand.
+- **Definition of done** for each plan step is a command that exits 0, with its
+  output pasted. Not a claim.
+
+---
+
+## 10. Build order
+
+Each step is shippable and independently verifiable.
+
+1. **Foundation** — Next 16.3 + Tailwind v4 tokens (both themes) + Supabase
+   local + CI. Proof: `npm run build`, `npm run typecheck`, `npm test` green.
+2. **Auth + profiles** — magic link, attestation, profile CRUD, RLS.
+3. **Verification** — camera UI, vision pipeline, decision, admin queue,
+   retention reaper.
+4. **Expiry lifecycle** — sweep job, read-only gate, the reminder ladder.
+5. **Seshes + fuzzy location** — CRUD, feed, chips, search, map.
+6. **RSVP + address unlock** — including the expiry-aware block. RLS test file.
+7. **On deck + bring list.**
+8. **Invites.**
+9. **Notifications + push + PWA.**
+10. **Safety** — report, block, kick.
+11. **Design pass** — impeccable across every route, both themes.
+
+Steps 2, 3, and 6 should be run at Opus 5 **High** effort. The rest are fine at
+Medium.
+
+---
+
+## 11. Open items
+
+- **Domain.** Meet4Weed is the approved name. `meet4weed.com` / `.app` must be
+  checked and bought. `fancyfam.com` is not being used for this.
+- **Admin surface.** v1 admin review is a protected route inside the app, not a
+  separate product.
+- **Terms and privacy copy.** Must be written before any non-owner account is
+  verified, because the retention promise in §4.2 is a commitment to users.
