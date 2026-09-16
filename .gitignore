@@ -19,3 +19,6 @@ supabase/.branches
 supabase/.temp
 .claude/worktrees
 .worktrees
+
+# MediaPipe wasm runtime, copied from node_modules by scripts/copy-mediapipe.mjs
+public/mediapipe/wasm/

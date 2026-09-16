@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "node scripts/copy-mediapipe.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/copy-mediapipe.mjs",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
