@@ -14,5 +14,10 @@ export default defineConfig({
     // outside. Both worktree conventions are excluded.
     exclude: ["**/node_modules/**", "**/.next/**", "**/.worktrees/**", "**/.claude/worktrees/**"],
   },
-  resolve: { alias: { "@": path.resolve(import.meta.dirname, ".") } },
+  resolve: {
+    alias: {
+      "@": path.resolve(import.meta.dirname, "."),
+      "server-only": path.resolve(import.meta.dirname, "vitest.server-only.ts"),
+    },
+  },
 });
