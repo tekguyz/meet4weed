@@ -10,6 +10,25 @@
 
 **Spec:** `docs/superpowers/specs/2026-09-16-meet4weed-rebuild-design.md`
 
+> **STATUS: COMPLETE (2026-09-16). Read this before copying any step.**
+> This plan was written assuming a local Supabase stack. The machine has no
+> Docker, so execution moved to a hosted project, and several steps below did
+> not ship as written:
+>
+> - **Task 1** — the `db:start`, `db:reset`, `db:diff` and `db:test` scripts and
+>   the local `.env.example` URL were later removed; `db:push` replaced them.
+> - **Task 3** — `supabase init` + `supabase link` to a hosted project replaced
+>   `supabase start`.
+> - **Task 4** — see its own AMENDED block: column grants instead of a trigger,
+>   RLS not forced, a vitest integration test instead of pgTAP, and the
+>   `service_role` grant.
+> - **Task 5** — magic-link sign-in shipped, and was then **decided against** in
+>   spec §4.5. It is replaced by email + password at the start of Plan 02.
+> - **Task 6** — `saveProfile` redirects home on success; the plan's version
+>   returned "Saved." and left the member stranded.
+>
+> The current source of truth is the code, `README.md`, and the spec.
+
 ## Global Constraints
 
 These apply to every task in this plan and every later plan.

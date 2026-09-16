@@ -59,8 +59,8 @@ Matches the house conventions already proven in `tekguyz-squid-ink`.
 | Maps | **Mapbox GL JS** | Fuzzy circles and avatar pins; cheaper and more styleable than Google Maps |
 | Card reading | **Claude vision** (`claude-sonnet-5`) | Structured output via zod schema |
 | Push | Web Push (VAPID) + service worker | PWA, no app store |
-| Email | Resend | Two paths. **Auth emails** (sign-in, confirm, reset) are sent by Supabase Auth over Resend SMTP, configured in the dashboard, with branded templates. **App emails** (the single expiry notice) are sent by the app through the Resend API |
-| Rate limiting | Upstash Redis | Verification attempts, RSVP spam, report spam |
+| Email | Resend | Two paths. **Auth emails** (sign-in, confirm, reset) are sent by Supabase Auth over Resend SMTP — configured in the dashboard 2026-09-16, sender `Meet4Weed <no-reply@tekguyz.com>`, delivery confirmed; branded templates still to come. **App emails** (the owner's review alert, the single expiry notice) are sent by the app through the Resend API with `RESEND_API_KEY` |
+| Rate limiting | Upstash Redis | Verification attempts, RSVP spam, report spam. **Shares the TEKGUYZ Website database** — the free tier allows one. Every Meet4Weed key is prefixed `m4w:` so the two apps never collide, and both apps draw on the same free-tier allowance |
 | Errors | Sentry | The camera/vision flow fails on phones we do not own; without it those failures are invisible |
 | Analytics | Vercel Analytics | One line, free. PostHog deferred to v2 — nothing to analyse pre-launch |
 | Tests | **vitest** + Testing Library | House standard |

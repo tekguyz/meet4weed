@@ -30,8 +30,12 @@ for cannabis, no dispensary ordering. That constraint is load-bearing.
 | CI | GitHub Actions |
 | Hosting | Vercel *(planned — not deployed yet)* |
 
-The rest of the stack — Claude vision for card reading, Mapbox, web push,
-Resend, Upstash, Sentry — is decided in the spec and not installed yet.
+**Configured, not yet used by code:** Resend SMTP sends auth email from
+`Meet4Weed <no-reply@tekguyz.com>` (set in the Supabase dashboard). Keys for
+Claude, Upstash and the Resend API are in `.env.local`, ready for Plan 02.
+
+**Decided, not installed:** Claude vision for card reading, Mapbox, web push,
+Sentry — see the spec.
 
 ---
 
@@ -53,17 +57,22 @@ npm install
 cp .env.example .env.local
 ```
 
-Fill in `.env.local` from **Supabase dashboard → Project Settings → API**:
+Fill in `.env.local`. `.env.example` names every variable and says where each
+comes from:
 
-```
-NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
-SUPABASE_SECRET_KEY=sb_secret_...
-```
+| Variable | From |
+| :-- | :-- |
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` | Supabase → Project Settings → API |
+| `ANTHROPIC_API_KEY` | Anthropic console → API Keys |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Upstash → the database → REST API |
+| `RESEND_API_KEY` | Resend → API Keys |
 
-`SUPABASE_SECRET_KEY` bypasses every security rule in the database. It never
-gets a `NEXT_PUBLIC_` prefix, never goes in client code, and never gets
-committed. `.env.local` is git-ignored.
+**Only the two `NEXT_PUBLIC_` values may ever reach the browser.** Every other
+key is server-only: the Supabase secret key bypasses every security rule, and
+the Anthropic key spends money. `.env.local` is git-ignored.
+
+**Upstash is shared** with the TEKGUYZ Website database, because the free tier
+allows one. Prefix every Meet4Weed key with `m4w:`.
 
 Link the CLI to the project once:
 
@@ -169,7 +178,7 @@ The rebuild follows one spec and seven plans.
 | Plan | Builds | Status |
 | :-- | :-- | :-- |
 | 01 | Scaffold, design tokens, auth, profiles | **Done** |
-| 02 | Card verification, expiry lifecycle | Next |
+| 02 | Password auth, card verification with owner review queue, cost caps, expiry lifecycle | Next |
 | 03 | Sessions, map, RSVP, address unlock | — |
 | 04 | Strains on deck, bring list, invite links | — |
 | 05 | Notifications, push, installable PWA | — |
