@@ -23,8 +23,10 @@ const SECRET = process.env.SUPABASE_SECRET_KEY;
 const configured = Boolean(URL && PUBLISHABLE && SECRET);
 
 /** A password nobody signs in with interactively — these accounts exist for
- *  the length of one test run and are deleted in afterAll. */
-const PASSWORD = "rls-probe-8f2a1c9d4b7e";
+ *  the length of one test run and are deleted in afterAll. It must pass the
+ *  hosted password rule (lower, upper, digit, symbol — spec §4.5): the admin
+ *  API enforces it too, and a weaker one fails every test before it starts. */
+const PASSWORD = "Rls-probe-8f2a1c9d4b7e!";
 
 type Member = { id: string; email: string; db: SupabaseClient };
 

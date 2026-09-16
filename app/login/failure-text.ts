@@ -16,4 +16,8 @@ export const FAILURE_TEXT: Record<AuthFailure, string> = {
   unknown: "Something went wrong. Try again.",
 };
 
+/** Checked on the phone before anything is sent. A typo in a new password
+ *  locks the member out of an account they just made. */
+export const PASSWORDS_DIFFER = "The two passwords do not match.";
+
 export const LINK = "text-left text-sm text-ink-muted underline";

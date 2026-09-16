@@ -5,6 +5,7 @@ import { signInWithPassword } from "@/app/auth/actions/sign-in";
 import { resendConfirmationLink } from "@/app/auth/actions/sign-up";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { FAILURE_TEXT, LINK } from "./failure-text";
 import { RecoveryForm } from "./recovery-form";
 import { SignUpForm } from "./sign-up-form";
@@ -46,7 +47,7 @@ export function LoginForm({ next }: { next: string }) {
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <Input label="Email" name="email" type="email" autoComplete="email" required
         value={email} onChange={(e) => setEmail(e.target.value)} />
-      <Input label="Password" name="password" type="password" autoComplete="current-password" required
+      <PasswordInput label="Password" name="password" autoComplete="current-password" required
         value={password} onChange={(e) => setPassword(e.target.value)} />
       <Button type="submit" disabled={pending}>{pending ? "Signing in…" : "Sign in"}</Button>
       {message ? <p role="alert" className="text-sm text-danger">{message}</p> : null}

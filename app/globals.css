@@ -78,6 +78,13 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Edge's built-in password reveal. components/ui/password-input.tsx has its
+   own show/hide button, and two eyes in one field is confusing. */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+
 h1,
 h2,
 h3 {
