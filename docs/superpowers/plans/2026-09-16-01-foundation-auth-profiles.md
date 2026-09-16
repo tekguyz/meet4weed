@@ -970,6 +970,60 @@ before a session exists.
 
 ## Task 4: The `profiles` table and its RLS matrix
 
+> **AMENDED DURING EXECUTION (2026-09-16).** Five things below differ from what
+> was written before the work started. The task is complete; this block is the
+> record of why it looks different from the steps that follow it.
+>
+> 1. **No `supabase/schemas/` directory.** Declarative schemas are diffed
+>    against a shadow database, which needs Docker, which this machine does not
+>    have. Keeping a `schemas/` copy that nothing verifies would silently drift
+>    from the migrations that actually ran. `supabase/migrations/` is the single
+>    source of truth for this project.
+> 2. **Column-level grants replace the privileged-column trigger.** `grant
+>    update (handle, display_name, …) on public.profiles to authenticated`
+>    leaves `status` and `card_expires_on` simply ungrantable to a member.
+>    Column privileges are checked *before* RLS and cannot be talked around by a
+>    cleverly shaped UPDATE, so this is strictly stronger than the trigger the
+>    plan described — and it is one line instead of a function.
+> 3. **No `force row level security`.** FORCE applies policies to the table
+>    owner too, and `public.handle_new_user()` is SECURITY DEFINER owned by
+>    `postgres`. With FORCE on and no INSERT policy, that function cannot insert
+>    and signup breaks outright. `service_role` bypasses policies by the
+>    BYPASSRLS attribute, not by ownership, so FORCE would have bought nothing.
+> 4. **The RLS matrix is a vitest integration test, not pgTAP.** It lives at
+>    `supabase/tests/__tests__/profiles-rls.test.ts`, creates two real members
+>    through the admin API, exercises them through PostgREST, and deletes them
+>    afterwards. It skips itself when `SUPABASE_SECRET_KEY` is absent, which is
+>    how CI sees it. This needs no Docker and no `pgtap` extension in
+>    production — and because it goes through PostgREST it covers the column
+>    grants and the Data API exposure rules, which a SQL-only test would skip.
+> 5. **`service_role` needs its own explicit grant.** Found by the test, not by
+>    reading. With "Automatically expose new tables" OFF, *nothing* is granted
+>    to anyone by default — including `service_role`. BYPASSRLS skips row
+>    *policies*; it does not skip table *privileges*, which are a separate check
+>    that runs first. Without `grant all on <table> to service_role`, the
+>    verification flow, the expiry sweep and the admin panel all fail with
+>    42501 the first time they touch the table.
+>
+>    **EVERY FUTURE TABLE IN THIS PROJECT NEEDS ITS OWN `grant all … to
+>    service_role`.** This is the landmine of this codebase.
+>
+> **Fail-proof.** Step 5's "break the policy, watch it go red" was refused by
+> the sandbox for weakening a live database, which was the right call. The
+> proof used instead is differential and touches nothing: the identical
+> statement, on the identical row, returns `42501 permission denied` for a
+> member and succeeds for `service_role`. The refusal is therefore caused by
+> the privilege and nothing else. Recorded output:
+>
+> - `MEMBER  -> {"code":"42501", … "permission denied for table profiles"}`
+> - `ADMIN   -> no error (write succeeded)` → `FINAL -> verified`
+>
+> **Also added beyond the plan:** `handleSchema` now rejects the reserved
+> `member_` prefix. The signup trigger writes `member_<12 hex>` and
+> `app/page.tsx` reads that prefix to decide whether onboarding is finished — a
+> member who claimed it would look permanently un-onboarded.
+
+
 **Files:**
 - Create: `supabase/schemas/profiles.sql`
 - Create: `supabase/migrations/<timestamp>_profiles.sql` (generated)
