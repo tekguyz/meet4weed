@@ -61,8 +61,8 @@ Matches the house conventions already proven in `tekguyz-squid-ink`.
 | Push | Web Push (VAPID) + service worker | PWA, no app store |
 | Email | Resend | Magic links + the single expiry email |
 | Rate limiting | Upstash Redis | Verification attempts, RSVP spam, report spam |
-| Errors | Sentry | |
-| Analytics | PostHog | |
+| Errors | Sentry | The camera/vision flow fails on phones we do not own; without it those failures are invisible |
+| Analytics | Vercel Analytics | One line, free. PostHog deferred to v2 — nothing to analyse pre-launch |
 | Tests | **vitest** + Testing Library | House standard |
 
 **Explicitly not now:** React Native / Expo (Play Store is hostile to cannabis
@@ -101,6 +101,7 @@ Each unit below must be understandable and testable on its own.
 | `invite` | Signed, expiring share links | `sesh` |
 | `notify` | In-app feed + web push fan-out | all of the above |
 | `safety` | Report, block, host kick | `member`, `sesh` |
+| `admin` | Review queue, reports queue, overrides, audit log | all of the above |
 
 Nothing imports another unit's internals. Cross-unit calls go through each
 unit's exported server functions.
@@ -318,8 +319,9 @@ Each step is shippable and independently verifiable.
 1. **Foundation** — Next 16.3 + Tailwind v4 tokens (both themes) + Supabase
    local + CI. Proof: `npm run build`, `npm run typecheck`, `npm test` green.
 2. **Auth + profiles** — magic link, attestation, profile CRUD, RLS.
-3. **Verification** — camera UI, vision pipeline, decision, admin queue,
-   retention reaper.
+3. **Verification** — camera UI, vision pipeline, decision, and the admin
+   verification queue (the rest of the panel lands at step 11). Retention
+   reaper.
 4. **Expiry lifecycle** — sweep job, read-only gate, the reminder ladder.
 5. **Seshes + fuzzy location** — CRUD, feed, chips, search, map.
 6. **RSVP + address unlock** — including the expiry-aware block. RLS test file.
@@ -327,18 +329,42 @@ Each step is shippable and independently verifiable.
 8. **Invites.**
 9. **Notifications + push + PWA.**
 10. **Safety** — report, block, kick.
-11. **Design pass** — impeccable across every route, both themes.
+11. **Admin panel** — reports queue, member and sesh lookup, overrides,
+    `admin_actions` audit log.
+12. **Design pass** — impeccable across every route, both themes.
 
 Steps 2, 3, and 6 should be run at Opus 5 **High** effort. The rest are fine at
 Medium.
 
 ---
 
-## 11. Open items
+## 11. Admin panel
 
-- **Domain.** Meet4Weed is the approved name. `meet4weed.com` / `.app` must be
-  checked and bought. `fancyfam.com` is not being used for this.
-- **Admin surface.** v1 admin review is a protected route inside the app, not a
-  separate product.
+Not optional, and not only for ID review. An email-based workflow cannot act,
+and mailing a card photo would put that photo in an inbox permanently, breaking
+the retention promise in §4.2. The panel is a protected route group inside the
+app, gated by a `role` claim, not a separate product.
+
+v1 surface:
+
+- **Verification queue** — pending submissions with age, the typed fields, the
+  model's reason and confidence, the stored images, and approve / reject /
+  request-retake actions. Approving or rejecting deletes the images immediately.
+- **Reports queue** — reported users and reported seshes, with suspend user,
+  take down sesh, and dismiss.
+- **Member lookup** — status, card expiry, manual override to approve or expire.
+- **Sesh lookup** — cancel a sesh on the host's behalf.
+
+Every admin action writes an `admin_actions` audit row (actor, target, action,
+reason, timestamp). This is not bureaucracy: it is the only record of why a
+member was suspended if they ever ask.
+
+---
+
+## 12. Open items
+
+- **Domain.** Meet4Weed is the approved name. No custom domain for now — ship
+  on a `*.vercel.app` subdomain. `fancyfam.com` is not being used for this.
+  `meet4weed.com` and `.app` are both available if that changes.
 - **Terms and privacy copy.** Must be written before any non-owner account is
   verified, because the retention promise in §4.2 is a commitment to users.
