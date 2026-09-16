@@ -55,8 +55,9 @@ describe("server secrets stay on the server", () => {
       .filter((f) => /from ["']@\/lib\/server-env["']/.test(read(f)))
       .filter((f) => !/^import "server-only";/m.test(read(f)))
       .map(rel)
-      // Route handlers and server actions are server code by construction.
-      .filter((f) => !/^app\/.*\/(route|actions)\.ts$/.test(f));
+      // Anything under app/ without "use client" — pages, layouts, route
+      // handlers, server actions — is server code by construction.
+      .filter((f) => !(f.startsWith("app/") && !isClient(read(path.join(ROOT, f)))));
     expect(missing).toEqual([]);
   });
 });
