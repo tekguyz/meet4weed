@@ -93,7 +93,7 @@ Each unit below must be understandable and testable on its own.
 | Unit | Does | Depends on |
 | :-- | :-- | :-- |
 | `auth` | Password sign-in, sign-up with email confirmation, password reset, session, sign-out | Supabase Auth |
-| `verification` | Card capture UI, vision call, decision, review queue | Claude API, Storage, `member` |
+| `verification` | Card + face-with-card capture, challenge, on-device pre-checks, vision read, review queue, owner alert, cost log | Claude API, Storage, Upstash, Resend, `member` |
 | `member` | Profile, preferences, card status, read-only gate | `verification` |
 | `sesh` | Create / edit / cancel a session, capacity, fuzzy geo | `member` |
 | `rsvp` | Request, host approve/deny, address unlock, expiry-aware block | `sesh`, `member` |
@@ -114,37 +114,79 @@ This is the highest-risk and highest-value flow. It gets the most design care.
 
 ### 4.1 Flow
 
+**Every member is approved by a human.** Decided 2026-09-16. AI reads; the
+owner approves. There is no auto-approval path.
+
+**Why.** Anthropic's vision documentation states two limits that rule out
+automatic approval. Claude cannot reliably detect edited or AI-generated
+images, so it cannot tell a real card from a well-edited fake. And comparing a
+face to an ID photo is not a supported capability; the docs warn against
+sensitive image analysis without human oversight. AI is good at *reading* a
+card. It is not a fraud detector. For an app whose entire promise is that
+everyone present is legal, a person makes the call.
+
 1. Sign up with email + password and confirm the email address.
 2. Attest: 21 or older, Florida resident, holder of a valid OMMU card, and
    agreement to the no-sales rule. Recorded with a timestamp.
 3. Enter **patient ID** and **card expiry date** by hand.
-4. **Capture the card** with a real camera UI — live viewfinder, card-shaped
-   guide frame, glare and blur warnings, retake. Not a file input.
-5. **Capture a live selfie** — "stay still and look at the camera," on-screen
-   ring, countdown.
-6. Both images POST to a server route. The route calls Claude vision with a
-   zod-typed structured schema and receives:
-   `{ nameOnCard, patientId, expiryDate, faceMatchesCardPhoto, looksAuthentic,
-   confidence, reason }`.
-7. Decision:
-   - **Confident, authentic, face matches, typed fields match, not expired** →
-     approved immediately.
-   - **Anything else** → `pending_review`, queued for the admin screen.
+4. **Capture the card on its own** with the in-app camera — live viewfinder,
+   card-shaped guide frame, glare and blur warnings, retake. This is the
+   legible close-up the fields are read from. **Not a file input;** gallery
+   uploads are not accepted.
+5. **Capture one live photo of the member's face holding the same card**
+   beside it, with a **random challenge** chosen at capture time — for example
+   "hold up two fingers" or "touch your ear". The challenge is stored with the
+   submission and shown to the reviewer. It defeats re-using an old photo or a
+   photo of someone else, because nobody can know the challenge in advance.
+6. **Free on-device pre-checks run first:** blur, glare, a card-shaped object
+   present, a face present. Junk is rejected on the phone and never costs an
+   API call.
+7. Both images POST to a server route, resized on the device to about 1000 px
+   on the long edge. The route calls Claude vision with a zod-typed structured
+   schema and receives **reading results and warnings, never a verdict**:
+   `{ nameOnCard, patientId, expiryDate, fieldsLegible, typedFieldsMatch,
+   cardVisibleInFacePhoto, challengeAppearsPerformed, concerns[] }`.
+8. **Everything becomes `pending_review`.** The owner is alerted immediately
+   (email in Plan 02; push once Plan 05 lands).
+9. **The review screen** shows the card close-up, the face-with-card photo, the
+   challenge that was requested, the typed fields, what Claude read, and any
+   concerns — side by side. The reviewer compares the face in the photo to the
+   photo printed on the card by eye, and chooses approve, reject, or ask for a
+   retake.
+10. Approval sets `status = 'verified'` and `card_expires_on`. Rejection and
+    retake requests tell the member the reason in plain language.
+
+**Honest limits of this design.** It raises the bar; it does not make fraud
+impossible. A determined person could forge a physical card. The only
+authoritative check is the state registry, which offers no API. The design
+goal is that faking entry costs more effort than this app is worth.
+
+**Image metadata (EXIF) is not used as evidence.** It is trivially edited or
+stripped, Claude does not read it, and a photo taken through the in-app camera
+has none in the first place. What actually carries weight is that capture
+happens live, inside the app, with a challenge nobody could have prepared for.
 
 ### 4.2 Image retention — the honest rule
 
-- Images are streamed to the server route and held **in memory only**. They are
-  **never** written to a bucket on the happy path.
-- **Approved → the images are discarded.** Only the extracted fields persist
-  (patient ID, expiry, verified-at).
-- **Pending review → only then** are images written to a private, encrypted
-  Supabase bucket, readable by service role alone. They are deleted the moment
-  an admin decides, and unconditionally after 7 days by the reaper job.
+Because every submission is reviewed by a person, **the images must be kept
+until that review happens.**
+
+- Images are written to a **private, encrypted Supabase bucket**, readable by
+  `service_role` only, and reached by the admin screen through short-lived
+  signed URLs.
+- **They are deleted the moment the reviewer decides** — approve, reject or
+  retake. Only the extracted fields persist (patient ID, expiry, verified-at,
+  reviewer).
+- **A reaper job deletes any image older than 7 days** unconditionally, even if
+  it was never reviewed. An unreviewed submission then asks the member to
+  capture again.
+- Images are never sent anywhere except Claude, and never used for anything but
+  this one check.
 
 The screen states this plainly, and the statement is true:
 
-> We read your card and delete the photo. We only keep a copy if a person needs
-> to check it, and it is gone within 7 days.
+> A person on our team checks your card, and your photos are deleted as soon as
+> they do — within 7 days at the most.
 
 ### 4.3 Expiry handling
 
@@ -163,10 +205,33 @@ The real protection is **contextual, not nagging**.
   They cannot RSVP, host, see any unlocked address, or message. Uploading a
   valid card restores full access immediately.
 
-### 4.4 Abuse controls
+### 4.4 Abuse and cost controls
 
-Rate limit verification attempts per account and per IP. Three failures sends
-the account to manual review rather than letting it retry forever.
+Simple and in-house. The goal is that nothing — a bug, a bot, or a determined
+person — can run up the Anthropic bill.
+
+1. **The API key exists only on the server.** Never `NEXT_PUBLIC_`, never in
+   client code.
+2. **Only a signed-in, attested member** can reach the verification route.
+3. **Per-member limit:** 3 submissions per day. **Per-IP limit** as well. Both
+   in Upstash Redis.
+4. **A global daily ceiling** for the whole app (starting value: 50 checks per
+   day, configurable). Once reached, submissions are still stored and queued
+   for review, but **skip the Claude call**. The reviewer reads the card by eye.
+   This is the circuit breaker: even if every other control fails, the daily
+   spend cannot exceed the ceiling.
+5. **Free on-device pre-checks** reject junk before any call (§4.1 step 6).
+6. **Image size caps:** resized on device to about 1000 px; the server rejects
+   anything over a hard byte limit before calling Claude.
+7. **A monthly spend limit** set in the Anthropic console, outside the app
+   entirely.
+8. **Every call logs its token usage and computed cost** to the database, and
+   the admin panel shows today's and this month's spend.
+
+**Measured cost, to be confirmed on the first real call.** At ~1000 px per
+image, one check on `claude-sonnet-5` is estimated at roughly 1–1.5 cents.
+Unresized phone photos would roughly double that, which is why resizing is a
+requirement and not an optimisation.
 
 ---
 
@@ -250,10 +315,13 @@ must load `supabase:supabase-postgres-best-practices`.
 - `profiles` — one per auth user. Handle, avatar, bio, city, prefs, vibe tags,
   `status` (`unverified` | `pending_review` | `verified` | `expired` |
   `suspended`).
-- `verifications` — patient ID, expiry date, decision, model confidence,
-  reason, reviewer, timestamps. **No image column on the happy path.**
-- `verification_documents` — review-queue only. Storage path + `expires_at`.
-  Rows and objects deleted by the reaper.
+- `verifications` — patient ID, expiry date, the requested challenge, what
+  Claude read and its concerns, whether the Claude call was skipped by the daily
+  ceiling, token usage and cost, the reviewer's decision and reason, reviewer,
+  timestamps. **No image columns** — images live in Storage.
+- `verification_documents` — one row per stored image (card close-up,
+  face-with-card). Storage path + `expires_at`. Row and object deleted on the
+  reviewer's decision, or by the 7-day reaper.
 - `seshes` — host, title, description, type, `starts_at`, capacity, status.
   Holds **both** `exact_location` and a derived `fuzzy_point` + `fuzzy_radius_m`.
 - `rsvps` — sesh, member, `status` (`requested` | `approved` | `denied` |
@@ -345,9 +413,13 @@ look.
   CI because CI holds no secret key.
 - **Component (Testing Library):** the camera/selfie stepper, the RSVP flow,
   the on-deck editor.
-- **Vision:** fixture-based. A folder of synthetic card images — clean, blurry,
-  expired, mismatched name, obvious fake — asserted against expected decisions.
-  The model is mocked in CI; the fixtures run against the live API on demand.
+- **Vision:** fixture-based. A folder of **synthetic** card images — clean,
+  blurry, expired, mismatched name — asserted against expected *readings and
+  concerns*, never a verdict. The model is mocked in CI; the fixtures run
+  against the live API only on demand, because each run costs money. **Never
+  commit a real card or a real face.**
+- **Cost controls:** the per-member limit, the per-IP limit and the global daily
+  ceiling each get a test proving the Claude call is skipped once exceeded.
 - **Definition of done** for each plan step is a command that exits 0, with its
   output pasted. Not a claim.
 
@@ -388,9 +460,13 @@ app, gated by a `role` claim, not a separate product.
 
 v1 surface:
 
-- **Verification queue** — pending submissions with age, the typed fields, the
-  model's reason and confidence, the stored images, and approve / reject /
-  request-retake actions. Approving or rejecting deletes the images immediately.
+- **Verification queue** — built in Plan 02, because every member depends on
+  it. Pending submissions with age; the card close-up and the face-with-card
+  photo side by side; the challenge that was requested; the typed fields next
+  to what Claude read; Claude's concerns. Approve / reject / request-retake,
+  each with a reason. Any decision deletes the images immediately.
+- **Spend** — today's and this month's Claude cost, and how close today is to
+  the daily ceiling.
 - **Reports queue** — reported users and reported seshes, with suspend user,
   take down sesh, and dismiss.
 - **Member lookup** — status, card expiry, manual override to approve or expire.
