@@ -1,31 +1,189 @@
-# Meet4Weed - Find Your Vibe
+# Meet4Weed
 
-**Meet4Weed** is an exclusive, AI-powered social platform for verified medical marijuana cardholders in Florida. Discover and host private get-togethers ('sessions'), connect with a trusted community, and share your vibe.
+A private social app for **verified Florida medical cannabis patients** to host
+and join small gatherings at private residences.
 
-## ✨ Key Features
+Florida law allows qualified patients to consume at a private residence. The
+app exists to make sure everyone in the room is one: every member holds a
+valid, unexpired OMMU card, and nobody else gets in.
 
--   **🤖 AI-Powered Verification:** Utilizes Google's Gemini API to securely verify every member's Florida OMMU card, ensuring a safe and legitimate community.
--   **🗓️ Session Discovery:** Browse a feed of private events hosted by other members, from chill game nights and creative workshops to outdoor adventures.
--   **➕ Host Your Own:** Easily create and manage your own sessions, set the vibe, and invite the community.
--   **💬 Private Messaging:** Coordinate details and connect with other attendees and hosts through a secure, built-in chat.
--   **👤 Vibe Profiles:** Build your profile with your favorite strains and consumption methods to find like-minded members.
--   **🤝 Vibe Matches:** Discover other users with similar preferences and build your trusted crew.
+**It is a place to meet, never a place to buy or sell.** No cart, no payments
+for cannabis, no dispensary ordering. That constraint is load-bearing.
 
-## 🛠️ Tech Stack
-
--   **Frontend:** React, TypeScript, Tailwind CSS
--   **AI & Verification:** Google Gemini API (`gemini-2.5-flash`)
--   **Styling:** Tailwind CSS for a responsive, mobile-first design.
--   **State Management:** React Context API for lightweight and effective state management.
-
-## 🚀 Getting Started (Conceptual)
-
-This is a frontend prototype running in a sandboxed environment.
-
-1.  **Environment Variables:** An `API_KEY` for the Google Gemini API is required and assumed to be present in the environment as `process.env.API_KEY`.
-2.  **Installation:** `npm install`
-3.  **Running the App:** `npm run dev`
+> **Status: early rebuild.** Sign-in, attestation and member profiles work.
+> Card verification, sessions and everything else are designed but not built.
+> See [Build status](#build-status).
 
 ---
 
-Built with ❤️ for the community.
+## Stack
+
+| Layer | Choice |
+| :-- | :-- |
+| App | Next.js 16.3 (App Router), React 19.2, TypeScript |
+| Data | Supabase Postgres, hosted |
+| Auth | Supabase Auth, email magic link |
+| Authorization | Postgres row-level security + column-level grants |
+| Styling | Tailwind CSS v4, "Warm Ink" design tokens, dark by default |
+| Validation | zod |
+| Tests | vitest + Testing Library |
+| CI | GitHub Actions |
+| Hosting | Vercel *(planned — not deployed yet)* |
+
+The rest of the stack — Claude vision for card reading, Mapbox, web push,
+Resend, Upstash, Sentry — is decided in the spec and not installed yet.
+
+---
+
+## Getting started
+
+### Prerequisites
+
+- Node 22+
+- The [Supabase CLI](https://supabase.com/docs/guides/cli)
+- Access to the hosted Supabase project
+
+**No Docker, no local database.** This project runs against a hosted Supabase
+instance. See [Database](#database) for what that changes.
+
+### Setup
+
+```bash
+npm install
+cp .env.example .env.local
+```
+
+Fill in `.env.local` from **Supabase dashboard → Project Settings → API**:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+SUPABASE_SECRET_KEY=sb_secret_...
+```
+
+`SUPABASE_SECRET_KEY` bypasses every security rule in the database. It never
+gets a `NEXT_PUBLIC_` prefix, never goes in client code, and never gets
+committed. `.env.local` is git-ignored.
+
+Link the CLI to the project once:
+
+```bash
+supabase link --project-ref <project-ref>
+```
+
+### Run it
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:3000`. Signed out, you land on `/login`.
+
+For the magic link to work locally, the Supabase project must list
+`http://localhost:3000/**` under **Authentication → URL Configuration →
+Redirect URLs**.
+
+---
+
+## Scripts
+
+| Command | Does |
+| :-- | :-- |
+| `npm run dev` | Dev server on port 3000 |
+| `npm run build` | Production build |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm test` | Every vitest suite, including the database security tests |
+
+`npm run db:start`, `db:reset`, `db:diff` and `db:test` exist in
+`package.json` but **need Docker and do not work on this project's setup.**
+Do not rely on them.
+
+---
+
+## Database
+
+Migrations live in `supabase/migrations/` and are the **single source of
+truth**. There is no `supabase/schemas/` directory: declarative schemas are
+diffed against a local shadow database, which needs Docker.
+
+Write a migration by hand, then push it:
+
+```bash
+supabase db push --linked
+```
+
+### The rule that will bite you
+
+The project was created with **"Automatically expose new tables" turned off**,
+so a new table is invisible to everyone until a migration grants access —
+**including the server's own `service_role`.**
+
+`service_role` bypasses row-level *policies*. It does **not** bypass table
+*privileges*, which are checked first. Every new table needs:
+
+```sql
+grant all on public.<table> to service_role;
+```
+
+Forget it and every server-side write to that table fails with `42501`.
+
+---
+
+## Tests
+
+```bash
+npm test
+```
+
+`supabase/tests/__tests__/profiles-rls.test.ts` is the security test. It
+creates two real members in the hosted project, checks what each can and
+cannot read or write through the real API, and deletes them afterwards.
+
+It **skips itself** when `SUPABASE_SECRET_KEY` is not set. CI has no secret, so
+**CI does not run the security tests.** Run them locally before merging
+anything that touches a migration.
+
+---
+
+## Project layout
+
+```
+app/                  routes: /login, /onboarding, /auth/callback, /auth/sign-out
+components/           UI; ui/ holds the primitives
+lib/supabase/         browser client, server client, session refresh
+lib/profiles/         zod schemas, types, queries
+proxy.ts              refreshes the session and gates signed-out visitors
+supabase/migrations/  every schema change, in order
+supabase/tests/       database security tests
+docs/superpowers/     the design spec and the implementation plans
+```
+
+`proxy.ts` is Next.js 16's name for what used to be `middleware.ts`.
+
+---
+
+## Build status
+
+The rebuild follows one spec and seven plans.
+
+| Plan | Builds | Status |
+| :-- | :-- | :-- |
+| 01 | Scaffold, design tokens, auth, profiles | **Done** |
+| 02 | Card verification, expiry lifecycle | Next |
+| 03 | Sessions, map, RSVP, address unlock | — |
+| 04 | Strains on deck, bring list, invite links | — |
+| 05 | Notifications, push, installable PWA | — |
+| 06 | Report, block, admin panel | — |
+| 07 | Full design pass | — |
+
+- **Spec:** [`docs/superpowers/specs/2026-09-16-meet4weed-rebuild-design.md`](docs/superpowers/specs/2026-09-16-meet4weed-rebuild-design.md)
+- **Plans:** [`docs/superpowers/plans/`](docs/superpowers/plans/)
+
+---
+
+## History
+
+This repository previously held a React + Vite + Netlify prototype built in
+Google AI Studio. It ran entirely on mock data, with no database and no real
+authentication. It was removed in the rebuild; its ideas carried into the spec,
+its code did not. It is still in git history before commit `04381a5`.
