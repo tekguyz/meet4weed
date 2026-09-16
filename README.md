@@ -22,7 +22,7 @@ for cannabis, no dispensary ordering. That constraint is load-bearing.
 | :-- | :-- |
 | App | Next.js 16.3 (App Router), React 19.2, TypeScript |
 | Data | Supabase Postgres, hosted |
-| Auth | Supabase Auth, email magic link |
+| Auth | Supabase Auth. Magic link today; **moving to email + password** (spec §4.5) |
 | Authorization | Postgres row-level security + column-level grants |
 | Styling | Tailwind CSS v4, "Warm Ink" design tokens, dark by default |
 | Validation | zod |

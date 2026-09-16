@@ -47,7 +47,7 @@ Matches the house conventions already proven in `tekguyz-squid-ink`.
 | Language | TypeScript | House standard |
 | Hosting | **Vercel** | Vercel CLI already in use |
 | Database | **Supabase Postgres** (hosted) | Supabase CLI already in use. Hand-written migrations in `supabase/migrations/`, applied with `supabase db push --linked`. No declarative schemas and no seed: both need a local Docker stack this project does not have |
-| Auth | **Supabase Auth — email magic link** | No password to forget; no unverified-OAuth warning screen |
+| Auth | **Supabase Auth — email + password** | Decided 2026-09-16, replacing magic link. Meet4Weed is an installed PWA: on iOS a magic link opens Safari rather than the installed app, so the member signs in in the wrong place. Email carries links only to confirm an account and reset a password. Follows the proven `tekguyz-squid-ink` pattern. No Google provider: unverified OAuth consent screen |
 | Files | Supabase Storage (private buckets) | Only used for the review queue, see §4 |
 | Realtime | Supabase Realtime | Live RSVP counts in v1; DM chat in v2 |
 | Authorization | **Postgres RLS** | Address privacy enforced in the DB, not the UI |
@@ -92,7 +92,7 @@ Each unit below must be understandable and testable on its own.
 
 | Unit | Does | Depends on |
 | :-- | :-- | :-- |
-| `auth` | Magic-link sign-in, session, sign-out | Supabase Auth |
+| `auth` | Password sign-in, sign-up with email confirmation, password reset, session, sign-out | Supabase Auth |
 | `verification` | Card capture UI, vision call, decision, review queue | Claude API, Storage, `member` |
 | `member` | Profile, preferences, card status, read-only gate | `verification` |
 | `sesh` | Create / edit / cancel a session, capacity, fuzzy geo | `member` |
@@ -114,7 +114,7 @@ This is the highest-risk and highest-value flow. It gets the most design care.
 
 ### 4.1 Flow
 
-1. Sign in with email magic link.
+1. Sign up with email + password and confirm the email address.
 2. Attest: 21 or older, Florida resident, holder of a valid OMMU card, and
    agreement to the no-sales rule. Recorded with a timestamp.
 3. Enter **patient ID** and **card expiry date** by hand.
@@ -170,11 +170,47 @@ the account to manual review rather than letting it retry forever.
 
 ---
 
+## 4.5 Authentication (decided 2026-09-16)
+
+Magic-link sign-in is **retired**. It shipped in Plan 01 and is replaced before
+any later plan builds on it.
+
+**Why.** Meet4Weed is used as an installed PWA. On iOS, a link tapped in Mail
+opens Safari, which has separate storage from the home-screen app, so the
+member ends up signed in somewhere they are not. A password is typed inside the
+app. Separately, some mail scanners fetch links before the person does and burn
+one-time tokens.
+
+**Contract.** Copy the `tekguyz-squid-ink` implementation (commit `c8ceb09`)
+rather than re-deriving it:
+
+- **Sign-in** is email + password and sends no email.
+- **Sign-up** is email + password, with **confirm-email on**. No session until
+  the address is confirmed.
+- **Email carries a link for exactly two jobs:** confirming a new account and
+  resetting a password.
+- **Both links open `/auth/confirm`**, which calls `verifyOtp({ token_hash })`
+  **only on a button POST**. A scanner's GET spends nothing, and the link works
+  in any browser.
+- **Link expiry is one hour.** The number shown in email copy and on screen
+  must equal the project's `otp_expiry`, enforced by a test.
+- **Auth email goes through Resend SMTP** with branded Warm Ink templates,
+  configured in the dashboard and mirrored in `supabase/config.toml` and
+  `supabase/templates/`.
+- **The same response for a known and an unknown address** on sign-up and
+  reset, so neither form reveals who is a member.
+- **No Google provider** until the OAuth consent screen is verified.
+
+`/auth/callback` (the magic-link code exchange) is removed once `/auth/confirm`
+replaces it.
+
+---
+
 ## 5. v1 feature scope
 
 **In scope.**
 
-- Magic-link auth + 21+/OMMU attestation
+- Email + password auth (confirm and reset by emailed link) + 21+/OMMU attestation
 - Card verification, admin review queue, expiry lifecycle
 - Profile: handle, avatar, bio, city, preferred strain types, consumption
   methods, vibe tags
@@ -323,7 +359,7 @@ Each step is shippable and independently verifiable.
 
 1. **Foundation** — Next 16.3 + Tailwind v4 tokens (both themes) + Supabase
    local + CI. Proof: `npm run build`, `npm run typecheck`, `npm test` green.
-2. **Auth + profiles** — magic link, attestation, profile CRUD, RLS.
+2. **Auth + profiles** — attestation, profile CRUD, RLS. Built with magic link in Plan 01; **converted to password auth at the start of Plan 02**, before verification builds on it.
 3. **Verification** — camera UI, vision pipeline, decision, and the admin
    verification queue (the rest of the panel lands at step 11). Retention
    reaper.
