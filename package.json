@@ -15,7 +15,8 @@
     "db:push": "supabase db push --linked",
     "fixtures:vision": "node scripts/make-vision-fixtures.mjs",
     "test:vision-live": "vitest run lib/verification/__tests__/vision.live.test.ts",
-    "admin:grant": "node --env-file=.env.local scripts/grant-admin.mjs"
+    "admin:grant": "node --env-file=.env.local scripts/grant-admin.mjs",
+    "cron:run": "node --env-file=.env.local scripts/run-cron.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.126.0",

@@ -56,4 +56,13 @@ describe("updateSession", () => {
 
     expect(res.status).toBe(200);
   });
+
+  it("lets Vercel Cron reach /api/cron without a session; the route checks its own secret", async () => {
+    getUser.mockResolvedValue({ data: { user: null } });
+    const { updateSession } = await import("@/lib/supabase/session");
+
+    const res = await updateSession(new NextRequest("http://localhost:3000/api/cron/expiry-sweep"));
+
+    expect(res.status).toBe(200);
+  });
 });

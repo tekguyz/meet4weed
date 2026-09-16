@@ -3,7 +3,10 @@ import { redirect } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { getMyProfile } from "@/lib/profiles/queries";
 import { RESERVED_HANDLE_PREFIX } from "@/lib/profiles/schema";
+import { floridaToday } from "@/lib/dates";
 import { APP_NAME } from "@/lib/env";
+import { expiryBanner, memberAccess } from "@/lib/member/gate";
+import type { Profile } from "@/lib/profiles/schema";
 import { getMyVerification, type MyVerification } from "@/lib/verification/status";
 
 export default async function HomePage() {
@@ -21,6 +24,7 @@ export default async function HomePage() {
       <p className="text-sm text-ink-muted">
         Signed in as @{profile.handle}. Card status: {profile.status.replace("_", " ")}.
       </p>
+      <AccessNotice profile={profile} today={floridaToday()} />
       <VerificationSummary status={profile.status} latest={await getMyVerification()} />
       <ThemeToggle />
       <form action="/auth/sign-out" method="post">
@@ -50,4 +54,24 @@ function VerificationSummary({ status, latest }: { status: string; latest: MyVer
       ) : null}
     </div>
   );
+}
+
+function AccessNotice({ profile, today }: { profile: Profile; today: string }) {
+  const banner = expiryBanner(profile, today);
+  if (banner) {
+    return (
+      <p role="status" className="rounded-card bg-surface p-4 text-sm text-secondary">
+        {banner} <Link href="/verify" className="underline">Renew</Link>
+      </p>
+    );
+  }
+  if (memberAccess(profile, today) === "read_only") {
+    return (
+      <p role="status" className="rounded-card bg-surface p-4 text-sm text-ink">
+        Your card has expired, so your account is read-only. You can browse and see your history.{" "}
+        <Link href="/verify" className="underline">Add your renewed card</Link> to get full access back.
+      </p>
+    );
+  }
+  return null;
 }
