@@ -17,7 +17,8 @@ These apply to every task in this plan and every later plan.
 - **Next.js 16.3**, React 19.2, TypeScript strict. Match `tekguyz-squid-ink` conventions exactly.
 - **Next 16 renamed `middleware` to `proxy`.** The file is `proxy.ts` at the repo root and the export is named `proxy`.
 - **Never ship the Supabase secret key to the browser.** Browser client uses `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` only.
-- **Every table gets RLS**, plus `force row level security`. Authorization is a database property, not a UI property.
+- **Every table gets RLS — enabled, not forced.** `force row level security` applies policies to the table owner and breaks any `SECURITY DEFINER` function owned by `postgres` that writes to the table. Authorization is a database property, not a UI property.
+- **Every table gets `grant all on public.<table> to service_role`.** "Automatically expose new tables" is off, and `BYPASSRLS` skips row policies but not table privileges.
 - **Wrap `auth.uid()` in a subselect inside every policy** — `(select auth.uid())` — so Postgres caches it instead of calling it per row.
 - **Index every column referenced in an RLS policy** and every foreign key.
 - **Primary keys are `uuid` with `gen_random_uuid()`** for anything user-facing or exposed in a URL, because sequential ids leak membership counts. This app's tables are small; index fragmentation is not a concern here.
@@ -1039,7 +1040,18 @@ before a session exists.
   - `getMyProfile(): Promise<Profile | null>` and `getProfileByHandle(handle: string): Promise<PublicProfile | null>` from `@/lib/profiles/queries`
   - `Profile` and `PublicProfile` types, and the `MemberStatus` union `"unverified" | "pending_review" | "verified" | "expired" | "suspended"`
 
-- [ ] **Step 1: Write the declarative schema**
+> **⚠ Steps 1–5 below are the ORIGINAL plan and did NOT ship.** They describe
+> a `supabase/schemas/` file, a privileged-column trigger, `force row level
+> security`, and pgTAP — all four were replaced during execution. See the
+> amendment block above for why. What shipped:
+>
+> - `supabase/migrations/20260916082218_profiles.sql` — table, RLS, column grants
+> - `supabase/migrations/20260916083000_profiles_service_role_grants.sql`
+> - `supabase/tests/__tests__/profiles-rls.test.ts` — 12 assertions through the API
+>
+> Steps 6–12 shipped as written, plus the reserved `member_` handle rule.
+
+- [ ] **Step 1: Write the declarative schema** *(superseded — see above)*
 
 `supabase/schemas/profiles.sql`:
 

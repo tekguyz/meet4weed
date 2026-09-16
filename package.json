@@ -10,10 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:start": "supabase start",
-    "db:reset": "supabase db reset",
-    "db:diff": "supabase db diff -f",
-    "db:test": "supabase test db"
+    "db:push": "supabase db push --linked"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.5",
@@ -33,7 +30,7 @@
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.5",
     "@vitejs/plugin-react": "6.1.1",
-    "dotenv": "^17.2.3",
+    "dotenv": "17.2.3",
     "jsdom": "30.0.1",
     "tailwindcss": "4.3.3",
     "typescript": "7.0.2",

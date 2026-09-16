@@ -46,7 +46,7 @@ Matches the house conventions already proven in `tekguyz-squid-ink`.
 | Runtime | React 19.2 | House standard |
 | Language | TypeScript | House standard |
 | Hosting | **Vercel** | Vercel CLI already in use |
-| Database | **Supabase Postgres** | Supabase CLI already in use; declarative schemas + migrations + seed |
+| Database | **Supabase Postgres** (hosted) | Supabase CLI already in use. Hand-written migrations in `supabase/migrations/`, applied with `supabase db push --linked`. No declarative schemas and no seed: both need a local Docker stack this project does not have |
 | Auth | **Supabase Auth — email magic link** | No password to forget; no unverified-OAuth warning screen |
 | Files | Supabase Storage (private buckets) | Only used for the review queue, see §4 |
 | Realtime | Supabase Realtime | Live RSVP counts in v1; DM chat in v2 |
@@ -59,7 +59,7 @@ Matches the house conventions already proven in `tekguyz-squid-ink`.
 | Maps | **Mapbox GL JS** | Fuzzy circles and avatar pins; cheaper and more styleable than Google Maps |
 | Card reading | **Claude vision** (`claude-sonnet-5`) | Structured output via zod schema |
 | Push | Web Push (VAPID) + service worker | PWA, no app store |
-| Email | Resend | Magic links + the single expiry email |
+| Email | Resend | Two paths. **Auth emails** (sign-in, confirm, reset) are sent by Supabase Auth over Resend SMTP, configured in the dashboard, with branded templates. **App emails** (the single expiry notice) are sent by the app through the Resend API |
 | Rate limiting | Upstash Redis | Verification attempts, RSVP spam, report spam |
 | Errors | Sentry | The camera/vision flow fails on phones we do not own; without it those failures are invisible |
 | Analytics | Vercel Analytics | One line, free. PostHog deferred to v2 — nothing to analyse pre-launch |
@@ -299,9 +299,14 @@ look.
 
 - **Unit (vitest):** zod schemas, the expiry-aware RSVP predicate, fuzzy-point
   derivation, invite token signing and expiry.
-- **RLS (pgTAP or SQL test harness):** the address-unlock matrix — host,
-  approved guest, requested guest, denied guest, stranger, expired member,
-  blocked user. This file gates releases.
+- **RLS (vitest integration tests through the API):** the address-unlock
+  matrix — host, approved guest, requested guest, denied guest, stranger,
+  expired member, blocked user. Real members are created through the admin API,
+  exercised through PostgREST, and deleted afterwards, following
+  `supabase/tests/__tests__/profiles-rls.test.ts`. Going through the API covers
+  column grants and Data API exposure, which a SQL-only test would skip. Not
+  pgTAP: that needs a local stack. These files gate releases, and they skip in
+  CI because CI holds no secret key.
 - **Component (Testing Library):** the camera/selfie stepper, the RSVP flow,
   the on-deck editor.
 - **Vision:** fixture-based. A folder of synthetic card images — clean, blurry,

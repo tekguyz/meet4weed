@@ -118,8 +118,10 @@ export function ProfileForm({ profile }: { profile: Profile }) {
         {pending ? "Saving…" : "Save profile"}
       </Button>
 
-      {state?.message ? (
-        <p role="status" className={state.ok ? "text-sm text-ink-muted" : "text-sm text-danger"}>
+      {/* Failures only: saveProfile redirects home on success, so an ok state
+          never reaches this component. */}
+      {state && !state.ok ? (
+        <p role="alert" className="text-sm text-danger">
           {state.message}
         </p>
       ) : null}

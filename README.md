@@ -93,10 +93,10 @@ Redirect URLs**.
 | `npm run build` | Production build |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` | Every vitest suite, including the database security tests |
+| `npm run db:push` | Apply new migrations to the linked hosted project |
 
-`npm run db:start`, `db:reset`, `db:diff` and `db:test` exist in
-`package.json` but **need Docker and do not work on this project's setup.**
-Do not rely on them.
+There is no local-database script. `supabase start`, `db reset`, `db diff` and
+`test db` all need Docker, which this project does not use.
 
 ---
 
@@ -109,7 +109,7 @@ diffed against a local shadow database, which needs Docker.
 Write a migration by hand, then push it:
 
 ```bash
-supabase db push --linked
+npm run db:push
 ```
 
 ### The rule that will bite you
