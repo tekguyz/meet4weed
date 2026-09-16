@@ -9,8 +9,10 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Every path except static assets and image files. Auth cookies rotate on
-    // the request that needs them, so the matcher stays broad.
-    "/((?!_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
+    // Every path except static assets, image files and the face detector's
+    // runtime (public/mediapipe/, ~12 MB, fetched on the verify face step).
+    // Auth cookies rotate on the request that needs them, so the matcher
+    // stays broad.
+    "/((?!_next/static|_next/image|favicon.ico|mediapipe/|.*\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
   ],
 };
