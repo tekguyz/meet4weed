@@ -63,18 +63,38 @@ describe("VerifyFlow", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(/passed/);
   });
 
+  it("shows the photo it took, with Use it and Retake", async () => {
+    const user = userEvent.setup();
+    render(<VerifyFlow today="2026-09-17" />);
+    await reachCardStep(user);
+
+    await user.click(screen.getByRole("button", { name: "mock shutter" }));
+    expect(screen.getByRole("img", { name: "The photo you took" })).toHaveAttribute("src", "blob:preview");
+    expect(screen.queryByRole("button", { name: "mock shutter" })).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Retake" }));
+    expect(screen.queryByRole("img", { name: "The photo you took" })).toBeNull();
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:preview");
+    await user.click(screen.getByRole("button", { name: "mock shutter" }));
+    await user.click(screen.getByRole("button", { name: "Use it" }));
+    expect(screen.getByRole("heading", { name: "Photo of you holding the card" })).toBeInTheDocument();
+  });
+
   it("names the pre-check problem, and offers the photo anyway after three failures", async () => {
     mocks.cardProblems = ["glare"];
     const user = userEvent.setup();
     render(<VerifyFlow today="2026-09-17" />);
     await reachCardStep(user);
 
-    for (let i = 0; i < 2; i++) await user.click(screen.getByRole("button", { name: "mock shutter" }));
-    expect(screen.getByRole("alert")).toHaveTextContent(/glare/);
-    expect(screen.queryByRole("button", { name: "Use this photo anyway" })).toBeNull();
+    for (let i = 0; i < 2; i++) {
+      await user.click(screen.getByRole("button", { name: "mock shutter" }));
+      expect(screen.getByRole("alert")).toHaveTextContent(/glare/);
+      expect(screen.queryByRole("button", { name: /Use it/ })).toBeNull();
+      await user.click(screen.getByRole("button", { name: "Retake" }));
+    }
 
     await user.click(screen.getByRole("button", { name: "mock shutter" }));
-    expect(screen.getByRole("button", { name: "Use this photo anyway" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Use it anyway" })).toBeInTheDocument();
   });
 
   it("shows the server's challenge on the face step and sends everything in one POST", async () => {
@@ -85,11 +105,11 @@ describe("VerifyFlow", () => {
     await reachCardStep(user);
 
     await user.click(screen.getByRole("button", { name: "mock shutter" }));
-    await user.click(screen.getByRole("button", { name: "Use this photo" }));
+    await user.click(screen.getByRole("button", { name: "Use it" }));
     expect(await screen.findByText("Touch your ear with your free hand")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "mock shutter" }));
-    await user.click(screen.getByRole("button", { name: "Use this photo" }));
+    await user.click(screen.getByRole("button", { name: "Use it" }));
     await user.click(screen.getByRole("button", { name: "Send for review" }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());

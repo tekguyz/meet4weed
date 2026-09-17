@@ -6,7 +6,7 @@ import { CameraCapture } from "@/components/verify/camera-capture";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { countFaces } from "@/lib/verification/face-detector";
-import { useVerifyFlow } from "@/lib/verification/flow-store";
+import { useVerifyFlow, type Shot } from "@/lib/verification/flow-store";
 import { PRECHECK_TEXT, RETENTION_STATEMENT, SUBMISSION_TEXT } from "@/lib/verification/messages";
 import { checkCardPhoto, checkFacePhoto, type PrecheckProblem } from "@/lib/verification/prechecks";
 import { toJpeg } from "@/lib/verification/resize";
@@ -79,7 +79,8 @@ function Details({ today }: { today: string }) {
 
 function Capture({ kind }: { kind: "card" | "face" }) {
   const { failures, failedCheck, setShot, go, challenge, setChallenge } = useVerifyFlow();
-  const [pending, setPending] = useState<{ canvas: HTMLCanvasElement; problems: PrecheckProblem[] } | null>(null);
+  // The photo just taken, shown back to the member before it is used (phone-test finding 2).
+  const [pending, setPending] = useState<{ shot: Shot; problems: PrecheckProblem[] } | null>(null);
 
   // The challenge is fetched when the face step opens, not earlier (spec §4.1 step 5).
   useEffect(() => {
@@ -98,15 +99,20 @@ function Capture({ kind }: { kind: "card" | "face" }) {
     const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
     const problems = kind === "card" ? checkCardPhoto(pixels) : checkFacePhoto(pixels, await countFaces(canvas));
     if (problems.length) failedCheck(kind);
-    setPending({ canvas, problems });
+    const blob = await toJpeg(canvas);
+    setPending({ shot: { blob, url: URL.createObjectURL(blob) }, problems });
   }
 
-  async function accept() {
+  function accept() {
     if (!pending) return;
-    const blob = await toJpeg(pending.canvas);
-    setShot(kind, { blob, url: URL.createObjectURL(blob) });
+    setShot(kind, pending.shot);
     setPending(null);
     go(kind === "card" ? "face" : "review");
+  }
+
+  function retake() {
+    if (pending) URL.revokeObjectURL(pending.shot.url);
+    setPending(null);
   }
 
   const heading = kind === "card" ? "Photo of your card" : "Photo of you holding the card";
@@ -126,22 +132,29 @@ function Capture({ kind }: { kind: "card" | "face" }) {
       )}
 
       {kind === "card" || challenge ? (
-        <CameraCapture facing={kind === "card" ? "environment" : "user"} guide={kind} onCapture={checked} />
-      ) : null}
-
-      {pending && pending.problems.length > 0 ? (
-        <div className="flex flex-col gap-2">
-          <p role="alert" className="text-sm text-danger">
-            {pending.problems.map((p) => PRECHECK_TEXT[p]).join(" ")}
-          </p>
-          {failedTooOften ? (
-            <Button type="button" variant="quiet" onClick={accept}>Use this photo anyway</Button>
-          ) : null}
+        // Hidden, not unmounted, while previewing: Retake then needs no camera restart.
+        <div hidden={pending !== null}>
+          <CameraCapture facing={kind === "card" ? "environment" : "user"} guide={kind} onCapture={checked} />
         </div>
       ) : null}
 
-      {pending && pending.problems.length === 0 ? (
-        <Button type="button" onClick={accept}>Use this photo</Button>
+      {pending ? (
+        <div className="flex flex-col gap-4">
+          <img src={pending.shot.url} alt="The photo you took" className="mx-auto max-h-[60dvh] rounded-card" />
+          {pending.problems.length > 0 ? (
+            <p role="alert" className="text-sm text-danger">
+              {pending.problems.map((p) => PRECHECK_TEXT[p]).join(" ")}
+            </p>
+          ) : null}
+          {pending.problems.length === 0 ? (
+            <Button type="button" onClick={accept}>Use it</Button>
+          ) : failedTooOften ? (
+            <Button type="button" variant="quiet" onClick={accept}>Use it anyway</Button>
+          ) : null}
+          <Button type="button" variant={pending.problems.length === 0 ? "quiet" : "primary"} onClick={retake}>
+            Retake
+          </Button>
+        </div>
       ) : null}
     </div>
   );
