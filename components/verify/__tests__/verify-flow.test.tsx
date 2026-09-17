@@ -53,6 +53,14 @@ describe("VerifyFlow", () => {
     expect(screen.getByText(RETENTION_STATEMENT)).toBeInTheDocument();
   });
 
+  it("upper-cases the patient ID as it is typed", async () => {
+    const user = userEvent.setup();
+    render(<VerifyFlow today="2026-09-17" />);
+    await user.click(screen.getByRole("button", { name: "Start" }));
+    await user.type(screen.getByLabelText("Patient ID"), "p000-test-0001");
+    expect(screen.getByLabelText("Patient ID")).toHaveValue("P000-TEST-0001");
+  });
+
   it("refuses an expiry date that has already passed", async () => {
     const user = userEvent.setup();
     render(<VerifyFlow today="2026-09-17" />);

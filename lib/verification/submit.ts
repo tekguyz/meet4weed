@@ -52,7 +52,8 @@ export type SubmitDeps = {
 };
 
 const Fields = z.object({
-  patientId: z.string().trim().min(1).max(40),
+  // Stored upper-case, whatever the phone's keyboard sent (phone-test finding 5).
+  patientId: z.string().trim().min(1).max(40).toUpperCase(),
   cardExpiresOn: z.iso.date(),
 });
 

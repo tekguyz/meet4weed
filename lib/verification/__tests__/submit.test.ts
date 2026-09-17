@@ -67,6 +67,7 @@ function harness(options: Options = {}) {
   const calls = {
     vision: [] as unknown[],
     begun: 0,
+    begunWith: [] as Parameters<VerificationStore["begin"]>[0][],
     stored: [] as string[],
     recorded: [] as RecordedVision[],
     lapsed: [] as string[],
@@ -74,8 +75,9 @@ function harness(options: Options = {}) {
   };
   const store: VerificationStore = {
     getMember: async () => (options.member === undefined ? { attested: true, status: "unverified" } : options.member),
-    begin: async () => {
+    begin: async (row) => {
       calls.begun += 1;
+      calls.begunWith.push(row);
       return { ok: true, id: `v${calls.begun}` };
     },
     storeImage: async ({ kind }) => {
@@ -225,6 +227,13 @@ describe("submitVerification — the happy path and its failures", () => {
       }),
     ]);
     expect(calls.alerts).toBe(1);
+  });
+
+  it("stores the patient ID upper-cased and asks Claude with it", async () => {
+    const { deps, calls } = harness();
+    expect(await submitVerification(input({ patientId: " p000-test-0001 " }), deps)).toEqual({ status: 200, body: { ok: true } });
+    expect(calls.begunWith[0].patientId).toBe("P000-TEST-0001");
+    expect(calls.vision).toEqual([expect.objectContaining({ typedPatientId: "P000-TEST-0001" })]);
   });
 
   it("a failed Claude read still queues the submission for a person", async () => {

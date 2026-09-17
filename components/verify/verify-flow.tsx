@@ -71,7 +71,15 @@ function Details({ today }: { today: string }) {
 
   return (
     <form onSubmit={next} className="flex flex-col gap-4">
-      <Input label="Patient ID" value={id} onChange={(e) => setId(e.target.value)} autoComplete="off" required />
+      <Input
+        label="Patient ID"
+        value={id}
+        onChange={(e) => setId(e.target.value.toUpperCase())}
+        autoCapitalize="characters"
+        autoComplete="off"
+        spellCheck={false}
+        required
+      />
       <Input label="Card expiry date" type="date" value={expiry} onChange={(e) => setExpiry(e.target.value)} required />
       <Button type="submit">Next</Button>
       {message ? <p role="alert" className="text-sm text-danger">{message}</p> : null}
