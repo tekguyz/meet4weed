@@ -8,6 +8,8 @@ vi.mock("@/lib/verification/resize", () => ({
 }));
 
 import { CameraCapture, viewfinderWidth } from "@/components/verify/camera-capture";
+import { LIVE_CHECK } from "@/lib/verification/live-hint";
+import { LIVE_HINT_TEXT } from "@/lib/verification/messages";
 
 beforeEach(() => {
   const track = { stop: vi.fn() };
@@ -64,5 +66,27 @@ describe("CameraCapture", () => {
     act(() => vi.advanceTimersByTime(1000));
     expect(onCapture).toHaveBeenCalledOnce();
     expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("shows a live hint from the pre-checks over the viewfinder", async () => {
+    // Fake timers before render: the interval starts as soon as the camera is live.
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const check = vi.fn(async () => ["glare" as const]);
+    render(<CameraCapture facing="environment" guide="card" check={check} onCapture={() => {}} />);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Take photo" })).toBeEnabled());
+
+    await act(async () => vi.advanceTimersByTime(LIVE_CHECK.intervalMs));
+    expect(check).toHaveBeenCalled();
+    expect(screen.getByText(LIVE_HINT_TEXT.glare)).toBeInTheDocument();
+  });
+
+  it("stops checking while it is not active", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const check = vi.fn(async () => []);
+    render(<CameraCapture facing="environment" guide="card" check={check} active={false} onCapture={() => {}} />);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Take photo" })).toBeEnabled());
+
+    await act(async () => vi.advanceTimersByTime(LIVE_CHECK.intervalMs * 3));
+    expect(check).not.toHaveBeenCalled();
   });
 });

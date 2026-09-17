@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { issueFaceChallenge } from "@/app/verify/actions";
 import { CameraCapture } from "@/components/verify/camera-capture";
 import { Button } from "@/components/ui/button";
@@ -96,10 +96,18 @@ function Capture({ kind }: { kind: "card" | "face" }) {
     };
   }, [kind, challenge, setChallenge]);
 
+  // The same checks guide the live viewfinder and gate the full-size photo.
+  const runChecks = useCallback(
+    async (canvas: HTMLCanvasElement, live: boolean) => {
+      const pixels = canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height);
+      return kind === "card" ? checkCardPhoto(pixels) : checkFacePhoto(pixels, await countFaces(canvas, { quiet: live }));
+    },
+    [kind],
+  );
+  const liveCheck = useCallback((frame: HTMLCanvasElement) => runChecks(frame, true), [runChecks]);
+
   async function checked(canvas: HTMLCanvasElement) {
-    const context = canvas.getContext("2d")!;
-    const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
-    const problems = kind === "card" ? checkCardPhoto(pixels) : checkFacePhoto(pixels, await countFaces(canvas));
+    const problems = await runChecks(canvas, false);
     if (problems.length) failedCheck(kind);
     const blob = await toJpeg(canvas);
     setPending({ shot: { blob, url: URL.createObjectURL(blob) }, problems });
@@ -141,6 +149,8 @@ function Capture({ kind }: { kind: "card" | "face" }) {
             facing={kind === "card" ? "environment" : "user"}
             guide={kind}
             timerSeconds={kind === "face" ? FACE_TIMER_SECONDS : undefined}
+            check={liveCheck}
+            active={pending === null}
             onCapture={checked}
           />
         </div>

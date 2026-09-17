@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { IMAGE_LIMITS } from "@/lib/verification/jpeg";
+import { LIVE_CHECK, liveHint } from "@/lib/verification/live-hint";
+import type { PrecheckProblem } from "@/lib/verification/prechecks";
 import { drawScaled } from "@/lib/verification/resize";
 
 type Props = {
@@ -11,6 +13,10 @@ type Props = {
   onCapture: (canvas: HTMLCanvasElement) => void;
   /** A visible self-timer, for the face step where both hands are busy. */
   timerSeconds?: number;
+  /** Runs on a small live frame a few times a second, to show a hint. */
+  check?: (frame: HTMLCanvasElement) => PrecheckProblem[] | Promise<PrecheckProblem[]>;
+  /** False while the viewfinder is hidden behind a preview: no live checks. */
+  active?: boolean;
 };
 
 /** The viewfinder keeps the video's own aspect ratio but is never taller than
@@ -29,11 +35,12 @@ export function viewfinderWidth(videoWidth: number, videoHeight: number): string
  * ratio, so the guide drawn over it covers the same pixels cardGuide() checks.
  * A tap on the viewfinder takes the photo too.
  */
-export function CameraCapture({ facing, guide, onCapture, timerSeconds }: Props) {
+export function CameraCapture({ facing, guide, onCapture, timerSeconds, check, active = true }: Props) {
   const video = useRef<HTMLVideoElement>(null);
   const [state, setState] = useState<"starting" | "live" | "denied" | "unsupported">("starting");
   const [size, setSize] = useState({ width: 4, height: 3 });
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [hint, setHint] = useState<string | null>(null);
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -61,6 +68,29 @@ export function CameraCapture({ facing, guide, onCapture, timerSeconds }: Props)
       stream?.getTracks().forEach((t) => t.stop());
     };
   }, [facing]);
+
+  useEffect(() => {
+    if (!check || !active || state !== "live") return;
+    let busy = false;
+    let stopped = false;
+    const timer = setInterval(async () => {
+      const el = video.current;
+      if (busy || !el) return;
+      busy = true;
+      try {
+        const problems = await check(drawScaled(el, el.videoWidth, el.videoHeight, LIVE_CHECK.longEdge));
+        if (!stopped) setHint(liveHint(problems));
+      } catch {
+        // A hint is a nicety; the full-size check after the shot still runs.
+      } finally {
+        busy = false;
+      }
+    }, LIVE_CHECK.intervalMs);
+    return () => {
+      stopped = true;
+      clearInterval(timer);
+    };
+  }, [check, active, state]);
 
   useEffect(() => {
     if (countdown === null) return;
@@ -120,6 +150,11 @@ export function CameraCapture({ facing, guide, onCapture, timerSeconds }: Props)
             style={{ aspectRatio: "3 / 4" }}
           />
         )}
+        {hint ? (
+          <span aria-live="polite" className="absolute inset-x-2 bottom-2 rounded-control bg-surface px-3 py-2 text-sm text-ink">
+            {hint}
+          </span>
+        ) : null}
         {countdown !== null ? (
           <span className="absolute inset-0 flex items-center justify-center">
             <span role="status" className="flex size-24 items-center justify-center rounded-full bg-primary text-5xl font-semibold text-on-primary">

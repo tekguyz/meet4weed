@@ -12,6 +12,15 @@ export const PRECHECK_TEXT: Record<PrecheckProblem, string> = {
   no_face: "We cannot see your face. Hold the phone at arm's length, face on.",
 };
 
+/** Short, live, over the viewfinder — see live-hint.ts. */
+export const LIVE_HINT_TEXT: Record<PrecheckProblem | "ready", string> = {
+  no_card: "Fit the card inside the frame",
+  no_face: "Show your face inside the oval",
+  glare: "Tilt the card away from the light",
+  blurry: "Hold still",
+  ready: "Looks good. Tap to take the photo",
+};
+
 // Spec §8: every failure names the reason and offers a way forward.
 export const SUBMISSION_TEXT: Record<SubmissionError, string> = {
   sign_in: "Your session ended. Sign in again, then retake the photos.",

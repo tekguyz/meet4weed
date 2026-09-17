@@ -25,12 +25,14 @@ export function loadFaceDetector(): Promise<FaceDetector> {
   return loading;
 }
 
-export async function countFaces(canvas: HTMLCanvasElement): Promise<number | null> {
+/** `quiet` is for the live hint loop, which would otherwise log a failure
+ *  a few times a second. */
+export async function countFaces(canvas: HTMLCanvasElement, { quiet = false } = {}): Promise<number | null> {
   try {
     const detector = await loadFaceDetector();
     return detector.detect(canvas).detections.length;
   } catch (error) {
-    console.error(`[face-detector] unavailable: ${(error as Error).name}`);
+    if (!quiet) console.error(`[face-detector] unavailable: ${(error as Error).name}`);
     return null;
   }
 }
