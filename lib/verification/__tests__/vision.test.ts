@@ -7,7 +7,7 @@ const INPUT = {
   face: Buffer.from("face-bytes"),
   typedPatientId: "P000-TEST-0001",
   typedExpiry: "2027-06-30",
-  challenge: "Hold up two fingers beside the card",
+  challenge: "Tilt your head to one side",
   today: "2026-09-17",
 };
 
@@ -59,7 +59,7 @@ describe("readCard", () => {
     const text = blocks.filter((b) => b.type === "text").map((b) => b.text).join("\n");
     expect(text).toContain("P000-TEST-0001");
     expect(text).toContain("2027-06-30");
-    expect(text).toContain("Hold up two fingers beside the card");
+    expect(text).toContain("Tilt your head to one side");
     expect(text).toContain("2026-09-17");
   });
 

@@ -9,6 +9,8 @@ type Props = {
   facing: "environment" | "user";
   guide: "card" | "face";
   onCapture: (canvas: HTMLCanvasElement) => void;
+  /** A visible self-timer, for the face step where both hands are busy. */
+  timerSeconds?: number;
 };
 
 /** The viewfinder keeps the video's own aspect ratio but is never taller than
@@ -27,10 +29,11 @@ export function viewfinderWidth(videoWidth: number, videoHeight: number): string
  * ratio, so the guide drawn over it covers the same pixels cardGuide() checks.
  * A tap on the viewfinder takes the photo too.
  */
-export function CameraCapture({ facing, guide, onCapture }: Props) {
+export function CameraCapture({ facing, guide, onCapture, timerSeconds }: Props) {
   const video = useRef<HTMLVideoElement>(null);
   const [state, setState] = useState<"starting" | "live" | "denied" | "unsupported">("starting");
   const [size, setSize] = useState({ width: 4, height: 3 });
+  const [countdown, setCountdown] = useState<number | null>(null);
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -59,6 +62,17 @@ export function CameraCapture({ facing, guide, onCapture }: Props) {
     };
   }, [facing]);
 
+  useEffect(() => {
+    if (countdown === null) return;
+    const timer = setTimeout(() => {
+      if (countdown > 1) return setCountdown(countdown - 1);
+      setCountdown(null);
+      capture();
+    }, 1000);
+    return () => clearTimeout(timer);
+    // capture() reads refs and the latest state; re-running on its identity would restart the count.
+  }, [countdown]);
+
   if (state === "unsupported") {
     return <p role="alert" className="text-sm text-danger">This browser cannot open the camera. Open Meet4Weed in Safari or Chrome.</p>;
   }
@@ -77,12 +91,18 @@ export function CameraCapture({ facing, guide, onCapture }: Props) {
     onCapture(drawScaled(el, el.videoWidth, el.videoHeight, IMAGE_LIMITS.captureLongEdge));
   }
 
+  function shutter() {
+    if (state !== "live" || countdown !== null) return;
+    if (timerSeconds) setCountdown(timerSeconds);
+    else capture();
+  }
+
   return (
     <div className="flex flex-col items-center gap-4">
       <button
         type="button"
         aria-label="Tap to take the photo"
-        onClick={capture}
+        onClick={shutter}
         className="relative block overflow-hidden rounded-card bg-surface"
         style={{ aspectRatio: `${size.width} / ${size.height}`, width: viewfinderWidth(size.width, size.height) }}
       >
@@ -100,9 +120,16 @@ export function CameraCapture({ facing, guide, onCapture }: Props) {
             style={{ aspectRatio: "3 / 4" }}
           />
         )}
+        {countdown !== null ? (
+          <span className="absolute inset-0 flex items-center justify-center">
+            <span role="status" className="flex size-24 items-center justify-center rounded-full bg-primary text-5xl font-semibold text-on-primary">
+              {countdown}
+            </span>
+          </span>
+        ) : null}
       </button>
-      <Button type="button" className="sticky bottom-4" onClick={capture} disabled={state !== "live"}>
-        {state === "live" ? "Take photo" : "Opening camera…"}
+      <Button type="button" className="sticky bottom-4" onClick={shutter} disabled={state !== "live" || countdown !== null}>
+        {state !== "live" ? "Opening camera…" : timerSeconds ? `Take photo in ${timerSeconds} seconds` : "Take photo"}
       </Button>
     </div>
   );

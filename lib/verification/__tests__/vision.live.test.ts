@@ -26,7 +26,7 @@ const base = (): VisionInput => ({
   face: image("face-with-card.jpg"),
   typedPatientId: "P000-TEST-0001",
   typedExpiry: "2027-06-30",
-  challenge: "Hold up two fingers beside the card",
+  challenge: "Tilt your head to one side",
   today: "2026-09-17",
 });
 

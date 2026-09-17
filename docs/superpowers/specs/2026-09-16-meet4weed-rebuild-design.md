@@ -135,7 +135,10 @@ everyone present is legal, a person makes the call.
    uploads are not accepted.
 5. **Capture one live photo of the member's face holding the same card**
    beside it, with a **random challenge** chosen at capture time — for example
-   "hold up two fingers" or "touch your ear". The challenge is stored with the
+   "smile with your teeth showing" or "tilt your head to one side". Challenges
+   use the face only: one hand holds the phone and the other holds the card,
+   so a visible 3-second self-timer takes the photo (owner's phone test,
+   2026-09-16). The challenge is stored with the
    submission and shown to the reviewer. It defeats re-using an old photo or a
    photo of someone else, because nobody can know the challenge in advance.
 6. **Free on-device pre-checks run first:** blur, glare, a card-shaped object

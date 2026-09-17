@@ -23,7 +23,7 @@ vi.mock("@/lib/verification/resize", () => ({
   fitWithin: (w: number, h: number) => ({ width: w, height: h }),
 }));
 vi.mock("@/app/verify/actions", () => ({
-  issueFaceChallenge: async () => ({ ok: true, challenge: "Touch your ear with your free hand", token: "t0ken" }),
+  issueFaceChallenge: async () => ({ ok: true, challenge: "Raise your eyebrows", token: "t0ken" }),
 }));
 
 import { VerifyFlow } from "@/components/verify/verify-flow";
@@ -106,7 +106,7 @@ describe("VerifyFlow", () => {
 
     await user.click(screen.getByRole("button", { name: "mock shutter" }));
     await user.click(screen.getByRole("button", { name: "Use it" }));
-    expect(await screen.findByText("Touch your ear with your free hand")).toBeInTheDocument();
+    expect(await screen.findByText("Raise your eyebrows")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "mock shutter" }));
     await user.click(screen.getByRole("button", { name: "Use it" }));

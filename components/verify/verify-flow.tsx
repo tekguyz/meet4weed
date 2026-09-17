@@ -13,6 +13,8 @@ import { toJpeg } from "@/lib/verification/resize";
 import type { SubmissionError } from "@/lib/verification/submit";
 
 const ANYWAY_AFTER = 3;
+// Both hands are busy on the face step: one holds the phone, one the card.
+const FACE_TIMER_SECONDS = 3;
 
 /** One job per screen (spec §7): intro, typed details, card, face, review. */
 export function VerifyFlow({ today }: { today: string }) {
@@ -125,7 +127,8 @@ function Capture({ kind }: { kind: "card" | "face" }) {
         <p className="text-sm text-ink-muted">Put the card on a dark surface and fit it inside the frame.</p>
       ) : challenge ? (
         <p className="text-sm text-ink">
-          Hold the card beside your face, and: <strong className="text-primary">{challenge.text}</strong>
+          Hold the card beside your face, and: <strong className="text-primary">{challenge.text}</strong>. Tap the
+          photo, and it is taken 3 seconds later.
         </p>
       ) : (
         <p className="text-sm text-ink-muted">Getting your pose…</p>
@@ -134,7 +137,12 @@ function Capture({ kind }: { kind: "card" | "face" }) {
       {kind === "card" || challenge ? (
         // Hidden, not unmounted, while previewing: Retake then needs no camera restart.
         <div hidden={pending !== null}>
-          <CameraCapture facing={kind === "card" ? "environment" : "user"} guide={kind} onCapture={checked} />
+          <CameraCapture
+            facing={kind === "card" ? "environment" : "user"}
+            guide={kind}
+            timerSeconds={kind === "face" ? FACE_TIMER_SECONDS : undefined}
+            onCapture={checked}
+          />
         </div>
       ) : null}
 

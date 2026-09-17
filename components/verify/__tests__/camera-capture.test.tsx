@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -45,5 +45,24 @@ describe("CameraCapture", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: "Take photo" })).toBeEnabled());
     await user.click(screen.getByRole("button", { name: "Tap to take the photo" }));
     expect(onCapture).toHaveBeenCalledOnce();
+  });
+
+  it("counts down 3 seconds on screen before a timed photo", async () => {
+    const onCapture = vi.fn();
+    render(<CameraCapture facing="user" guide="face" timerSeconds={3} onCapture={onCapture} />);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Take photo in 3 seconds" })).toBeEnabled());
+    vi.useFakeTimers();
+
+    fireEvent.click(screen.getByRole("button", { name: "Tap to take the photo" }));
+    expect(screen.getByRole("status")).toHaveTextContent("3");
+    act(() => vi.advanceTimersByTime(1000));
+    expect(screen.getByRole("status")).toHaveTextContent("2");
+    act(() => vi.advanceTimersByTime(1000));
+    expect(screen.getByRole("status")).toHaveTextContent("1");
+    fireEvent.click(screen.getByRole("button", { name: "Tap to take the photo" }));
+    expect(onCapture).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(1000));
+    expect(onCapture).toHaveBeenCalledOnce();
+    expect(screen.queryByRole("status")).toBeNull();
   });
 });

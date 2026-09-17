@@ -96,7 +96,7 @@ function harness(options: Options = {}) {
       calls.alerts += 1;
       if (options.alertFails) throw new Error("resend down");
     },
-    verifyChallenge: (token, memberId) => (token === `good-token-for-${memberId}` ? "Hold up two fingers beside the card" : null),
+    verifyChallenge: (token, memberId) => (token === `good-token-for-${memberId}` ? "Tilt your head to one side" : null),
     today: () => TODAY,
   };
   return { deps, calls };
@@ -220,7 +220,7 @@ describe("submitVerification — the happy path and its failures", () => {
       expect.objectContaining({
         typedPatientId: "P000-TEST-0001",
         typedExpiry: "2027-06-30",
-        challenge: "Hold up two fingers beside the card",
+        challenge: "Tilt your head to one side",
         today: TODAY,
       }),
     ]);
