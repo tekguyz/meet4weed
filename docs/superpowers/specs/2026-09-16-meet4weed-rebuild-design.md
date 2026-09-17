@@ -140,7 +140,8 @@ everyone present is legal, a person makes the call.
    photo of someone else, because nobody can know the challenge in advance.
 6. **Free on-device pre-checks run first:** blur, glare, a card-shaped object
    present, a face present. Junk is rejected on the phone and never costs an
-   API call.
+   API call. The face check is MediaPipe BlazeFace, about 2.7 MB loaded on the
+   face step only (measured 2026-09-16; the owner confirmed it at that size).
 7. Both images POST to a server route, resized on the device to about 1000 px
    on the long edge. The route calls Claude vision with a zod-typed structured
    schema and receives **reading results and warnings, never a verdict**:
@@ -171,9 +172,12 @@ happens live, inside the app, with a challenge nobody could have prepared for.
 Because every submission is reviewed by a person, **the images must be kept
 until that review happens.**
 
-- Images are written to a **private, encrypted Supabase bucket**, readable by
-  `service_role` only, and reached by the admin screen through short-lived
-  signed URLs.
+- Images are written to a **private Supabase bucket**, readable by
+  `service_role` only, and **encrypted by the app** (AES-256-GCM) before upload,
+  so the Supabase secret key alone reads ciphertext. The admin screen streams
+  them decrypted through an admin-only route with `Cache-Control: no-store`.
+  Storage signed URLs are not used: they would serve ciphertext. (Changed in
+  Plan 02, 2026-09-16.)
 - **They are deleted the moment the reviewer decides** — approve, reject or
   retake. Only the extracted fields persist (patient ID, expiry, verified-at,
   reviewer).
@@ -200,7 +204,8 @@ The real protection is **contextual, not nagging**.
   the session date, the host gets one notice and the guest is auto-dropped
   unless renewed.
 - **Reminders (deliberately few).** In-app banner from 30 days out. Push at
-  7 days and at 1 day. **Exactly one email**, on the expiry date.
+  7 days and at 1 day (ships with Plan 05, which builds push). **Exactly one
+  email**, on the expiry date.
 - **On expiry: read-only.** The member can browse and see their own history.
   They cannot RSVP, host, see any unlocked address, or message. Uploading a
   valid card restores full access immediately.
@@ -213,13 +218,14 @@ person — can run up the Anthropic bill.
 1. **The API key exists only on the server.** Never `NEXT_PUBLIC_`, never in
    client code.
 2. **Only a signed-in, attested member** can reach the verification route.
-3. **Per-member limit:** 3 submissions per day. **Per-IP limit** as well. Both
-   in Upstash Redis.
+3. **Per-member limit:** 3 submissions per day. **Per-IP limit:** 10 per day.
+   Both in Upstash Redis. Over either, the submission is refused whole.
 4. **A global daily ceiling** for the whole app (starting value: 50 checks per
    day, configurable). Once reached, submissions are still stored and queued
    for review, but **skip the Claude call**. The reviewer reads the card by eye.
    This is the circuit breaker: even if every other control fails, the daily
-   spend cannot exceed the ceiling.
+   spend cannot exceed the ceiling. If Upstash is unreachable, the limiter
+   fails closed for Claude (no call) and open for the member (still queued).
 5. **Free on-device pre-checks** reject junk before any call (§4.1 step 6).
 6. **Image size caps:** resized on device to about 1000 px; the server rejects
    anything over a hard byte limit before calling Claude.
@@ -228,10 +234,12 @@ person — can run up the Anthropic bill.
 8. **Every call logs its token usage and computed cost** to the database, and
    the admin panel shows today's and this month's spend.
 
-**Measured cost, to be confirmed on the first real call.** At ~1000 px per
-image, one check on `claude-sonnet-5` is estimated at roughly 1–1.5 cents.
-Unresized phone photos would roughly double that, which is why resizing is a
-requirement and not an optimisation.
+**Measured cost (2026-09-16).** 4 live calls on `claude-sonnet-5`, effort
+`low`, a 1000×630 card image plus a 1000×750 face-with-card image, synthetic
+fixtures: 3,237 input tokens each, 157–341 output tokens, **$0.0080–$0.0099
+per check, mean $0.0088**. The estimate had been 1–1.5 cents. Unresized phone
+photos would roughly double the input, which is why resizing is a requirement
+and not an optimisation.
 
 ---
 
@@ -456,7 +464,9 @@ Medium.
 Not optional, and not only for ID review. An email-based workflow cannot act,
 and mailing a card photo would put that photo in an inbox permanently, breaking
 the retention promise in §4.2. The panel is a protected route group inside the
-app, gated by a `role` claim, not a separate product.
+app, gated by the **`admins` table** (read through `private.is_admin()`), not
+a separate product. Decided 2026-09-16 instead of a JWT `role` claim: removing
+an admin works at once, and no auth hook is needed in the dashboard.
 
 v1 surface:
 

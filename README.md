@@ -10,8 +10,10 @@ valid, unexpired OMMU card, and nobody else gets in.
 **It is a place to meet, never a place to buy or sell.** No cart, no payments
 for cannabis, no dispensary ordering. That constraint is load-bearing.
 
-> **Status: early rebuild.** Password sign-in, attestation and member profiles work.
-> Card verification, sessions and everything else are designed but not built.
+> **Status: early rebuild.** Password sign-in, attestation, member profiles,
+> card verification with an owner review queue, and the expiry lifecycle are
+> built. The phone capture screens need fixes found in the owner's first phone
+> test. Sessions and everything after are designed but not built.
 > See [Build status](#build-status).
 
 ---
@@ -28,12 +30,18 @@ for cannabis, no dispensary ordering. That constraint is load-bearing.
 | Validation | zod |
 | Tests | vitest + Testing Library |
 | CI | GitHub Actions |
-| Hosting | Vercel *(planned — not deployed yet)* |
+| Card reading | Claude (`claude-sonnet-5`) — reads and lists concerns; a person approves |
+| Face check on the phone | MediaPipe BlazeFace |
+| Rate limits | Upstash Redis (shared; keys prefixed `m4w:`) |
+| App email | Resend API |
+| Hosting | Vercel *(planned — not deployed yet; `vercel.json` holds the cron schedule)* |
 
 Auth email goes through Resend SMTP from `Meet4Weed <no-reply@tekguyz.com>`,
 set in the Supabase dashboard, with the branded templates in
-`supabase/templates/`. Keys for Claude, Upstash and the Resend API are in
-`.env.local`, ready for Plan 02.
+`supabase/templates/`. The owner's review alert and the expiry email go
+through the Resend API from the same sender.
+
+**Measured cost of one card check:** $0.0088 on average (spec §4.4).
 
 **Decided, not installed:** Claude vision for card reading, Mapbox, web push,
 Sentry — see the spec.
@@ -67,6 +75,11 @@ comes from:
 | `ANTHROPIC_API_KEY` | Anthropic console → API Keys |
 | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Upstash → the database → REST API |
 | `RESEND_API_KEY` | Resend → API Keys |
+| `VERIFICATION_SECRET` | 32 random bytes, base64 — generate it; encrypts card photos |
+| `CRON_SECRET` | 32 random bytes, hex — generate it; Vercel Cron sends it |
+| `OWNER_ALERT_EMAIL` | Who gets the "card waiting for review" email |
+| `VISION_DAILY_CEILING` | Optional, default 50 Claude checks per day |
+| `DEV_LAN_HOST` | Optional, dev only — this computer's LAN IP for phone testing |
 
 **Only the two `NEXT_PUBLIC_` values may ever reach the browser.** Every other
 key is server-only: the Supabase secret key bypasses every security rule, and
@@ -120,6 +133,17 @@ so a change means editing both:
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` | Every vitest suite, including the database security tests |
 | `npm run db:push` | Apply new migrations to the linked hosted project |
+| `npm run admin:grant -- <email>` | Make an existing account an admin |
+| `npm run cron:run -- verification-reaper` | Run a cron job against the local dev server (also `expiry-sweep`) |
+| `npm run fixtures:vision` | Re-render the synthetic card fixtures |
+| `VISION_LIVE=1 npm run test:vision-live` | Call the real Claude API with the fixtures — **costs about 1 cent per case** |
+
+**Testing the camera on a phone.** The camera needs HTTPS off localhost. Start
+the `dev-phone` configuration in `.claude/launch.json`: it serves HTTPS on the
+LAN with a self-signed certificate from `private/dev-cert/` (git-ignored; make
+one with `openssl req -x509 … -addext "subjectAltName=IP:<LAN IP>"`), and
+`DEV_LAN_HOST` in `.env.local` lets Next.js accept that origin. The phone shows
+one certificate warning.
 
 There is no local-database script. `supabase start`, `db reset`, `db diff` and
 `test db` all need Docker, which this project does not use.
@@ -161,24 +185,34 @@ Forget it and every server-side write to that table fails with `42501`.
 npm test
 ```
 
-`supabase/tests/__tests__/profiles-rls.test.ts` is the security test. It
-creates two real members in the hosted project, checks what each can and
-cannot read or write through the real API, and deletes them afterwards.
+The security tests run against the hosted project and delete what they create:
 
-It **skips itself** when `SUPABASE_SECRET_KEY` is not set. CI has no secret, so
-**CI does not run the security tests.** Run them locally before merging
-anything that touches a migration.
+- `supabase/tests/__tests__/profiles-rls.test.ts` — who can read and write profiles.
+- `supabase/tests/__tests__/verification-rls.test.ts` — who can read a submission, decide one, or call the service-only functions.
+- `supabase/tests/__tests__/verification-store.test.ts` — stored photos are ciphertext.
+- `supabase/tests/__tests__/verification-reaper.test.ts` — the 7-day deletion.
+
+They **skip themselves** when `SUPABASE_SECRET_KEY` is not set. CI has no
+secret, so **CI does not run the security tests.** Run them locally before
+merging anything that touches a migration.
+
+`lib/verification/__tests__/vision.live.test.ts` calls the real Claude API and
+runs only with `VISION_LIVE=1`. Every other vision test uses a mocked client.
 
 ---
 
 ## Project layout
 
 ```
-app/                  routes: /login, /login/new-password, /onboarding, /auth/confirm, /auth/sign-out
+app/                  routes: /login, /onboarding, /auth/confirm, /verify, /admin, /api/verification, /api/cron/*
 components/           UI; ui/ holds the primitives
 lib/auth/             auth error mapping, link lifetime, safe redirects
 lib/supabase/         browser client, server client, session refresh
 lib/profiles/         zod schemas, types, queries
+lib/verification/     capture checks, limits, Claude reader, submission pipeline, reaper
+lib/member/           read-only gate, expiry sweep
+lib/admin/            review-queue queries
+scripts/              admin grant, cron runner, fixtures, MediaPipe copy
 proxy.ts              refreshes the session and gates signed-out visitors
 supabase/migrations/  every schema change, in order
 supabase/templates/   branded auth emails, mirrored in the dashboard
@@ -197,8 +231,8 @@ The rebuild follows one spec and seven plans.
 | Plan | Builds | Status |
 | :-- | :-- | :-- |
 | 01 | Scaffold, design tokens, auth, profiles | **Done** |
-| 02 | Password auth, card verification with owner review queue, cost caps, expiry lifecycle | Next |
-| 03 | Sessions, map, RSVP, address unlock | — |
+| 02 | Password auth, card verification with owner review queue, cost caps, expiry lifecycle | **Built — phone capture fixes pending** (see the plan's STATUS) |
+| 03 | Sessions, map, RSVP, address unlock | Next |
 | 04 | Strains on deck, bring list, invite links | — |
 | 05 | Notifications, push, installable PWA | — |
 | 06 | Report, block, admin panel | — |

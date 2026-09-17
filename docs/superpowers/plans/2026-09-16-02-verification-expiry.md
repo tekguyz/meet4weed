@@ -12,6 +12,30 @@
 
 **Spec:** `docs/superpowers/specs/2026-09-16-meet4weed-rebuild-design.md` — §4 (all of it), §6, §8, §9, §10 steps 2–4, §11 verification queue and spend.
 
+> **STATUS: BUILT, CAPTURE FIXES PENDING (2026-09-16). Read this before copying any step.**
+>
+> - **Tasks 1–9 shipped** (commits `2fbf1bb` … `fa4729d`), each with its gates green. At the last run: 215 tests passing, 4 skipped (the live Claude file), with all four security files running against the hosted project.
+> - **Task 10 is partly done.** Done: the live Claude run (Step 1–2, cost below), the owner made admin (Step 3), the phone reaching the dev server over HTTPS (Step 4, commit `46275b7`), the spec amendments (Step 6). **The owner's phone test (Step 5) stopped at the face step** and found the eight problems in "Findings from the owner's phone test" below. No submission was sent, so no real photo was stored.
+> - **Measured cost:** mean **$0.0088 per check** (4 calls, 3,237 input tokens each, 157–341 output). Recorded in spec §4.4.
+> - **To close Plan 02:** fix findings 1–6, repeat Task 10 Step 5 on the phone through approval, calibrate the pre-check thresholds, then Steps 7–10. Findings 7–8 need a decision or research first.
+>
+> Steps that did not ship as written:
+>
+> - **Task 7** — the signed-in browser check (Step 11) was not run: it needs the owner's password. The proxy matcher also had to exclude `public/mediapipe/` (commit `46275b7`): the ~12 MB runtime was being sent through the session check.
+> - **Task 8** — the image-route test wraps its `Buffer` in `Uint8Array` (TypeScript refused `Buffer` as a `BlobPart`); `secret-boundary.test.ts` now exempts every `app/` file without `"use client"` from the `server-only` rule, not only routes and actions, because `app/admin/page.tsx` reads the ceiling from `serverEnv()`. The signed-in non-admin browser check was not run (password).
+> - **Task 10 Step 4** — the phone path uses `.claude/launch.json` → `dev-phone`: HTTPS on `0.0.0.0` with a 30-day self-signed certificate in the git-ignored `private/dev-cert/`, and `DEV_LAN_HOST` in `.env.local` allowed by `next.config.ts`. Nothing was installed into the Windows trust store. `next dev --experimental-https` without a key and cert would have tried to.
+>
+> ### Findings from the owner's phone test (Pixel 9a, 2026-09-16)
+>
+> 1. **The Take photo button is below the fold.** The viewfinder box takes the portrait video's full aspect ratio, so the member scrolls to reach the button, and scrolls again after every shot. Fix: cap the viewfinder height (about 60dvh), keep the button in view, and let a tap on the viewfinder take the photo.
+> 2. **No preview after a shot.** "Use this photo" accepts a picture the member never saw. Fix: show the captured frame with "Use it" and "Retake".
+> 3. **The face step needs three hands.** One hand holds the phone, one holds the card, and several challenges ("Cover one eye with your free hand", "Give a thumbs up with your free hand", "Point at the card…", "Touch your ear…", "Hold up two/three fingers…") need a third. Fix: face-only challenges (for example smile, tilt your head, look to one side, raise your eyebrows) and a visible 3-second self-timer. `lib/verification/challenges.ts` and the spec §4.1 step 5 examples change together.
+> 4. **Guidance arrives only after the shot.** The owner expected live hints such as "move closer" or "too blurry" before capturing. Fix: run the same pre-checks on the live video a few times a second on a downscaled frame, show the hint over the viewfinder, and keep the post-capture check as the gate.
+> 5. **Patient ID should be upper-cased as typed**, and stored upper-case.
+> 6. **The MediaPipe "INFO: Created TensorFlow Lite XNNPACK delegate for CPU" line shows as a red Console Error** in the Next.js dev overlay. It is informational — detection ran — but it alarms a tester. Fix: filter that one message around `detect()`/load; dev only, never a user-facing problem.
+> 7. **Patient ID format hint — research needed, not a guess.** The owner asked for a hint such as "usually starts with …, N characters". Find the Florida Medical Marijuana Use Registry ID format from a public source (for example the OMMU site) before writing any hint; never derive it from the owner's card. If no public source states it, show a generic "as printed on the front of your card" hint.
+> 8. **The back of the card — owner decision needed.** It carries more printed information. A third image adds roughly 1,000 input tokens, about **$0.002 more per check** (from the measured 3,237 tokens for two images). Decide whether it adds verification value worth that before building it.
+
 ## Decisions settled with the owner (2026-09-16)
 
 | Question | Decision | Why |

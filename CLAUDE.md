@@ -81,12 +81,19 @@ reason so nobody has to rediscover it.
 - **Never weaken a live security rule to prove a test fails.** Prove it
   differentially: the same statement on the same row fails for a member and
   succeeds for `service_role`.
-- **Never commit a real card or a real face.** Vision fixtures are synthetic.
-  Live Claude runs are on demand only, because each costs money.
+- **Never commit a real card or a real face.** Vision fixtures are synthetic
+  (`npm run fixtures:vision`). Real photos for a hand test, and the dev HTTPS
+  certificate, live in `private/`, which is git-ignored. Live Claude runs
+  (`VISION_LIVE=1 npm run test:vision-live`) are on demand only: about 1 cent
+  per case.
 - Definition of done is a command that exits 0, with its output shown.
 
 ## Secrets and cost
 
+- **Every module that reads a server secret starts with `import "server-only";`,
+  and only `lib/server-env.ts` reads secrets from the environment.** *Why:* a
+  client import of a server module then fails the build instead of shipping a
+  key. `lib/__tests__/secret-boundary.test.ts` holds the line.
 - **Only `NEXT_PUBLIC_` keys reach the browser** — today that is the Supabase
   URL and publishable key. *Why:* the Supabase secret key bypasses every
   security rule, and the Anthropic key spends money. Never read a server key in
