@@ -1,4 +1,5 @@
 import type { FaceDetector } from "@mediapipe/tasks-vision";
+import { quietMediapipeInfo } from "@/lib/verification/mediapipe-noise";
 
 /** Loaded on the face step only: the runtime is a ~2.4 MB download (measured
  *  2026-09-16). Browser-only. */
@@ -10,6 +11,7 @@ let loading: Promise<FaceDetector> | null = null;
 export function loadFaceDetector(): Promise<FaceDetector> {
   if (!loading) {
     loading = (async () => {
+      quietMediapipeInfo();
       const { FaceDetector, FilesetResolver } = await import("@mediapipe/tasks-vision");
       const fileset = await FilesetResolver.forVisionTasks(WASM);
       return FaceDetector.createFromOptions(fileset, {
