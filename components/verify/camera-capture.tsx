@@ -11,17 +11,26 @@ type Props = {
   onCapture: (canvas: HTMLCanvasElement) => void;
 };
 
+/** The viewfinder keeps the video's own aspect ratio but is never taller than
+ *  60dvh, so the shutter stays on screen on a tall portrait phone (Pixel 9a
+ *  phone test, 2026-09-16). Capping width rather than height keeps the guide
+ *  over the same pixels the pre-checks read. */
+export function viewfinderWidth(videoWidth: number, videoHeight: number): string {
+  return `min(100%, calc(60dvh * ${videoWidth} / ${videoHeight}))`;
+}
+
 /**
  * Live viewfinder with a guide frame. Not a file input: gallery uploads are
  * not accepted (spec §4.1 step 4).
  *
  * The frame is shown with object-contain in a box of the video's own aspect
  * ratio, so the guide drawn over it covers the same pixels cardGuide() checks.
+ * A tap on the viewfinder takes the photo too.
  */
 export function CameraCapture({ facing, guide, onCapture }: Props) {
   const video = useRef<HTMLVideoElement>(null);
   const [state, setState] = useState<"starting" | "live" | "denied" | "unsupported">("starting");
-  const [aspect, setAspect] = useState("4 / 3");
+  const [size, setSize] = useState({ width: 4, height: 3 });
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -39,7 +48,7 @@ export function CameraCapture({ facing, guide, onCapture }: Props) {
         const el = video.current!;
         el.srcObject = s;
         await el.play();
-        setAspect(`${el.videoWidth} / ${el.videoHeight}`);
+        setSize({ width: el.videoWidth, height: el.videoHeight });
         setState("live");
       })
       .catch(() => setState("denied"));
@@ -69,8 +78,14 @@ export function CameraCapture({ facing, guide, onCapture }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="relative w-full overflow-hidden rounded-card bg-surface" style={{ aspectRatio: aspect }}>
+    <div className="flex flex-col items-center gap-4">
+      <button
+        type="button"
+        aria-label="Tap to take the photo"
+        onClick={capture}
+        className="relative block overflow-hidden rounded-card bg-surface"
+        style={{ aspectRatio: `${size.width} / ${size.height}`, width: viewfinderWidth(size.width, size.height) }}
+      >
         <video ref={video} playsInline muted className="h-full w-full object-contain" />
         {guide === "card" ? (
           <div
@@ -85,8 +100,8 @@ export function CameraCapture({ facing, guide, onCapture }: Props) {
             style={{ aspectRatio: "3 / 4" }}
           />
         )}
-      </div>
-      <Button type="button" onClick={capture} disabled={state !== "live"}>
+      </button>
+      <Button type="button" className="sticky bottom-4" onClick={capture} disabled={state !== "live"}>
         {state === "live" ? "Take photo" : "Opening camera…"}
       </Button>
     </div>
