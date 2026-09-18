@@ -73,8 +73,8 @@ export function glareRatio(p: Pixels, rect: Rect): number {
   return n === 0 ? 0 : bright / n;
 }
 
-/** How many sides of the guide have a strong straight edge near them. */
-export function edgeSides(p: Pixels, rect: Rect): number {
+/** Edge strength along each side of the guide: top, bottom, left, right. */
+export function edgeStrengths(p: Pixels, rect: Rect): number[] {
   const l = luma(p);
   const w = p.width;
   const h = p.height;
@@ -103,13 +103,12 @@ export function edgeSides(p: Pixels, rect: Rect): number {
     return best;
   };
 
-  const strengths = [
-    horizontal(rect.y),
-    horizontal(rect.y + rect.height),
-    vertical(rect.x),
-    vertical(rect.x + rect.width),
-  ];
-  return strengths.filter((s) => s >= PRECHECK_THRESHOLDS.minEdgeStrength).length;
+  return [horizontal(rect.y), horizontal(rect.y + rect.height), vertical(rect.x), vertical(rect.x + rect.width)];
+}
+
+/** How many sides of the guide have a strong straight edge near them. */
+export function edgeSides(p: Pixels, rect: Rect): number {
+  return edgeStrengths(p, rect).filter((s) => s >= PRECHECK_THRESHOLDS.minEdgeStrength).length;
 }
 
 export function checkCardPhoto(p: Pixels): PrecheckProblem[] {
