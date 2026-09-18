@@ -121,3 +121,17 @@ reason so nobody has to rediscover it.
 ## Next.js 16
 
 - `middleware.ts` is now `proxy.ts`, and its export is named `proxy`.
+
+## Agent skills
+
+### Issue tracker
+
+New work goes to GitHub Issues (`gh` CLI). `docs/superpowers/plans/` and `docs/superpowers/specs/` stay as they are. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` + `docs/adr/` at the repo root, created lazily as terms/decisions resolve. See `docs/agents/domain.md`.
