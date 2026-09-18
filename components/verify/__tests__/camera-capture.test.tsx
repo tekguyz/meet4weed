@@ -75,9 +75,12 @@ describe("CameraCapture", () => {
     render(<CameraCapture facing="environment" guide="card" check={check} onCapture={() => {}} />);
     await waitFor(() => expect(screen.getByRole("button", { name: "Take photo" })).toBeEnabled());
 
+    // waitFor resolves on the render that enables the shutter, but the effect
+    // that starts the interval is a passive one: it can still be pending. Give
+    // it a turn, then wait for the call instead of asserting a single tick.
     await act(async () => vi.advanceTimersByTime(LIVE_CHECK.intervalMs));
-    expect(check).toHaveBeenCalled();
-    expect(screen.getByText(LIVE_HINT_TEXT.glare)).toBeInTheDocument();
+    await waitFor(() => expect(check).toHaveBeenCalled());
+    expect(await screen.findByText(LIVE_HINT_TEXT.glare)).toBeInTheDocument();
   });
 
   it("stops checking while it is not active", async () => {
