@@ -12,7 +12,8 @@ for cannabis, no dispensary ordering. That constraint is load-bearing.
 
 > **Status: early rebuild.** Password sign-in, attestation, member profiles,
 > card verification with an owner review queue, and the expiry lifecycle are
-> built and proven end to end on a real phone with a real card (2026-09-18).
+> built and proven end to end on a real phone with a real card (2026-09-18),
+> and deployed to Vercel (2026-09-19).
 > Sessions and everything after are designed but not built.
 > See [Build status](#build-status).
 
@@ -34,7 +35,7 @@ for cannabis, no dispensary ordering. That constraint is load-bearing.
 | Face check on the phone | MediaPipe BlazeFace |
 | Rate limits | Upstash Redis (shared; keys prefixed `m4w:`) |
 | App email | Resend API |
-| Hosting | Vercel *(planned — not deployed yet; `vercel.json` holds the cron schedule)* |
+| Hosting | Vercel — live at [meet4weed.vercel.app](https://meet4weed.vercel.app); `vercel.json` holds the cron schedule |
 
 Auth email goes through Resend SMTP from `Meet4Weed <no-reply@tekguyz.com>`,
 set in the Supabase dashboard, with the branded templates in
@@ -42,6 +43,13 @@ set in the Supabase dashboard, with the branded templates in
 through the Resend API from the same sender.
 
 **Measured cost of one card check:** $0.0088 on average (spec §4.4).
+
+**Deployed at** `https://meet4weed.vercel.app`. The two cron jobs in
+`vercel.json` run there and refuse any call without `CRON_SECRET`. The ten
+server variables in the table below are set in Production and Preview; the
+three optional limits are left unset, so their defaults apply. Supabase
+**Authentication → URL Configuration** must list that origin, or emailed links
+point at localhost.
 
 **Decided, not installed:** Claude vision for card reading, Mapbox, web push,
 Sentry — see the spec.
