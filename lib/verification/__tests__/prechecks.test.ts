@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cardGuide, checkCardPhoto, checkFacePhoto, type Pixels } from "@/lib/verification/prechecks";
+import { cardGuide, checkCardPhoto, checkFacePhoto, PRECHECK_THRESHOLDS, type Pixels } from "@/lib/verification/prechecks";
 
 const W = 800;
 const H = 600;
@@ -94,6 +94,28 @@ describe("checkCardPhoto", () => {
   it("tolerates a card that misses one side of the guide", () => {
     const shifted = scene((x, y) => (x > guide.x + guide.width - 20 ? 35 : cardPainter(Math.max(x, guide.x), y)));
     expect(checkCardPhoto(shifted)).not.toContain("no_card");
+  });
+});
+
+// Readings logged from the owner's Pixel 9a on 2026-09-18 (Plan 02 Task 10
+// step 5), on photos the owner judged good. The thresholds have to accept them.
+const PIXEL_9A = {
+  cardEdgeStrengths: [40, 17, 43, 18],
+  cardSharpness: 364,
+  cardGlare: 0,
+  faceSharpness: 40,
+};
+
+describe("thresholds against the owner's Pixel 9a", () => {
+  it("counts enough sides on a card the owner framed correctly", () => {
+    const strong = PIXEL_9A.cardEdgeStrengths.filter((s) => s >= PRECHECK_THRESHOLDS.minEdgeStrength).length;
+    expect(strong).toBeGreaterThanOrEqual(PRECHECK_THRESHOLDS.minEdgeSides);
+  });
+
+  it("leaves room below the readings, so a good photo is not a near miss", () => {
+    expect(PIXEL_9A.cardSharpness).toBeGreaterThan(PRECHECK_THRESHOLDS.minSharpness * 2);
+    expect(PIXEL_9A.faceSharpness).toBeGreaterThan(PRECHECK_THRESHOLDS.minFaceSharpness * 2);
+    expect(PIXEL_9A.cardGlare).toBeLessThan(PRECHECK_THRESHOLDS.maxGlare);
   });
 });
 

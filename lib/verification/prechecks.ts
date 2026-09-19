@@ -13,10 +13,17 @@ export type PrecheckProblem = "blurry" | "glare" | "no_card" | "no_face";
 
 export const CARD_ASPECT = 1.586; // ISO/IEC 7810 ID-1: 85.60 × 53.98 mm
 
+/** Calibrated on the owner's Pixel 9a, 2026-09-18 (Plan 02 Task 10 step 5).
+ *  Its card photos measured sharpness 364–509, glare 0 and edge strengths
+ *  [40, 17, 43, 18] — a card plainly inside the guide, yet only two sides
+ *  passed the old strength of 40. Its face photo measured sharpness 40, right
+ *  on the old blur limit, because skin has far less detail than printed text.
+ *  So a face now has its own blur limit. */
 export const PRECHECK_THRESHOLDS = {
   minSharpness: 40,
+  minFaceSharpness: 15,
   maxGlare: 0.08,
-  minEdgeStrength: 40,
+  minEdgeStrength: 15,
   minEdgeSides: 3,
 } as const;
 
@@ -125,7 +132,7 @@ export function checkCardPhoto(p: Pixels): PrecheckProblem[] {
  *  see the photo. */
 export function checkFacePhoto(p: Pixels, faceCount: number | null): PrecheckProblem[] {
   const problems: PrecheckProblem[] = [];
-  if (sharpness(p) < PRECHECK_THRESHOLDS.minSharpness) problems.push("blurry");
+  if (sharpness(p) < PRECHECK_THRESHOLDS.minFaceSharpness) problems.push("blurry");
   if (faceCount !== null && faceCount < 1) problems.push("no_face");
   return problems;
 }
