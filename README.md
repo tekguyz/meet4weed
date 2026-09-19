@@ -12,8 +12,8 @@ for cannabis, no dispensary ordering. That constraint is load-bearing.
 
 > **Status: early rebuild.** Password sign-in, attestation, member profiles,
 > card verification with an owner review queue, and the expiry lifecycle are
-> built. The phone capture screens need fixes found in the owner's first phone
-> test. Sessions and everything after are designed but not built.
+> built and proven end to end on a real phone with a real card (2026-09-18).
+> Sessions and everything after are designed but not built.
 > See [Build status](#build-status).
 
 ---
@@ -135,6 +135,7 @@ so a change means editing both:
 | `npm run db:push` | Apply new migrations to the linked hosted project |
 | `npm run admin:grant -- <email>` | Make an existing account an admin |
 | `npm run cron:run -- verification-reaper` | Run a cron job against the local dev server (also `expiry-sweep`) |
+| `CRON_BASE_URL=https://localhost:3000 NODE_TLS_REJECT_UNAUTHORIZED=0 npm run cron:run -- …` | The same, while the HTTPS `dev-phone` server is running |
 | `npm run fixtures:vision` | Re-render the synthetic card fixtures |
 | `VISION_LIVE=1 npm run test:vision-live` | Call the real Claude API with the fixtures — **costs about 1 cent per case** |
 
@@ -144,6 +145,11 @@ LAN with a self-signed certificate from `private/dev-cert/` (git-ignored; make
 one with `openssl req -x509 … -addext "subjectAltName=IP:<LAN IP>"`), and
 `DEV_LAN_HOST` in `.env.local` lets Next.js accept that origin. The phone shows
 one certificate warning.
+
+While that HTTPS server is the one running, `npm run cron:run` needs
+`CRON_BASE_URL=https://localhost:3000` and `NODE_TLS_REJECT_UNAUTHORIZED=0`,
+because it defaults to `http://localhost:3000` and the certificate is
+self-signed.
 
 There is no local-database script. `supabase start`, `db reset`, `db diff` and
 `test db` all need Docker, which this project does not use.
@@ -231,7 +237,7 @@ The rebuild follows one spec and seven plans.
 | Plan | Builds | Status |
 | :-- | :-- | :-- |
 | 01 | Scaffold, design tokens, auth, profiles | **Done** |
-| 02 | Password auth, card verification with owner review queue, cost caps, expiry lifecycle | **Built — phone capture fixes pending** (see the plan's STATUS) |
+| 02 | Password auth, card verification with owner review queue, cost caps, expiry lifecycle | **Done** |
 | 03 | Sessions, map, RSVP, address unlock | Next |
 | 04 | Strains on deck, bring list, invite links | — |
 | 05 | Notifications, push, installable PWA | — |

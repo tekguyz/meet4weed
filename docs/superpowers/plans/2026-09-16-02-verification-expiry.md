@@ -12,18 +12,54 @@
 
 **Spec:** `docs/superpowers/specs/2026-09-16-meet4weed-rebuild-design.md` — §4 (all of it), §6, §8, §9, §10 steps 2–4, §11 verification queue and spend.
 
-> **STATUS: BUILT, CAPTURE FIXES PENDING (2026-09-16). Read this before copying any step.**
+> **STATUS: COMPLETE (2026-09-18). Read this before copying any step.**
 >
-> - **Tasks 1–9 shipped** (commits `2fbf1bb` … `fa4729d`), each with its gates green. At the last run: 215 tests passing, 4 skipped (the live Claude file), with all four security files running against the hosted project.
-> - **Task 10 is partly done.** Done: the live Claude run (Step 1–2, cost below), the owner made admin (Step 3), the phone reaching the dev server over HTTPS (Step 4, commit `46275b7`), the spec amendments (Step 6). **The owner's phone test (Step 5) stopped at the face step** and found the eight problems in "Findings from the owner's phone test" below. No submission was sent, so no real photo was stored.
-> - **Measured cost:** mean **$0.0088 per check** (4 calls, 3,237 input tokens each, 157–341 output). Recorded in spec §4.4.
-> - **To close Plan 02:** fix findings 1–6, repeat Task 10 Step 5 on the phone through approval, calibrate the pre-check thresholds, then Steps 7–10. Findings 7–8 need a decision or research first.
+> - **Tasks 1–10 shipped.** At the last run: 233 tests passing, 4 skipped (the
+>   live Claude file), with all four database security files running against
+>   the hosted project.
+> - **Proven end to end on the owner's Pixel 9a with a real card, 2026-09-18:**
+>   capture → Claude read → owner email → `/admin/verifications` → approve →
+>   both image URLs 404 → `cron:run verification-reaper` reported
+>   `{"removed":0,"lapsed":0}` → the member shows as verified.
+> - **Measured cost:** mean **$0.0088 per check** (4 calls, 3,237 input tokens
+>   each, 157–341 output). Recorded in spec §4.4.
+> - **Findings 1–6 of the phone test shipped** (commits `3828e76`, `b770642`,
+>   `44c441e`, `4a6249b`, `ed6d6db`, `b72bfd3`) and the thresholds were
+>   calibrated (`4a58e20`). All of it is in Task 7's AMENDED block.
+> - **Finding 7 (patient ID hint) — researched, not built.** No public source
+>   states the Florida MMUR patient ID format: §381.986(7)(a) F.S. requires only
+>   "the unique numeric identifier used for the qualified patient", Fla. Admin.
+>   Code R. 64-4.011 does not describe the card's printing, and the OMMU's own
+>   pages and patient guide do not state a pattern. The owner's card was never
+>   used as a source. So the screen keeps a generic hint; do not invent a mask.
+> - **Finding 8 (card back) — decided: not now** (owner, 2026-09-18). It would
+>   add about $0.002 per check for little checking value. Revisit if forged
+>   cards appear.
 >
 > Steps that did not ship as written:
 >
-> - **Task 7** — the signed-in browser check (Step 11) was not run: it needs the owner's password. The proxy matcher also had to exclude `public/mediapipe/` (commit `46275b7`): the ~12 MB runtime was being sent through the session check.
-> - **Task 8** — the image-route test wraps its `Buffer` in `Uint8Array` (TypeScript refused `Buffer` as a `BlobPart`); `secret-boundary.test.ts` now exempts every `app/` file without `"use client"` from the `server-only` rule, not only routes and actions, because `app/admin/page.tsx` reads the ceiling from `serverEnv()`. The signed-in non-admin browser check was not run (password).
-> - **Task 10 Step 4** — the phone path uses `.claude/launch.json` → `dev-phone`: HTTPS on `0.0.0.0` with a 30-day self-signed certificate in the git-ignored `private/dev-cert/`, and `DEV_LAN_HOST` in `.env.local` allowed by `next.config.ts`. Nothing was installed into the Windows trust store. `next dev --experimental-https` without a key and cert would have tried to.
+> - **Task 7** — the signed-in browser check (Step 11) was not run: it needs the
+>   owner's password. The proxy matcher also had to exclude `public/mediapipe/`
+>   (commit `46275b7`): the ~12 MB runtime was being sent through the session
+>   check. The capture screens then changed again after the phone test — see the
+>   AMENDED block on that task.
+> - **Task 8** — the image-route test wraps its `Buffer` in `Uint8Array`
+>   (TypeScript refused `Buffer` as a `BlobPart`); `secret-boundary.test.ts` now
+>   exempts every `app/` file without `"use client"` from the `server-only`
+>   rule, not only routes and actions, because `app/admin/page.tsx` reads the
+>   ceiling from `serverEnv()`. The signed-in non-admin browser check was not
+>   run (password).
+> - **Task 10 Step 4** — the phone path uses `.claude/launch.json` → `dev-phone`:
+>   HTTPS on `0.0.0.0` with a 30-day self-signed certificate in the git-ignored
+>   `private/dev-cert/`, and `DEV_LAN_HOST` in `.env.local` allowed by
+>   `next.config.ts`. Nothing was installed into the Windows trust store.
+>   `next dev --experimental-https` without a key and cert would have tried to.
+> - **Task 10 Step 5** — run twice. The first attempt (2026-09-16) stopped at the
+>   face step and produced the eight findings below. The second (2026-09-18) ran
+>   through approval. `npm run cron:run` needed
+>   `CRON_BASE_URL=https://localhost:3000` and `NODE_TLS_REJECT_UNAUTHORIZED=0`,
+>   because it defaults to HTTP and the dev certificate is self-signed; that is
+>   now in the README.
 >
 > ### Findings from the owner's phone test (Pixel 9a, 2026-09-16)
 >
@@ -4297,6 +4333,46 @@ git push
 
 ---
 
+> ### AMENDED DURING EXECUTION (2026-09-18) — capture fixes and threshold calibration
+>
+> The owner's phone test (Task 10 step 5) found eight problems with the capture
+> screens, listed in the STATUS block. Findings 1–6 shipped after Task 7, each
+> with a test:
+>
+> - **Finding 1** (`3828e76`): the viewfinder keeps the video's aspect ratio but
+>   is capped at 60dvh through its *width* (`viewfinderWidth()`), so the guide
+>   still covers the pixels `cardGuide()` reads; the shutter is sticky, and a
+>   tap on the viewfinder takes the photo.
+> - **Finding 2** (`b770642`): the captured frame is shown with "Use it" and
+>   "Retake". The camera is hidden, not unmounted, so Retake needs no restart.
+> - **Finding 3** (`44c441e`): `CHALLENGES` are face-only, and the face step has
+>   a visible 3-second self-timer (`FACE_TIMER_SECONDS`). Spec §4.1 step 5
+>   changed with it.
+> - **Finding 4** (`4a6249b`): the same pre-checks run on a 320 px live frame
+>   every 400 ms (`lib/verification/live-hint.ts`) and show one hint over the
+>   viewfinder. The full-size check after the shot stays the gate.
+> - **Finding 5** (`ed6d6db`): the patient ID is upper-cased in the input and by
+>   the zod schema in `submit.ts`.
+> - **Finding 6** (`b72bfd3`): `lib/verification/mediapipe-noise.ts` filters the
+>   one XNNPACK info line. It installs before the runtime loads, because
+>   Emscripten binds `console.error` when its script loads.
+>
+> **Threshold calibration (`4a58e20`), measured on the owner's Pixel 9a,
+> 2026-09-18.** Readings were logged from real photos the owner judged good, by
+> a temporary dev-only route that printed numbers and never pixels; it was
+> removed afterwards.
+>
+> | Threshold | Before | After | Measured on the phone | Why |
+> |---|---|---|---|---|
+> | `minEdgeStrength` | 40 | **15** | card edges `[40, 17, 43, 18]` | A card plainly inside the guide had only two sides above 40, so a good photo was called "no card". |
+> | `minFaceSharpness` | *(none; used `minSharpness` 40)* | **15** | face sharpness `40` | Skin holds far less detail than printed text, so a good selfie sat exactly on the card's blur limit. |
+> | `minSharpness` | 40 | 40 | card sharpness `364`–`509` | Unchanged: nine times the limit. |
+> | `maxGlare` | 0.08 | 0.08 | glare `0` | Unchanged; no glare sample was logged this round. |
+>
+> `edgeSides()` was split into `edgeStrengths()` plus a count (`3423b88`) so the
+> strengths could be measured. `lib/verification/__tests__/prechecks.test.ts`
+> holds the measured readings and fails if a threshold is raised past them.
+
 ## Task 8: Admin review queue and spend
 
 **Effort: High.**
@@ -5640,7 +5716,7 @@ git push
 - Modify: `lib/verification/prechecks.ts` (only if calibration moves a threshold)
 - Modify: this plan (STATUS banner; AMENDED blocks wherever execution departed from a written step)
 
-- [ ] **Step 1: The first live Claude run, with the cost stated first**
+- [x] **Step 1: The first live Claude run, with the cost stated first**
 
 Tell the owner: 4 calls to `claude-sonnet-5` with synthetic images, estimated 3–6 cents in total, against the $5 monthly limit. Run only after a yes:
 
@@ -5650,11 +5726,11 @@ VISION_LIVE=1 npm run test:vision-live
 
 Expected: 4 PASS, and the `TOTAL` line. Record the per-call tokens and the mean cost per check. If a reading assertion fails, look at the reading before touching the prompt: a fixture problem (unreadable render) is fixed in the fixture script.
 
-- [ ] **Step 2: Record the measured cost in the spec**
+- [x] **Step 2: Record the measured cost in the spec**
 
 Replace the "Measured cost, to be confirmed on the first real call" paragraph in §4.4 with the measured numbers, the date, the model, the image sizes (1000×630 and 1000×750) and the effort level (`low`). Report the same numbers to the owner.
 
-- [ ] **Step 3: Make the owner an admin**
+- [x] **Step 3: Make the owner an admin**
 
 Ask which account. Then:
 
@@ -5664,7 +5740,7 @@ npm run admin:grant -- <the owner's sign-in email>
 
 Expected: `Done: that account is an admin.`
 
-- [ ] **Step 4: Decide how the phone reaches the dev server**
+- [x] **Step 4: Decide how the phone reaches the dev server**
 
 The camera needs a secure context: `localhost` on this computer, or HTTPS. Offer the owner two options:
 
@@ -5673,7 +5749,7 @@ The camera needs a secure context: `localhost` on this computer, or HTTPS. Offer
 
 Recommend option 2: the pre-check thresholds need a real phone camera.
 
-- [ ] **Step 5: The owner's hand test**
+- [x] **Step 5: The owner's hand test**
 
 Real photos never enter the repo. Ask the owner whether to use their real card (it goes to Claude and to the encrypted bucket, and is deleted on decision) or a printed specimen. Then walk through, and have the owner report each result:
 
@@ -5689,7 +5765,7 @@ Real photos never enter the repo. Ask the owner whether to use their real card (
 
 Record every threshold the owner's phone needed changed, with before and after values, in an AMENDED block on Task 7.
 
-- [ ] **Step 6: Amend the spec**
+- [x] **Step 6: Amend the spec**
 
 - §4.1 step 6: the face detector is MediaPipe BlazeFace, ~2.7 MB loaded on the face step only (measured 2026-09-16).
 - §4.2: images are encrypted by the app with AES-256-GCM before upload; the admin screen streams them through an admin-only route rather than Storage signed URLs, which would serve ciphertext.
@@ -5697,22 +5773,22 @@ Record every threshold the owner's phone needed changed, with before and after v
 - §4.4: item 3 names the defaults (3 per member, 10 per IP); item 4 notes the limiter fails closed for Claude when Upstash is unreachable; the measured cost (Step 2).
 - §11: "gated by a `role` claim" becomes "gated by the `admins` table, read through `private.is_admin()`", with the reason from this plan's decisions table.
 
-- [ ] **Step 7: Update README, CLAUDE.md and the handoff skill**
+- [x] **Step 7: Update README, CLAUDE.md and the handoff skill**
 
 - `README.md`: status line; Stack (Claude, Upstash, Resend now used by code); the env table (`VERIFICATION_SECRET`, `CRON_SECRET`, `OWNER_ALERT_EMAIL`, `VISION_DAILY_CEILING`); Scripts (`admin:grant`, `cron:run`, `fixtures:vision`, `test:vision-live`); Tests (the three new security files, the live test); Project layout (`lib/verification`, `lib/admin`, `lib/member`, `app/admin`, `app/verify`, `app/api`); Build status row 02 → **Done**, row 03 → Next.
 - `CLAUDE.md`: "every module that reads a server secret imports `server-only`, and only `lib/server-env.ts` reads them from the environment"; "real card or face photos for a hand test live in `private/`"; the new scripts.
 - `.claude/skills/handoff/SKILL.md`: only if a heading it quotes as a source moved. Confirm with `grep -n "^### 4\|^## 11\|^## 1\." docs/superpowers/specs/2026-09-16-meet4weed-rebuild-design.md`.
 
-- [ ] **Step 8: Close the plan**
+- [x] **Step 8: Close the plan**
 
 Add a STATUS banner under this plan's header in the same shape as Plan 01's: complete, the date, and a list of every task whose steps did not ship as written, pointing at its AMENDED block.
 
-- [ ] **Step 9: Final gates**
+- [x] **Step 9: Final gates**
 
 Run: `npm run typecheck && npm test && npm run build`
 Expected: exit 0. Report the test count and that all four security files ran (`profiles-rls`, `verification-rls`, `verification-store`, `verification-reaper`).
 
-- [ ] **Step 10: Commit and push**
+- [x] **Step 10: Commit and push**
 
 ```bash
 git add docs README.md CLAUDE.md .claude/skills/handoff/SKILL.md lib/verification/prechecks.ts
