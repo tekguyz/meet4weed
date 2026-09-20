@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, daysBetween, floridaToday, floridaWallClockToInstant } from "@/lib/dates";
+import { addDays, daysBetween, floridaToday, floridaWallClock, floridaWallClockToInstant } from "@/lib/dates";
 
 describe("floridaToday", () => {
   it("is still yesterday in Florida late in the UTC evening (daylight time)", () => {
@@ -34,5 +34,18 @@ describe("floridaWallClockToInstant", () => {
   it("refuses something that is not a wall-clock value", () => {
     expect(floridaWallClockToInstant("next tuesday")).toBeNull();
     expect(floridaWallClockToInstant("2026-09-25")).toBeNull();
+  });
+});
+
+describe("floridaWallClock", () => {
+  /** The edit screen has to put back into the picker exactly what the host
+   *  typed. Expected values are the same worked examples as above, read the
+   *  other way round. */
+  it("turns an instant back into the wall clock a host typed, on daylight time", () => {
+    expect(floridaWallClock(new Date("2026-09-26T00:00:00Z"))).toBe("2026-09-25T20:00");
+  });
+
+  it("does the same on standard time", () => {
+    expect(floridaWallClock(new Date("2026-01-16T01:00:00Z"))).toBe("2026-01-15T20:00");
   });
 });

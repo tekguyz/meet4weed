@@ -68,3 +68,13 @@ export function floridaWallClockToInstant(local: string): Date | null {
   const instant = new Date(naive + floridaOffsetMs(new Date(naive)));
   return Number.isNaN(instant.getTime()) ? null : instant;
 }
+
+/** The inverse of floridaWallClockToInstant: an instant rendered as the
+ *  `datetime-local` value a host would have typed. The edit screen has to put
+ *  back exactly what they entered, not what their laptop's clock thinks. */
+export function floridaWallClock(at: Date): string {
+  const parts = FLORIDA_PARTS.formatToParts(at);
+  const value = (type: string) => parts.find((p) => p.type === type)!.value;
+  const hour = String(Number(value("hour")) % 24).padStart(2, "0");
+  return `${value("year")}-${value("month")}-${value("day")}T${hour}:${value("minute")}`;
+}

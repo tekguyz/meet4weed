@@ -63,8 +63,14 @@ function SeshCard({ sesh }: { sesh: SeshListItem }) {
       </div>
       <p className="text-sm text-ink-muted">{WHEN.format(new Date(sesh.startsAt))} ET</p>
       <p className="text-sm text-ink-muted">
-        {cancelled ? "Cancelled" : `Room for ${sesh.capacity} guest${sesh.capacity === 1 ? "" : "s"}`}
+        {sesh.areaName ? `${sesh.areaName} · ` : ""}
+        {cancelled ? "Cancelled" : `room for ${sesh.capacity} guest${sesh.capacity === 1 ? "" : "s"}`}
       </p>
+      {cancelled ? null : (
+        <Link href={`/seshes/${sesh.id}/edit`} className="text-sm font-semibold text-primary underline">
+          Edit
+        </Link>
+      )}
     </article>
   );
 }

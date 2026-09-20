@@ -101,3 +101,27 @@ h3 {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Map styles.
+
+   The one place a raw colour value is unavoidable: an OpenFreeMap style is a
+   whole JSON document of colours that MapLibre fetches, not something token
+   classes can reach. Naming the two URLs here keeps components free of them,
+   so the theme still swaps in exactly one file.
+
+   OpenFreeMap needs no key and no account, and MapLibre adds its required
+   OpenFreeMap / OpenMapTiles / OpenStreetMap attribution itself.
+--------------------------------------------------------------------------- */
+
+:root {
+  --map-style: url("https://tiles.openfreemap.org/styles/dark");
+  /* MapLibre paints in its own style document, so it cannot take a token
+     class. sRGB, because a map style is not CSS and does not read oklch(). */
+  --map-accent: #b4d982;
+}
+
+.light {
+  --map-style: url("https://tiles.openfreemap.org/styles/positron");
+  --map-accent: #5f7f36;
+}

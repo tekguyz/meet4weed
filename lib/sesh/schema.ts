@@ -59,6 +59,14 @@ export const seshInputSchema = z.object({
     .max(200, "Keep the address under 200 characters."),
   unitNote: z.string().trim().max(60, "Keep it under 60 characters.").optional(),
   gateCode: z.string().trim().max(40, "Keep it under 40 characters.").optional(),
+  /** Mirrors seshes_area_name_length. Usually filled in by the lookup; a host
+   *  can overwrite it. The limit is the backstop for pasting a street into a
+   *  field the whole app can read. */
+  areaName: z
+    .string()
+    .trim()
+    .max(40, "That looks like an address. A neighbourhood name is enough.")
+    .optional(),
 });
 
 export type SeshInput = z.infer<typeof seshInputSchema>;
