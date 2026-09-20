@@ -13,6 +13,10 @@ import type { ActionState } from "@/lib/forms/action-state";
  *  the same code, and a member can act on neither. One message covers both
  *  reasons a host's own write can bounce. */
 const INSUFFICIENT_PRIVILEGE = "42501";
+/** Raised by seshes_guard_capacity. It gets its own code so this screen can
+ *  say how many people are already in; an RLS refusal would arrive as 42501,
+ *  indistinguishable from every other reason a write can bounce. */
+const CAPACITY_BELOW_APPROVED = "M4W16";
 const REFUSED =
   "Could not post that sesh. Check your card is still current, and that you do not already have five open seshes.";
 const CHECK_FIELDS = "Check the highlighted fields.";
@@ -171,6 +175,22 @@ export async function editSesh(
     })
     .eq("id", id.data);
 
+  if (error?.code === CAPACITY_BELOW_APPROVED) {
+    // Only on the failure path, so the happy path stays one round trip.
+    const { data: sesh } = await supabase
+      .from("seshes")
+      .select("approved_count")
+      .eq("id", id.data)
+      .single();
+    const approved = (sesh?.approved_count as number | undefined) ?? 0;
+    return {
+      ok: false,
+      message: CHECK_FIELDS,
+      fieldErrors: {
+        capacity: `You have ${approved} ${approved === 1 ? "person" : "people"} approved. Remove somebody first, or keep room for them.`,
+      },
+    };
+  }
   if (error?.code === INSUFFICIENT_PRIVILEGE) return { ok: false, message: REFUSED };
   if (error) return { ok: false, message: "Could not save that. Try again." };
 
