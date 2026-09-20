@@ -1,6 +1,6 @@
 import "server-only";
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
-import { deriveKey } from "@/lib/keys";
+import { deriveKey } from "@/lib/derived-keys";
 
 /**
  * AES-256-GCM, stored as iv (12 bytes) | auth tag (16 bytes) | ciphertext.

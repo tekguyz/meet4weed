@@ -7,7 +7,7 @@
  *  verifying. The move must not touch a single byte.
  */
 import { describe, expect, it } from "vitest";
-import { deriveKey } from "@/lib/keys";
+import { deriveKey } from "@/lib/derived-keys";
 import { verifyChallengeToken } from "@/lib/verification/challenge-token";
 import { CHALLENGES } from "@/lib/verification/challenges";
 
