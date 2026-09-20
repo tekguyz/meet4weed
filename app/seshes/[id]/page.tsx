@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AddressPanel } from "@/components/sesh/address-panel";
+import { ChangedBanner } from "@/components/sesh/changed-banner";
 import { AskToJoin, DecideButtons, WithdrawRsvp } from "@/components/sesh/rsvp-buttons";
 import { floridaToday } from "@/lib/dates";
 import { memberAccess } from "@/lib/member/gate";
@@ -158,6 +159,9 @@ function GuestActions({
           <p role="status" className="rounded-card bg-surface p-4 text-sm text-ink">
             You are going.
           </p>
+          {/* Only an approved guest gets this: nobody else was told a time or
+              a place to have it changed out from under them. */}
+          <ChangedBanner changedAt={sesh.materiallyChangedAt} startsAt={sesh.startsAt} />
           <WithdrawRsvp seshId={sesh.id} approved />
           <div className="flex flex-col gap-2">
             <h2 className="text-lg">Who else is coming ({approved.length})</h2>

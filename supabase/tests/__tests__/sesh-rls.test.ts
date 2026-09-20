@@ -254,6 +254,73 @@ describe.skipIf(!configured)("sesh row-level security", () => {
     });
   });
 
+  describe("the host-changed stamp", () => {
+    /** A sesh must not move under its guests in silence. The stamp is what
+     *  the banner reads; what counts as "moved" is decided here, not by a
+     *  screen. */
+    it("is set when the pin moves more than a kilometre", async () => {
+      const { data: sesh } = await create(host);
+
+      // About 2.2 km north.
+      await host.db.from("seshes").update({ exact_lat: TAMPA.lat + 0.02 }).eq("id", sesh!.id);
+
+      const { data } = await service.from("seshes").select("materially_changed_at").eq("id", sesh!.id).single();
+      expect(data!.materially_changed_at).not.toBeNull();
+    });
+
+    it("is left alone when the pin barely moves", async () => {
+      const { data: sesh } = await create(host);
+
+      // About 22 m.
+      await host.db.from("seshes").update({ exact_lat: TAMPA.lat + 0.0002 }).eq("id", sesh!.id);
+
+      const { data } = await service.from("seshes").select("materially_changed_at").eq("id", sesh!.id).single();
+      expect(data!.materially_changed_at).toBeNull();
+    });
+
+    it("is set when the start time moves more than an hour", async () => {
+      const { data: sesh } = await create(host);
+
+      await host.db.from("seshes").update({ starts_at: hoursFromNow(52) }).eq("id", sesh!.id);
+
+      const { data } = await service.from("seshes").select("materially_changed_at").eq("id", sesh!.id).single();
+      expect(data!.materially_changed_at).not.toBeNull();
+    });
+
+    it("is left alone when the start time shifts by half an hour", async () => {
+      const { data: sesh } = await create(host);
+
+      await host.db.from("seshes").update({ starts_at: hoursFromNow(48.5) }).eq("id", sesh!.id);
+
+      const { data } = await service.from("seshes").select("materially_changed_at").eq("id", sesh!.id).single();
+      expect(data!.materially_changed_at).toBeNull();
+    });
+
+    /** Otherwise the banner cries wolf and people stop reading it. */
+    it("is left alone by a typo fix", async () => {
+      const { data: sesh } = await create(host);
+
+      await host.db
+        .from("seshes")
+        .update({ title: "Renamed", description: "New words", capacity: 4, sesh_type: "outdoors" })
+        .eq("id", sesh!.id);
+
+      const { data } = await service.from("seshes").select("materially_changed_at").eq("id", sesh!.id).single();
+      expect(data!.materially_changed_at).toBeNull();
+    });
+
+    it("cannot be written by the host, but can by service_role", async () => {
+      const { data: sesh } = await create(host);
+      const now = new Date().toISOString();
+
+      const asHost = await host.db.from("seshes").update({ materially_changed_at: now }).eq("id", sesh!.id);
+      const asService = await service.from("seshes").update({ materially_changed_at: now }).eq("id", sesh!.id);
+
+      expect(asHost.error?.code).toBe(INSUFFICIENT_PRIVILEGE);
+      expect(asService.error).toBeNull();
+    });
+  });
+
   describe("browsing", () => {
     it("shows an open sesh to any verified member", async () => {
       const { data: sesh } = await create(host);
