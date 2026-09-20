@@ -258,11 +258,11 @@ describe.skipIf(!configured)("sesh row-level security", () => {
     /** A sesh must not move under its guests in silence. The stamp is what
      *  the banner reads; what counts as "moved" is decided here, not by a
      *  screen. */
-    it("is set when the pin moves more than a kilometre", async () => {
+    it("is set when the pin moves more than a mile", async () => {
       const { data: sesh } = await create(host);
 
-      // About 2.2 km north.
-      await host.db.from("seshes").update({ exact_lat: TAMPA.lat + 0.02 }).eq("id", sesh!.id);
+      // About 2.2 miles north.
+      await host.db.from("seshes").update({ exact_lat: TAMPA.lat + 0.032 }).eq("id", sesh!.id);
 
       const { data } = await service.from("seshes").select("materially_changed_at").eq("id", sesh!.id).single();
       expect(data!.materially_changed_at).not.toBeNull();
@@ -271,8 +271,20 @@ describe.skipIf(!configured)("sesh row-level security", () => {
     it("is left alone when the pin barely moves", async () => {
       const { data: sesh } = await create(host);
 
-      // About 22 m.
+      // About 70 feet.
       await host.db.from("seshes").update({ exact_lat: TAMPA.lat + 0.0002 }).eq("id", sesh!.id);
+
+      const { data } = await service.from("seshes").select("materially_changed_at").eq("id", sesh!.id).single();
+      expect(data!.materially_changed_at).toBeNull();
+    });
+
+    /** The boundary the owner asked for. Just over half a mile used to stamp
+     *  when the rule was a kilometre; it must not now. */
+    it("is left alone when the pin moves less than a mile", async () => {
+      const { data: sesh } = await create(host);
+
+      // About 0.76 of a mile north — over a kilometre, under a mile.
+      await host.db.from("seshes").update({ exact_lat: TAMPA.lat + 0.011 }).eq("id", sesh!.id);
 
       const { data } = await service.from("seshes").select("materially_changed_at").eq("id", sesh!.id).single();
       expect(data!.materially_changed_at).toBeNull();

@@ -40,7 +40,7 @@ export function AddressPanel({ address, areaName }: Props) {
       ) : (
         <p className="text-sm text-ink-muted">
           {areaName ? `Somewhere in ${areaName}. ` : ""}
-          The map shows a circle about 800 m across. The exact address appears once the host has
+          The map shows a circle about half a mile across. The exact address appears once the host has
           approved you.
         </p>
       )}
