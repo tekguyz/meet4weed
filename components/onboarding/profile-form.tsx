@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { saveProfile, type ActionState } from "@/app/onboarding/actions";
+import { saveProfile } from "@/app/onboarding/actions";
+import type { ActionState } from "@/lib/forms/action-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {

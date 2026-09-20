@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { recordAttestation, type ActionState } from "@/app/onboarding/actions";
+import { recordAttestation } from "@/app/onboarding/actions";
+import type { ActionState } from "@/lib/forms/action-state";
 import { Button } from "@/components/ui/button";
 
 const CLAIMS = [
