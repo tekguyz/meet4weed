@@ -10,7 +10,7 @@ import { FEED_PAGE_SIZE, MAP_LIMIT, type FeedFilters } from "@/lib/sesh/feed-fil
  *  private ones — it fails the whole query with 42501. Proved in
  *  supabase/tests/__tests__/sesh-rls.test.ts. */
 const LIST_COLUMNS =
-  "id, host_id, title, description, sesh_type, starts_at, capacity, status, area_name, approved_count, fuzzy_lat, fuzzy_lng, fuzzy_radius_m";
+  "id, host_id, title, description, sesh_type, starts_at, capacity, status, area_name, approved_count, materially_changed_at, fuzzy_lat, fuzzy_lng, fuzzy_radius_m";
 
 export type SeshListItem = {
   id: string;
@@ -23,6 +23,7 @@ export type SeshListItem = {
   status: SeshStatus;
   areaName: string | null;
   approvedCount: number;
+  materiallyChangedAt: string | null;
   fuzzyLat: number | null;
   fuzzyLng: number | null;
   fuzzyRadiusM: number;
@@ -42,6 +43,7 @@ function toListItem(row: Row): SeshListItem {
     status: row.status as SeshStatus,
     areaName: (row.area_name as string | null) ?? null,
     approvedCount: (row.approved_count as number | null) ?? 0,
+    materiallyChangedAt: (row.materially_changed_at as string | null) ?? null,
     fuzzyLat: (row.fuzzy_lat as number | null) ?? null,
     fuzzyLng: (row.fuzzy_lng as number | null) ?? null,
     fuzzyRadiusM: row.fuzzy_radius_m as number,
