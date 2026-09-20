@@ -15,7 +15,7 @@ const Schema = z.object({
   UPSTASH_REDIS_REST_URL: z.url(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1),
   RESEND_API_KEY: z.string().min(1),
-  // Root of the image-encryption and challenge-signing keys (lib/verification/keys.ts).
+  // Root of the image-encryption and challenge-signing keys (lib/derived-keys.ts).
   VERIFICATION_SECRET: z.string().refine((v) => Buffer.from(v, "base64").length >= 32),
   // Vercel Cron sends it as a bearer token.
   CRON_SECRET: z.string().min(32),
