@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CreateSeshForm } from "@/components/sesh/create-form";
+import { SeshForm } from "@/components/sesh/sesh-form";
+import { createSesh } from "@/app/seshes/actions";
 import { getMyProfile } from "@/lib/profiles/queries";
 import { floridaToday } from "@/lib/dates";
 import { memberAccess } from "@/lib/member/gate";
@@ -38,7 +39,7 @@ export default async function NewSeshPage() {
         </p>
       </header>
 
-      <CreateSeshForm />
+      <SeshForm action={createSesh} submitLabel="Post the sesh" pendingLabel="Posting…" />
     </main>
   );
 }

@@ -229,6 +229,31 @@ describe.skipIf(!configured)("sesh row-level security", () => {
     });
   });
 
+  describe("the area name", () => {
+    it("is written by the host and readable by anybody browsing", async () => {
+      const { data: sesh } = await create(host);
+
+      const write = await host.db.from("seshes").update({ area_name: "Riverside" }).eq("id", sesh!.id);
+      const { data } = await stranger.db.from("seshes").select("area_name").eq("id", sesh!.id).single();
+
+      expect(write.error).toBeNull();
+      expect(data!.area_name).toBe("Riverside");
+    });
+
+    /** The column is the backstop for a host pasting their street into a
+     *  public field. The form warns; this refuses. */
+    it("refuses a name long enough to hide a street address in", async () => {
+      const { data: sesh } = await create(host);
+
+      const { error } = await host.db
+        .from("seshes")
+        .update({ area_name: "1600 Pennsylvania Avenue Northwest, Washington" })
+        .eq("id", sesh!.id);
+
+      expect(error).not.toBeNull();
+    });
+  });
+
   describe("browsing", () => {
     it("shows an open sesh to any verified member", async () => {
       const { data: sesh } = await create(host);

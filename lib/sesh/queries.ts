@@ -9,7 +9,7 @@ import type { SeshStatus, SeshType } from "@/lib/sesh/schema";
  *  private ones — it fails the whole query with 42501. Proved in
  *  supabase/tests/__tests__/sesh-rls.test.ts. */
 const LIST_COLUMNS =
-  "id, host_id, title, description, sesh_type, starts_at, capacity, status, fuzzy_lat, fuzzy_lng, fuzzy_radius_m";
+  "id, host_id, title, description, sesh_type, starts_at, capacity, status, area_name, fuzzy_lat, fuzzy_lng, fuzzy_radius_m";
 
 export type SeshListItem = {
   id: string;
@@ -20,6 +20,7 @@ export type SeshListItem = {
   startsAt: string;
   capacity: number;
   status: SeshStatus;
+  areaName: string | null;
   fuzzyLat: number | null;
   fuzzyLng: number | null;
   fuzzyRadiusM: number;
@@ -37,6 +38,7 @@ function toListItem(row: Row): SeshListItem {
     startsAt: row.starts_at as string,
     capacity: row.capacity as number,
     status: row.status as SeshStatus,
+    areaName: (row.area_name as string | null) ?? null,
     fuzzyLat: (row.fuzzy_lat as number | null) ?? null,
     fuzzyLng: (row.fuzzy_lng as number | null) ?? null,
     fuzzyRadiusM: row.fuzzy_radius_m as number,
@@ -59,6 +61,16 @@ export async function listMySeshes(): Promise<SeshListItem[]> {
     .order("starts_at", { ascending: true });
 
   return (data ?? []).map(toListItem);
+}
+
+/** One sesh the caller hosts, for the edit screen. The address is fetched
+ *  separately through sesh_address(): it is not on the table as far as
+ *  `authenticated` is concerned, and naming it here would fail the whole
+ *  query with 42501. */
+export async function getMySesh(id: string): Promise<SeshListItem | null> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("seshes").select(LIST_COLUMNS).eq("id", id).maybeSingle();
+  return data ? toListItem(data as Row) : null;
 }
 
 export type SeshAddress = {
