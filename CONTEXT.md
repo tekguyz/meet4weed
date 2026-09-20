@@ -50,14 +50,14 @@ The only way to read them is `public.sesh_address()`.
 ## Fuzzy point, fuzzy circle
 
 The public stand-in for the exact location: `fuzzy_lat`, `fuzzy_lng`, and
-`fuzzy_radius_m` (400, so the circle is about 800 m across). Written by a
+`fuzzy_radius_m` (400, so the circle is about half a mile across). Written by a
 trigger, never by a host.
 
 The offset is a **fixed function of the address**, not a random number per
 sesh. One home always produces one circle. A host running ten seshes therefore
 gives nobody ten samples to average back to the house.
 
-The offset is between **150 m and 400 m**. The floor exists because a host
+The offset is between **500 feet and a quarter of a mile**. The floor exists because a host
 cannot reshuffle their own circle — it is a function of their address — so the
 guarantee replaces the reshuffle: the circle is never centred on the door.
 

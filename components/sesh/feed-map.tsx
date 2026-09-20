@@ -49,7 +49,7 @@ export function FeedMap({ circles }: Props) {
           {asking ? "Asking…" : "Near me"}
         </button>
         <p className="text-sm text-ink-muted">
-          Each circle is about 800 m across. Nobody&apos;s address is on this map.
+          Each circle is about half a mile across. Nobody&apos;s address is on this map.
         </p>
       </div>
 

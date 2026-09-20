@@ -1,7 +1,7 @@
 /**
  * "The host changed this sesh."
  *
- * Shown to an approved guest when the pin has moved more than a kilometre or
+ * Shown to an approved guest when the pin has moved more than a mile or
  * the start time by more than an hour. What counts as a change is decided by
  * a trigger in Postgres; this only reads the stamp.
  *

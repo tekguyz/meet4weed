@@ -35,7 +35,7 @@ export function LocationPicker({ defaultPoint = null, fieldError }: Props) {
 
       {point ? (
         <p role="status" className="text-sm text-ink-muted">
-          The shaded circle is what the feed and the map show — about 800 m across, and never
+          The shaded circle is what the feed and the map show — about half a mile across, and never
           centred on your door. It is the same circle every time you host here.
         </p>
       ) : (

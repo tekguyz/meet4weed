@@ -12,6 +12,16 @@ export async function GET(request: NextRequest) {
     return new NextResponse(null, { status: 401 });
   }
   const today = floridaToday();
+  const db = createAdminClient();
   const send = expiryMailerFromEnv(`${request.nextUrl.origin}/verify`, today);
-  return NextResponse.json(await runExpirySweep(createAdminClient(), today, send));
+
+  const sweep = await runExpirySweep(db, today, send);
+
+  // Rides here rather than taking a third cron job: vercel.json already
+  // registers two and the plan does not allow another. expiry_sweep() itself
+  // is untouched — it has been running against real members since Plan 02.
+  const { data: wiped, error } = await db.rpc("sesh_address_reaper");
+  if (error) throw new Error(`sesh_address_reaper failed: ${error.code}`);
+
+  return NextResponse.json({ ...sweep, addressesWiped: Number(wiped ?? 0) });
 }
