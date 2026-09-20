@@ -143,7 +143,7 @@ so a change means editing both:
 | `npm run db:push` | Apply new migrations to the linked hosted project |
 | `npm run admin:grant -- <email>` | Make an existing account an admin |
 | `npm run cron:run -- verification-reaper` | Run a cron job against the local dev server (also `expiry-sweep`) |
-| `CRON_BASE_URL=https://localhost:3000 NODE_TLS_REJECT_UNAUTHORIZED=0 npm run cron:run -- …` | The same, while the HTTPS `dev-phone` server is running |
+| `npm run cron:run -- verification-reaper --https` | The same, while the HTTPS `dev-phone` server is running |
 | `npm run fixtures:vision` | Re-render the synthetic card fixtures |
 | `VISION_LIVE=1 npm run test:vision-live` | Call the real Claude API with the fixtures — **costs about 1 cent per case** |
 
@@ -154,10 +154,18 @@ one with `openssl req -x509 … -addext "subjectAltName=IP:<LAN IP>"`), and
 `DEV_LAN_HOST` in `.env.local` lets Next.js accept that origin. The phone shows
 one certificate warning.
 
-While that HTTPS server is the one running, `npm run cron:run` needs
-`CRON_BASE_URL=https://localhost:3000` and `NODE_TLS_REJECT_UNAUTHORIZED=0`,
-because it defaults to `http://localhost:3000` and the certificate is
-self-signed.
+While that HTTPS server is the one running, add `--https` to
+`npm run cron:run`, because the script defaults to `http://localhost:3000`:
+
+```bash
+npm run cron:run -- verification-reaper --https
+```
+
+`--https` talks to `https://localhost:3000` and trusts
+`private/dev-cert/cert.pem` for that one request. It does **not** set
+`NODE_TLS_REJECT_UNAUTHORIZED`. Keep that variable out of `.env.local`: every
+script and `npm test` load that file, so a value there would turn off
+certificate checks for every local Node process, not just this one command.
 
 There is no local-database script. `supabase start`, `db reset`, `db diff` and
 `test db` all need Docker, which this project does not use.
