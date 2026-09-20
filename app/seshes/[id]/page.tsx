@@ -2,11 +2,19 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AddressPanel } from "@/components/sesh/address-panel";
 import { ChangedBanner } from "@/components/sesh/changed-banner";
+import { OnDeck } from "@/components/sesh/on-deck";
 import { AskToJoin, DecideButtons, WithdrawRsvp } from "@/components/sesh/rsvp-buttons";
 import { floridaToday } from "@/lib/dates";
 import { memberAccess } from "@/lib/member/gate";
 import { getMyProfile } from "@/lib/profiles/queries";
-import { getSesh, getSeshAddress, listRsvps, type RsvpRow, type SeshListItem } from "@/lib/sesh/queries";
+import {
+  getSesh,
+  getSeshAddress,
+  listContributions,
+  listRsvps,
+  type RsvpRow,
+  type SeshListItem,
+} from "@/lib/sesh/queries";
 import { SESH_TYPE_LABELS } from "@/lib/sesh/schema";
 
 const WHEN = new Intl.DateTimeFormat("en-US", {
@@ -31,6 +39,9 @@ export default async function SeshPage({ params }: { params: Promise<{ id: strin
   // Returns null when the caller may not read it. The screen renders that;
   // it never works out who is allowed. See private.can_see_address.
   const address = await getSeshAddress(id);
+  // Empty for anybody the host has not approved. That emptiness IS the
+  // locked state — the screen is not told why, and must not ask.
+  const onDeck = await listContributions(id);
   const iAmHost = sesh.hostId === profile.id;
   const mine = rsvps.find((r) => r.memberId === profile.id) ?? null;
   const approved = rsvps.filter((r) => r.status === "approved");
@@ -63,6 +74,8 @@ export default async function SeshPage({ params }: { params: Promise<{ id: strin
       {sesh.description ? <p className="text-sm text-ink">{sesh.description}</p> : null}
 
       <AddressPanel address={address} areaName={sesh.areaName} />
+
+      <OnDeck seshId={sesh.id} rows={onDeck} />
 
       {iAmHost ? (
         <HostQueue seshId={sesh.id} waiting={waiting} approved={approved} />
