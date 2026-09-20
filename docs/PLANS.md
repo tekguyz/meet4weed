@@ -15,7 +15,7 @@ Issues and nothing recorded the change — a new session could find Plans 01 and
 | 01 | 1–2 — foundation, auth, profiles | `docs/superpowers/plans/2026-09-16-01-foundation-auth-profiles.md` | Done |
 | 02 | 3–4 — verification, review queue, expiry | `docs/superpowers/plans/2026-09-16-02-verification-expiry.md` | Done |
 | 03 | 5–6 — seshes, map, RSVP, address unlock | GitHub issue #2, with #3–#10 as its tickets | Done 2026-09-20 |
-| 04 | 7–8 — on deck and bring list, invites | GitHub Issues | In progress |
+| 04 | 7–8 — on deck and bring list, invites | GitHub issue #23, with #25–#32 as its tickets | Ticketed 2026-09-20 |
 | 05 | 9 — notifications, web push, PWA | GitHub Issues | Not started |
 | 06 | 10 — safety: report, block, kick | GitHub Issues | Not started |
 | 07 | 11 — admin panel beyond the verification queue | GitHub Issues | Not started |
