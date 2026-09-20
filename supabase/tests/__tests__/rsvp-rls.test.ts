@@ -416,16 +416,24 @@ describe.skipIf(!configured)("RSVP", () => {
   });
 
   describe("the address", () => {
-    /** Nothing in this ticket unlocks it. The guest branch is #8, and this
-     *  test is here so that wiring it up anywhere else goes red. */
-    it("stays shut to an approved guest until the unlock rule says otherwise", async () => {
+    /** This began life as a scope guard for #7, asserting that approving
+     *  somebody did NOT hand over the address. #8 then shipped the guest
+     *  branch of private.can_see_address, so the expectation flipped — the
+     *  guard did its job and is now the ordinary assertion that approving
+     *  somebody is what unlocks it.
+     *
+     *  Everything else about the rule lives in sesh-address-unlock.test.ts. */
+    it("opens to a guest the host approves, and to nobody else", async () => {
       const sesh = await makeSesh();
       await ask(guest, sesh);
+      await ask(other, sesh);
       await decide(host, await rsvpIdFor(sesh, guest.id), "approved");
 
-      const { data } = await guest.db.rpc("sesh_address", { p_sesh: sesh });
+      const toApproved = await guest.db.rpc("sesh_address", { p_sesh: sesh });
+      const toRequester = await other.db.rpc("sesh_address", { p_sesh: sesh });
 
-      expect(data).toEqual([]);
+      expect(toApproved.data).toHaveLength(1);
+      expect(toRequester.data).toEqual([]);
     });
   });
 });

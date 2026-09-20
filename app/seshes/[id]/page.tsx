@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { AddressPanel } from "@/components/sesh/address-panel";
 import { AskToJoin, DecideButtons, WithdrawRsvp } from "@/components/sesh/rsvp-buttons";
 import { floridaToday } from "@/lib/dates";
 import { memberAccess } from "@/lib/member/gate";
 import { getMyProfile } from "@/lib/profiles/queries";
-import { getSesh, listRsvps, type RsvpRow, type SeshListItem } from "@/lib/sesh/queries";
+import { getSesh, getSeshAddress, listRsvps, type RsvpRow, type SeshListItem } from "@/lib/sesh/queries";
 import { SESH_TYPE_LABELS } from "@/lib/sesh/schema";
 
 const WHEN = new Intl.DateTimeFormat("en-US", {
@@ -26,6 +27,9 @@ export default async function SeshPage({ params }: { params: Promise<{ id: strin
   if (!sesh) notFound();
 
   const rsvps = await listRsvps(id);
+  // Returns null when the caller may not read it. The screen renders that;
+  // it never works out who is allowed. See private.can_see_address.
+  const address = await getSeshAddress(id);
   const iAmHost = sesh.hostId === profile.id;
   const mine = rsvps.find((r) => r.memberId === profile.id) ?? null;
   const approved = rsvps.filter((r) => r.status === "approved");
@@ -57,7 +61,7 @@ export default async function SeshPage({ params }: { params: Promise<{ id: strin
 
       {sesh.description ? <p className="text-sm text-ink">{sesh.description}</p> : null}
 
-      <AddressPanel sesh={sesh} />
+      <AddressPanel address={address} areaName={sesh.areaName} />
 
       {iAmHost ? (
         <HostQueue seshId={sesh.id} waiting={waiting} approved={approved} />
@@ -74,22 +78,6 @@ export default async function SeshPage({ params }: { params: Promise<{ id: strin
         Back to seshes
       </Link>
     </main>
-  );
-}
-
-/** Always the locked state in this ticket. The guest branch of the unlock
- *  rule is #8, and wiring it up here instead would put the decision in a
- *  screen — which is the one thing the whole plan is built to avoid. */
-function AddressPanel({ sesh }: { sesh: SeshListItem }) {
-  return (
-    <section className="flex flex-col gap-2 rounded-card bg-surface p-4">
-      <h2 className="text-lg">Where</h2>
-      <p className="text-sm text-ink-muted">
-        {sesh.areaName ? `Somewhere in ${sesh.areaName}. ` : ""}
-        The map shows a circle about 800 m across. The exact address appears once the host approves
-        you.
-      </p>
-    </section>
   );
 }
 
