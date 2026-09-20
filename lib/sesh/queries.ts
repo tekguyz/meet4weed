@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { SeshStatus, SeshType } from "@/lib/sesh/schema";
+import { FEED_PAGE_SIZE, MAP_LIMIT, type FeedFilters } from "@/lib/sesh/feed-filters";
 
 /** Named columns, never `select *`.
  *
@@ -9,7 +10,7 @@ import type { SeshStatus, SeshType } from "@/lib/sesh/schema";
  *  private ones — it fails the whole query with 42501. Proved in
  *  supabase/tests/__tests__/sesh-rls.test.ts. */
 const LIST_COLUMNS =
-  "id, host_id, title, description, sesh_type, starts_at, capacity, status, area_name, fuzzy_lat, fuzzy_lng, fuzzy_radius_m";
+  "id, host_id, title, description, sesh_type, starts_at, capacity, status, area_name, approved_count, fuzzy_lat, fuzzy_lng, fuzzy_radius_m";
 
 export type SeshListItem = {
   id: string;
@@ -21,6 +22,7 @@ export type SeshListItem = {
   capacity: number;
   status: SeshStatus;
   areaName: string | null;
+  approvedCount: number;
   fuzzyLat: number | null;
   fuzzyLng: number | null;
   fuzzyRadiusM: number;
@@ -39,6 +41,7 @@ function toListItem(row: Row): SeshListItem {
     capacity: row.capacity as number,
     status: row.status as SeshStatus,
     areaName: (row.area_name as string | null) ?? null,
+    approvedCount: (row.approved_count as number | null) ?? 0,
     fuzzyLat: (row.fuzzy_lat as number | null) ?? null,
     fuzzyLng: (row.fuzzy_lng as number | null) ?? null,
     fuzzyRadiusM: row.fuzzy_radius_m as number,
@@ -97,4 +100,36 @@ export async function getSeshAddress(seshId: string): Promise<SeshAddress | null
     exactLat: (row.exact_lat as number | null) ?? null,
     exactLng: (row.exact_lng as number | null) ?? null,
   };
+}
+
+/** The public feed: open seshes that have not started yet, soonest first.
+ *
+ *  Cancelled seshes and finished ones are filtered here. A sesh whose host's
+ *  card has lapsed is filtered by the select policy instead — that is a rule,
+ *  not a preference, so it belongs in the database.
+ *
+ *  One extra row is fetched beyond the page so the caller knows whether there
+ *  is a next page without a second count query. */
+export async function listFeed(filters: FeedFilters): Promise<{ seshes: SeshListItem[]; hasMore: boolean }> {
+  const supabase = await createClient();
+
+  const limit = filters.view === "map" ? MAP_LIMIT : FEED_PAGE_SIZE;
+  const offset = filters.view === "map" ? 0 : (filters.page - 1) * FEED_PAGE_SIZE;
+
+  let query = supabase
+    .from("seshes")
+    .select(LIST_COLUMNS)
+    .eq("status", "open")
+    .gt("starts_at", new Date().toISOString())
+    .order("starts_at", { ascending: true })
+    .range(offset, offset + limit);
+
+  if (filters.types.length) query = query.in("sesh_type", filters.types);
+  if (filters.search) {
+    query = query.textSearch("search_vector", filters.search, { type: "websearch", config: "english" });
+  }
+
+  const { data } = await query;
+  const rows = (data ?? []) as Row[];
+  return { seshes: rows.slice(0, limit).map(toListItem), hasMore: rows.length > limit };
 }

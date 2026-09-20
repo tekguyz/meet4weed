@@ -23,8 +23,8 @@ export function LocationPicker({ defaultPoint = null, fieldError }: Props) {
       </p>
 
       <SeshMap
-        point={point}
-        radiusM={PUBLISHED_RADIUS_M}
+        circles={point ? [{ id: "preview", ...point, radiusM: PUBLISHED_RADIUS_M }] : []}
+        marker={point}
         onPick={setPoint}
         label="Tap the map to drop a pin where the sesh is"
       />
