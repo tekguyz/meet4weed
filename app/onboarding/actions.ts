@@ -5,12 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { profileInputSchema } from "@/lib/profiles/schema";
-
-export type ActionState = {
-  ok: boolean;
-  message: string;
-  fieldErrors?: Record<string, string>;
-};
+import type { ActionState } from "@/lib/forms/action-state";
 
 const checked = z.literal("on");
 
