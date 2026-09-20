@@ -5,7 +5,8 @@ Next.js 16.3 + hosted Supabase. Read `README.md` for setup and layout.
 
 **Sources of truth, in order:** the code, then the spec
 (`docs/superpowers/specs/2026-09-16-meet4weed-rebuild-design.md`), then
-`README.md`. Plans in `docs/superpowers/plans/` record intent; their
+`README.md`. `docs/PLANS.md` says which plan covers which build-order steps
+and where each one lives — read it before starting or resuming a plan. Plans in `docs/superpowers/plans/` record intent; their
 `STATUS` and `AMENDED DURING EXECUTION` blocks record what actually shipped.
 Read those blocks before copying any plan step.
 
