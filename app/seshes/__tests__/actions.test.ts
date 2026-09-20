@@ -16,6 +16,8 @@ const getUser = vi.fn();
 const insert = vi.fn();
 const update = vi.fn();
 const eq = vi.fn();
+const selectOne = vi.fn();
+let updateResult: unknown = { error: null };
 
 /** What the insert hands back: the circle the trigger just worked out. */
 let insertResult: unknown = {
@@ -36,10 +38,11 @@ vi.mock("@/lib/supabase/server", () => ({
         return {
           eq: async (column: string, value: string) => {
             eq(column, value);
-            return { error: null };
+            return updateResult;
           },
         };
       },
+      select: () => ({ eq: () => ({ single: async () => selectOne() }) }),
     }),
   }),
 }));
@@ -87,6 +90,8 @@ beforeEach(() => {
   eq.mockReset();
   redirect.mockReset();
   areaNameFor.mockReset().mockResolvedValue("Riverside");
+  updateResult = { error: null };
+  selectOne.mockReset().mockResolvedValue({ data: { approved_count: 4 } });
   insertResult = { data: { id: "sesh-1", fuzzy_lat: 27.95312, fuzzy_lng: -82.45411 }, error: null };
 });
 
@@ -258,6 +263,19 @@ describe("editSesh", () => {
 
     expect(result?.ok).toBe(false);
     expect(update).not.toHaveBeenCalled();
+  });
+
+  /** The database raises its own code for this so the screen can say how
+   *  many people are already in. An RLS refusal would arrive as 42501,
+   *  indistinguishable from every other reason a write can bounce. */
+  it("says how many people are already approved when the host shrinks it too far", async () => {
+    updateResult = { error: { code: "M4W16", message: "capacity below approved count" } };
+
+    const result = await act("editSesh", editForm({ capacity: "2" }));
+
+    expect(result?.ok).toBe(false);
+    expect(result?.fieldErrors?.capacity).toContain("4");
+    expect(result?.fieldErrors?.capacity).not.toMatch(/M4W16/);
   });
 
   it("refuses without a sesh to edit", async () => {

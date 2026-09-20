@@ -133,3 +133,87 @@ export async function listFeed(filters: FeedFilters): Promise<{ seshes: SeshList
   const rows = (data ?? []) as Row[];
   return { seshes: rows.slice(0, limit).map(toListItem), hasMore: rows.length > limit };
 }
+
+/** One sesh, for its own page. The select policy decides whether the caller
+ *  gets it at all. */
+export async function getSesh(id: string): Promise<SeshListItem | null> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("seshes").select(LIST_COLUMNS).eq("id", id).maybeSingle();
+  return data ? toListItem(data as Row) : null;
+}
+
+export type RsvpStatus = "requested" | "approved" | "denied" | "cancelled" | "kicked";
+
+export type RsvpRow = {
+  id: string;
+  memberId: string;
+  status: RsvpStatus;
+  handle: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  bio: string | null;
+};
+
+const RSVP_COLUMNS =
+  "id, member_id, status, requested_at, profiles(handle, display_name, avatar_url, bio)";
+
+function toRsvp(row: Row): RsvpRow {
+  const profile = (row.profiles ?? {}) as Record<string, unknown>;
+  return {
+    id: row.id as string,
+    memberId: row.member_id as string,
+    status: row.status as RsvpStatus,
+    handle: (profile.handle as string) ?? "unknown",
+    displayName: (profile.display_name as string | null) ?? null,
+    avatarUrl: (profile.avatar_url as string | null) ?? null,
+    bio: (profile.bio as string | null) ?? null,
+  };
+}
+
+/** Whatever the caller is allowed to see: their own row, everything if they
+ *  host it, or the approved guests if they are one. The policy does the
+ *  deciding — this asks for all of it and takes what comes back. */
+export async function listRsvps(seshId: string): Promise<RsvpRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("rsvps")
+    .select(RSVP_COLUMNS)
+    .eq("sesh_id", seshId)
+    .order("requested_at", { ascending: true });
+  return (data ?? []).map((row) => toRsvp(row as Row));
+}
+
+/** The seshes the caller has asked about or is going to. */
+export async function listMyGoing(): Promise<{ sesh: SeshListItem; status: RsvpStatus }[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data } = await supabase
+    .from("rsvps")
+    .select(`status, seshes(${LIST_COLUMNS})`)
+    .eq("member_id", user.id)
+    .in("status", ["requested", "approved"]);
+
+  return (data ?? [])
+    .map((row) => {
+      const sesh = (row as Row).seshes as Row | null;
+      return sesh ? { sesh: toListItem(sesh), status: (row as Row).status as RsvpStatus } : null;
+    })
+    .filter((row): row is { sesh: SeshListItem; status: RsvpStatus } => row !== null)
+    .sort((a, b) => a.sesh.startsAt.localeCompare(b.sesh.startsAt));
+}
+
+/** How many people are waiting on each of the caller's own seshes. The host
+ *  badge — the only way a host learns of a request in this plan. */
+export async function pendingCounts(seshIds: string[]): Promise<Record<string, number>> {
+  if (!seshIds.length) return {};
+  const supabase = await createClient();
+  const { data } = await supabase.from("rsvps").select("sesh_id").in("sesh_id", seshIds).eq("status", "requested");
+
+  const counts: Record<string, number> = {};
+  for (const row of data ?? []) counts[(row as Row).sesh_id as string] = (counts[(row as Row).sesh_id as string] ?? 0) + 1;
+  return counts;
+}
