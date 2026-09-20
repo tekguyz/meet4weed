@@ -1,7 +1,7 @@
 import "server-only";
 import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 import { CHALLENGES } from "@/lib/verification/challenges";
-import { deriveKey } from "@/lib/verification/keys";
+import { deriveKey } from "@/lib/keys";
 
 /**
  * The server chooses the challenge when the member reaches the face step and
