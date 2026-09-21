@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { toAuthFailure, type AuthFailure } from "@/lib/auth/auth-errors";
 import { safeNext } from "@/lib/auth/safe-next";
+import { heldInvitePath } from "@/lib/sesh/held-invite";
 
 /**
  * Email + password sign-in. Sends no email. Spec §4.5; copied from
@@ -43,5 +44,15 @@ export async function signInWithPassword(input: SignInInput): Promise<{ failure:
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { failure: toAuthFailure(error) };
 
-  redirect(safeNext(next));
+  // Somebody sent to sign UP by an invite button may already have an account
+  // and sign IN instead. A waiting link should still land them back on the
+  // invite page. An explicit `next` wins: it is where they were actually
+  // going, and overriding it would be this app deciding for them.
+  const target = safeNext(next);
+  if (target === "/") {
+    const held = await heldInvitePath();
+    if (held) redirect(held);
+  }
+
+  redirect(target);
 }

@@ -1,11 +1,13 @@
-import { redirect } from "next/navigation";
 import { RedeemInvite } from "@/components/sesh/redeem-invite";
 import { APP_NAME } from "@/lib/env";
-import { createClient } from "@/lib/supabase/server";
 import { getInvitePreview } from "@/lib/sesh/invite-reads";
-import { INVITE_FAILED, invitePath } from "@/lib/sesh/invites";
+import { INVITE_FAILED } from "@/lib/sesh/invites";
 
-export const metadata = { title: "An invite" };
+/** `referrer: no-referrer` is not decoration. The token is a path segment, so
+ *  every link and every form post from this page would otherwise hand it to
+ *  whatever it went to in a Referer header. Nothing may carry a live token
+ *  off this page. */
+export const metadata = { title: "An invite", referrer: "no-referrer" as const };
 
 const WHEN = new Intl.DateTimeFormat("en-US", {
   timeZone: "America/New_York",
@@ -34,7 +36,9 @@ const WHEN = new Intl.DateTimeFormat("en-US", {
  *
  * Every failure — expired, used up, revoked, never existed, a flipped byte in
  * the signature — renders ONE identical sentence. Telling them apart is what
- * would turn this page into a machine for finding live links.
+ * would turn this page into a machine for finding live links. A token carried
+ * back here by a tampered hold cookie lands in the same place, which is why
+ * lib/sesh/held-invite.ts checks shape and never the tag.
  */
 export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {
   const { token: segment } = await params;
@@ -43,21 +47,16 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
   // quietly change a token that ever did contain a percent.
   const token = decodeURIComponent(segment);
 
-  // `/invite` is public in lib/supabase/session.ts, so a signed-out visitor
-  // arrives here rather than at /login. Send them to sign in and bring them
-  // straight back, because THIS ticket requires an authenticated caller and
-  // a signed-out reader must not be told whether the link is any good.
-  // Rendering INVITE_FAILED at them would be a lie about their link.
+  // NOBODY IS SENT ANYWHERE FROM HERE, signed in or signed out. `/invite` is
+  // public in lib/supabase/session.ts, and a visitor with no account sees
+  // EXACTLY this page: title, start time, button, nothing else. The page does
+  // not know or care whether anyone is signed in, so there is no second
+  // rendering to keep in step with this one.
   //
-  // #31 replaces this line with the cold path: the token goes into a signed,
-  // httpOnly cookie, the person signs UP, and the second press spends the
-  // use. The bounce stays one redirect either way — no automatic spend.
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect(`/login?next=${encodeURIComponent(invitePath(token))}`);
-
+  // The split happens on the press, inside app/seshes/invite-actions.ts, and
+  // nowhere else. A signed-out press spends nothing: the token goes into a
+  // short-lived httpOnly cookie and the person is sent to sign up. They come
+  // back here and press again, and that press spends the use.
   const preview = await getInvitePreview(token);
 
   return (

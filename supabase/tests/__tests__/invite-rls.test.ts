@@ -676,6 +676,40 @@ describe.skipIf(!configured)("invites", () => {
       expect(afterReview).toBe(true);
     });
 
+    /**
+     * #31, THE WHOLE COLD PATH, END TO END AND AGAINST THE DATABASE.
+     *
+     * Somebody with no account presses an invite button, signs up, comes
+     * back and presses again. By the time they press the second time they
+     * are a real member whose card nobody has looked at yet — which is
+     * exactly this member. The claim is written, the sesh stays shut, and
+     * the day a reviewer approves the card the sesh is there and they can
+     * ask to come.
+     *
+     * Proved on rows, not on a screen. The screen half is
+     * app/invite/__tests__/held.test.tsx.
+     */
+    it("opens the sesh and lets them ask to come the day a reviewer approves them", async () => {
+      const sesh = await makeSesh();
+      const { hash } = await mustMint(sesh);
+
+      // The second press, while the card is still unreviewed.
+      expect((await redeem(unverified, hash)).error).toBeNull();
+
+      const whileWaiting = await canSee(unverified, sesh);
+      const askedWhileWaiting = await ask(unverified, sesh);
+
+      await setStatus(unverified.id, "verified");
+      const afterReview = await canSee(unverified, sesh);
+      const askedAfterReview = await ask(unverified, sesh);
+      await setStatus(unverified.id, "unverified");
+
+      expect(whileWaiting).toBe(false);
+      expect(askedWhileWaiting.error).not.toBeNull();
+      expect(afterReview).toBe(true);
+      expect(askedAfterReview.error).toBeNull();
+    });
+
     /** A use spent by somebody who never finishes verification STAYS spent.
      *  Nothing about a link's liveness may depend on a future event — that is
      *  the race the row lock exists to kill. */
@@ -1096,8 +1130,9 @@ describe.skipIf(!configured)("invites", () => {
   describe("the functions are not callable by anon", () => {
     /** Postgres grants EXECUTE to PUBLIC by default, and "Automatically
      *  expose new tables" does not change that. Every one of these was
-     *  revoked. The signed-out path is #31 and will widen only the two it
-     *  needs. */
+     *  revoked, and #31 WIDENED NOTHING. The signed-out invite page reads
+     *  its preview through the service-role client on the server instead —
+     *  see lib/sesh/invite-reads.ts. The anon key never gets to guess. */
     it("refuses every new function to the anon key", async () => {
       const anon = createClient(URL!, PUBLISHABLE!, { auth: { persistSession: false, autoRefreshToken: false } });
 

@@ -140,3 +140,33 @@ export function isInviteLive(
     invite.useCount < invite.maxUses
   );
 }
+
+/**
+ * What a member who claimed a link but cannot read the sesh yet is told.
+ *
+ * They pressed the button, the claim is a row on the server, and
+ * private.can_browse still refuses them the sesh because a person has not
+ * approved their card. Both halves have to be said: the link is not lost, and
+ * the thing standing in the way is the card review.
+ *
+ * It names no sesh — not the title, not the start time, not the id. They
+ * cannot read the sesh, so the screen that says so must not read it either.
+ */
+export const INVITE_HELD_TITLE = "Your invite is being held";
+export const INVITE_HELD_BODY =
+  "You used the link, and we saved it. A person has to check your medical card first. Once they approve it, the sesh will be waiting for you.";
+
+/**
+ * Can this member read a sesh at all? The TS twin of private.can_browse.
+ *
+ * Verified and expired both browse — an expired card is read-only, not gone.
+ * Unverified, pending review and suspended cannot, and that is what makes an
+ * invite WAIT: the claim is written for them anyway, and the sesh appears the
+ * day a reviewer approves the card.
+ *
+ * Cosmetic ONLY, exactly like [[isInviteLive]]. The database refuses the read;
+ * this picks which screen to show instead of a 404.
+ */
+export function canBrowse(status: string): boolean {
+  return status === "verified" || status === "expired";
+}

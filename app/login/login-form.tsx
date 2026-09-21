@@ -12,8 +12,11 @@ import { SignUpForm } from "./sign-up-form";
 
 /** Sign in, with the ways out to sign-up and password reset. Copied in shape
  *  from tekguyz-squid-ink (c8ceb09), built on this app's own primitives. */
-export function LoginForm({ next }: { next: string }) {
-  const [mode, setMode] = useState<"sign-in" | "sign-up" | "recover">("sign-in");
+export function LoginForm({ next, signUp = false }: { next: string; signUp?: boolean }) {
+  // `signUp` only picks which form opens first. Somebody sent here by an
+  // invite has no account yet, so showing them the sign-in form and making
+  // them find the link is a step for nothing. They can still press "Back".
+  const [mode, setMode] = useState<"sign-in" | "sign-up" | "recover">(signUp ? "sign-up" : "sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [unconfirmed, setUnconfirmed] = useState(false);

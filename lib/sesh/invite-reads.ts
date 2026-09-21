@@ -1,4 +1,5 @@
 import "server-only";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { serverEnv } from "@/lib/server-env";
 import { hashInviteToken, verifyInviteToken } from "@/lib/sesh/invite-token";
@@ -33,11 +34,27 @@ export type InvitePreview = { title: string; startsAt: string };
  * The tag is checked FIRST, which is the whole point of having one: garbage
  * is thrown out without a database round trip, so guessing costs an attacker
  * everything and costs this app nothing.
+ *
+ * A SIGNED-OUT VISITOR SEES THE SAME PAGE, so this read has to work with no
+ * session — that is the whole of #31's cold path. public.invite_preview() is
+ * granted to `authenticated` and not to `anon`, so the anon key would fail it
+ * with 42501. The service-role client is used for that one case only.
+ *
+ * That is not a hole. invite_preview() is SECURITY DEFINER, already ignores
+ * who is asking on purpose, and returns a title and a start time for a live
+ * link and zero rows for everything else. Escalating changes no answer; it
+ * only gets past a table privilege. The gate is the tag above: without
+ * VERIFICATION_SECRET nobody can put a token in front of this at all.
  */
 export async function getInvitePreview(token: string): Promise<InvitePreview | null> {
   if (!verifyInviteToken(serverEnv().VERIFICATION_SECRET, token)) return null;
 
-  const supabase = await createClient();
+  const caller = await createClient();
+  const {
+    data: { user },
+  } = await caller.auth.getUser();
+
+  const supabase = user ? caller : createAdminClient();
   const { data } = await supabase.rpc("invite_preview", { p_token_hash: hashInviteToken(token) });
   const row = (data as Record<string, unknown>[] | null)?.[0];
   if (!row) return null;

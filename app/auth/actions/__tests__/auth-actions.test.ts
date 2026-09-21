@@ -22,6 +22,11 @@ vi.mock("next/navigation", () => ({
   },
 }));
 
+/** #31: both actions now ask whether an invite link is waiting in a cookie.
+ *  Empty here — these tests are about the auth seam, and the waiting-link
+ *  behaviour has its own file (app/auth/__tests__/held-invite-return.test.ts). */
+vi.mock("@/lib/sesh/held-invite", () => ({ heldInvitePath: async () => null }));
+
 vi.mock("@/lib/auth/email-redirect", () => ({
   emailLinkTarget: async () => "http://localhost:3000/auth/confirm",
 }));

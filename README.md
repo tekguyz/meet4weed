@@ -265,6 +265,30 @@ docs/superpowers/     the design spec and the implementation plans
 
 `proxy.ts` is Next.js 16's name for what used to be `middleware.ts`.
 
+### An invite link, opened by somebody with no account
+
+`/invite/[token]` is public, and a signed-out visitor sees **exactly** the
+page a member sees: title, start time, button. The split happens on the
+press, and nowhere else.
+
+| Press | What happens |
+| --- | --- |
+| Signed out | Nothing is spent. The token goes into `m4w_held_invite` — `httpOnly`, `SameSite=Lax`, 30 minutes — and they are sent to `/login?mode=sign-up`. The redirect carries no token. |
+| Signed in | The use is spent, the claim row is written, and the cookie is dropped. |
+
+They land back on the invite page after confirming their email (or after
+signing in), and **press it a second time**. That press is the one that
+spends.
+
+**A redirect never spends a use.** One rule, one place. A second, invisible
+way to spend one would be the hardest thing in this app to debug the day it
+went wrong.
+
+The claim is written even though nobody has reviewed their card yet — that
+is what makes the link wait across a multi-day review. `private.can_browse`
+still refuses them the sesh, so they land on `/invite/held`, which says so
+and names no sesh. The day a reviewer approves the card, the sesh is there.
+
 ---
 
 ## Build status
