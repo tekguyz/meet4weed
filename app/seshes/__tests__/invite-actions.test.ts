@@ -19,9 +19,29 @@ const getUser = vi.fn();
 const rpc = vi.fn();
 const claimRedemption = vi.fn();
 const headerGet = vi.fn();
+const cookieSet = vi.fn();
+const cookieDelete = vi.fn();
+
+/** The caller's own profile row, read after a successful claim to pick
+ *  between the sesh and the held screen. `verified` unless a test says
+ *  otherwise, because that is the ordinary member. */
+const profileStatus = vi.fn(() => "verified" as string | null);
 
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({ auth: { getUser }, rpc }),
+  createClient: async () => ({
+    auth: { getUser },
+    rpc,
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: async () => {
+            const status = profileStatus();
+            return { data: status === null ? null : { status }, error: null };
+          },
+        }),
+      }),
+    }),
+  }),
 }));
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -35,6 +55,7 @@ vi.mock("next/navigation", () => ({ redirect: (to: string) => redirect(to) }));
 
 vi.mock("next/headers", () => ({
   headers: async () => ({ get: headerGet }),
+  cookies: async () => ({ set: cookieSet, delete: cookieDelete }),
 }));
 
 vi.mock("@/lib/sesh/invite-limits", () => ({
@@ -67,6 +88,7 @@ beforeEach(() => {
   vi.resetModules();
   vi.clearAllMocks();
   getUser.mockResolvedValue({ data: { user: { id: "member-1" } } });
+  profileStatus.mockReturnValue("verified");
   rpc.mockResolvedValue({ data: null, error: null });
   claimRedemption.mockResolvedValue(true);
   headerGet.mockImplementation((name: string) =>
@@ -305,16 +327,204 @@ describe("redeeming", () => {
     expect(rpc).not.toHaveBeenCalled();
   });
 
-  /** The signed-out path is #31. This one requires an authenticated caller,
-   *  and says so rather than pretending the link is broken. */
-  it("sends a signed-out visitor to sign in rather than failing the link", async () => {
-    getUser.mockResolvedValue({ data: { user: null } });
-    const { redeemInvite } = await actions();
+  /**
+   * THE COLD PATH (#31). Somebody with no account presses the button.
+   *
+   * There is nobody to spend a use FOR, so nothing is spent: no rate-limit
+   * slot, no database round trip, no claim. The token is held in a cookie
+   * and they are sent to make an account. They come back and press again,
+   * and THAT press is the one that spends.
+   */
+  describe("a press with no account", () => {
+    beforeEach(() => {
+      getUser.mockResolvedValue({ data: { user: null } });
+    });
 
-    const state = await redeemInvite(null, form({ token: await liveToken() }));
+    it("spends nothing at all", async () => {
+      const { redeemInvite } = await actions();
 
-    expect(state.ok).toBe(false);
-    expect(state.message).toMatch(/sign in/i);
-    expect(rpc).not.toHaveBeenCalled();
+      await expect(redeemInvite(null, form({ token: await liveToken() }))).rejects.toThrow(
+        "NEXT_REDIRECT",
+      );
+
+      expect(rpc).not.toHaveBeenCalled();
+      expect(claimRedemption).not.toHaveBeenCalled();
+    });
+
+    it("sends them to sign up", async () => {
+      const { redeemInvite } = await actions();
+
+      await expect(redeemInvite(null, form({ token: await liveToken() }))).rejects.toThrow(
+        "NEXT_REDIRECT",
+      );
+
+      expect(redirect).toHaveBeenCalledWith("/login?mode=sign-up");
+    });
+
+    /** The token travels in the cookie and NOWHERE else. A query string, a
+     *  path segment or a fragment on this redirect would put a live link in
+     *  a server log and in the next page's Referer header. */
+    it("puts the token in the cookie and never in the redirect", async () => {
+      const { redeemInvite } = await actions();
+      const token = await liveToken();
+
+      await expect(redeemInvite(null, form({ token }))).rejects.toThrow("NEXT_REDIRECT");
+
+      expect(cookieSet).toHaveBeenCalledWith("m4w_held_invite", token, expect.any(Object));
+      expect(redirect.mock.calls[0][0]).not.toContain(token);
+      expect(redirect.mock.calls[0][0]).not.toContain(token.split(".")[0]);
+    });
+
+    it("holds it httpOnly, SameSite=Lax and short-lived", async () => {
+      const { redeemInvite } = await actions();
+
+      await expect(redeemInvite(null, form({ token: await liveToken() }))).rejects.toThrow(
+        "NEXT_REDIRECT",
+      );
+
+      const options = cookieSet.mock.calls[0][2] as Record<string, unknown>;
+      expect(options.httpOnly).toBe(true);
+      expect(options.sameSite).toBe("lax");
+      expect(options.maxAge).toBeLessThanOrEqual(60 * 60);
+      expect(options.maxAge).toBeGreaterThan(0);
+    });
+
+    /** A dead link is a dead link whether or not anybody is signed in. It
+     *  must not become a cookie, and it must not become a trip to sign-up
+     *  that ends in the same sentence anyway. */
+    it("reads the one sentence for a bad tag, and holds nothing", async () => {
+      const { redeemInvite } = await actions();
+
+      const state = await redeemInvite(null, form({ token: "abc.def" }));
+
+      expect(state.message).toBe(INVITE_FAILED);
+      expect(cookieSet).not.toHaveBeenCalled();
+      expect(redirect).not.toHaveBeenCalled();
+    });
+  });
+
+  /**
+   * THE SECOND PRESS, by a member whose card nobody has looked at yet.
+   *
+   * public.redeem_invite() writes the claim anyway — that is what makes a
+   * link wait across a multi-day review. private.can_browse() still refuses
+   * them the sesh, so the screen has to say so instead of 404ing.
+   */
+  describe("a claim by a member who cannot browse yet", () => {
+    it("still spends the use and writes the claim", async () => {
+      profileStatus.mockReturnValue("unverified");
+      rpc.mockResolvedValue({ data: SESH, error: null });
+      const { redeemInvite } = await actions();
+
+      await expect(redeemInvite(null, form({ token: await liveToken() }))).rejects.toThrow(
+        "NEXT_REDIRECT",
+      );
+
+      expect(rpc).toHaveBeenCalledWith("redeem_invite", expect.any(Object));
+    });
+
+    it.each(["unverified", "pending_review"])("sends %s to the held screen", async (status) => {
+      profileStatus.mockReturnValue(status);
+      rpc.mockResolvedValue({ data: SESH, error: null });
+      const { redeemInvite } = await actions();
+
+      await expect(redeemInvite(null, form({ token: await liveToken() }))).rejects.toThrow(
+        "NEXT_REDIRECT",
+      );
+
+      expect(redirect).toHaveBeenCalledWith("/invite/held");
+    });
+
+    /** A STATUS WE COULD NOT READ IS NOT EVIDENCE THEY ARE WAITING. The held
+     *  screen tells somebody their card needs approving. Saying that to a
+     *  VERIFIED member because one self-read hiccuped is a lie on the one
+     *  screen that has to be plainly true, so with nothing to go on the
+     *  database gets to answer instead. */
+    it("sends a member with no readable status to the sesh, not the held screen", async () => {
+      profileStatus.mockReturnValue(null);
+      rpc.mockResolvedValue({ data: SESH, error: null });
+      const { redeemInvite } = await actions();
+
+      await expect(redeemInvite(null, form({ token: await liveToken() }))).rejects.toThrow(
+        "NEXT_REDIRECT",
+      );
+
+      expect(redirect).toHaveBeenCalledWith(`/seshes/${SESH}`);
+    });
+
+    /** An expired card is read-only, not gone. private.can_browse lets it
+     *  through, and so does this. */
+    it("sends an expired card to the sesh", async () => {
+      profileStatus.mockReturnValue("expired");
+      rpc.mockResolvedValue({ data: SESH, error: null });
+      const { redeemInvite } = await actions();
+
+      await expect(redeemInvite(null, form({ token: await liveToken() }))).rejects.toThrow(
+        "NEXT_REDIRECT",
+      );
+
+      expect(redirect).toHaveBeenCalledWith(`/seshes/${SESH}`);
+    });
+
+    it("names no sesh in the held destination", async () => {
+      profileStatus.mockReturnValue("pending_review");
+      rpc.mockResolvedValue({ data: SESH, error: null });
+      const { redeemInvite } = await actions();
+
+      await expect(redeemInvite(null, form({ token: await liveToken() }))).rejects.toThrow(
+        "NEXT_REDIRECT",
+      );
+
+      expect(redirect.mock.calls[0][0]).not.toContain(SESH);
+    });
+  });
+
+  /** The cookie's ONLY job was to survive sign-up. Once they are signed in
+   *  it is finished, whatever the press does next — they are holding the
+   *  token in the form they just posted, and the claim, if there is one, is
+   *  a row on the server. */
+  describe("the held cookie", () => {
+    it("is cleared once the claim is written", async () => {
+      rpc.mockResolvedValue({ data: SESH, error: null });
+      const { redeemInvite } = await actions();
+
+      await expect(redeemInvite(null, form({ token: await liveToken() }))).rejects.toThrow(
+        "NEXT_REDIRECT",
+      );
+
+      expect(cookieDelete).toHaveBeenCalledWith("m4w_held_invite");
+    });
+
+    /** A cookie kept through a refusal sits in the browser for half an hour
+     *  and bounces their NEXT sign-in to a link that is already dead. */
+    it("is cleared when the press is refused too", async () => {
+      rpc.mockResolvedValue({ error: { code: "M4W19", message: "that link does not work" } });
+      const { redeemInvite } = await actions();
+
+      await redeemInvite(null, form({ token: await liveToken() }));
+
+      expect(cookieDelete).toHaveBeenCalledWith("m4w_held_invite");
+    });
+
+    it("is cleared when the IP is over its allowance", async () => {
+      claimRedemption.mockResolvedValue(false);
+      const { redeemInvite } = await actions();
+
+      await redeemInvite(null, form({ token: await liveToken() }));
+
+      expect(cookieDelete).toHaveBeenCalledWith("m4w_held_invite");
+    });
+
+    /** Not on the cold press. That press is the one that SETS it. */
+    it("is not cleared by a press with no account", async () => {
+      getUser.mockResolvedValue({ data: { user: null } });
+      const { redeemInvite } = await actions();
+
+      await expect(redeemInvite(null, form({ token: await liveToken() }))).rejects.toThrow(
+        "NEXT_REDIRECT",
+      );
+
+      expect(cookieDelete).not.toHaveBeenCalled();
+    });
   });
 });

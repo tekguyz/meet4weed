@@ -132,23 +132,52 @@ describe("a link that does not work", () => {
 });
 
 describe("a signed-out visitor", () => {
-  /** `/invite` is public in lib/supabase/session.ts, so they arrive here
-   *  rather than at /login. They are bounced to sign in with the link
-   *  remembered — NOT told their link is broken, which would be a lie about
-   *  a link that is probably fine. #31 replaces this with the cold path. */
-  it("is sent to sign in with the link remembered", async () => {
+  beforeEach(() => {
     getUser.mockResolvedValue({ data: { user: null } });
-
-    await expect(renderPage()).rejects.toThrow("NEXT_REDIRECT");
-
-    expect(redirect).toHaveBeenCalledWith(`/login?next=${encodeURIComponent(`/invite/${TOKEN}`)}`);
   });
 
-  it("is not shown the sesh, and nothing is looked up for them", async () => {
-    getUser.mockResolvedValue({ data: { user: null } });
+  /** #31, the cold path. They are NOT bounced to sign in any more: they see
+   *  the same page as everybody else, and the split happens on the press.
+   *  Bouncing them first meant a stranger had to make an account before they
+   *  were told what they were being invited to. */
+  it("is sent nowhere", async () => {
+    await renderPage();
 
-    await expect(renderPage()).rejects.toThrow("NEXT_REDIRECT");
+    expect(redirect).not.toHaveBeenCalled();
+  });
 
-    expect(getInvitePreview).not.toHaveBeenCalled();
+  /** The SAME page, not a version of it. One rendering, so there is no
+   *  second one to keep in step. */
+  it("sees the title, the start time and the button", async () => {
+    await renderPage();
+
+    expect(screen.getByText("Tuesday wind-down")).toBeInTheDocument();
+    expect(screen.getByText(/Sep 23/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /use this invite/i })).toBeInTheDocument();
+  });
+
+  it("is told nothing extra about signing up or signing in", async () => {
+    await renderPage();
+
+    const text = document.body.textContent!;
+    expect(text).not.toMatch(/sign up|sign in|create an account|password/i);
+  });
+
+  /** Pressing is what splits the two paths, and pressing is a POST. The page
+   *  itself never looks at who is asking, so it cannot drift. */
+  it("does not ask who is asking", async () => {
+    await renderPage();
+
+    expect(SOURCE).not.toMatch(/getUser/);
+  });
+});
+
+describe("the token", () => {
+  /** The token is a path segment, so without this every link and every form
+   *  post from this page hands a live invite to whatever it goes to. */
+  it("is kept out of the Referer header", async () => {
+    const { metadata } = await import("@/app/invite/[token]/page");
+
+    expect(metadata.referrer).toBe("no-referrer");
   });
 });

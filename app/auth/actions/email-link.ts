@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { heldInvitePath } from "@/lib/sesh/held-invite";
 
 /**
  * Verifies an emailed confirmation or password-reset link — the POST behind
@@ -40,5 +41,18 @@ export async function confirmEmailLink(formData: FormData): Promise<void> {
     console.error(`[auth] link verification failed: ${error.code ?? "(no code)"}`);
     redirect("/login?error=link_invalid");
   }
+  // A LINK THAT WAITED THROUGH SIGN-UP. Somebody pressed an invite button
+  // with no account; the token went into a short-lived cookie and they were
+  // sent here to make one. Put them back on that invite page so they can
+  // press it again — the second press is what spends the use. This redirect
+  // spends nothing; see app/seshes/invite-actions.ts.
+  //
+  // Confirmation only. A password reset is not a sign-up and must land on
+  // the new-password screen.
+  if (type === "email") {
+    const held = await heldInvitePath();
+    if (held) redirect(held);
+  }
+
   redirect(DESTINATION[type]);
 }

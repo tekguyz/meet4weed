@@ -7,9 +7,9 @@ export const metadata = { title: "Sign in" };
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; error?: string }>;
+  searchParams: Promise<{ next?: string; error?: string; mode?: string }>;
 }) {
-  const { next, error } = await searchParams;
+  const { next, error, mode } = await searchParams;
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center gap-8 px-4">
@@ -25,7 +25,10 @@ export default async function LoginPage({
         </p>
       ) : null}
 
-      <LoginForm next={safeNext(next)} />
+      {/* Set by app/seshes/invite-actions.ts when somebody with no account
+          presses an invite button. It carries NO token — the token is in an
+          httpOnly cookie, and a query string is exactly where it must not be. */}
+      <LoginForm next={safeNext(next)} signUp={mode === "sign-up"} />
 
       <p className="text-xs text-ink-muted">
         {APP_NAME} is for verified Florida medical cannabis patients aged 21 and over. It is a place

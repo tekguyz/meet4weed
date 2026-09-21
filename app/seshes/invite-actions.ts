@@ -10,8 +10,10 @@ import type { ActionState } from "@/lib/forms/action-state";
 import { floridaToday } from "@/lib/dates";
 import { APP_URL } from "@/lib/env";
 import { inviteLimitsFromEnv } from "@/lib/sesh/invite-limits";
+import { holdInvite, releaseHeldInvite } from "@/lib/sesh/held-invite";
 import { hashInviteToken, mintInviteToken, verifyInviteToken } from "@/lib/sesh/invite-token";
 import {
+  canBrowse,
   INVITE_FAILED,
   INVITES_PER_SESH,
   INVITE_USES_MAX,
@@ -61,7 +63,7 @@ async function callerOrNull() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  return user ? supabase : null;
+  return user ? { supabase, userId: user.id } : null;
 }
 
 /** What a mint hands back. `url` is the ONE time the token exists outside the
@@ -81,8 +83,9 @@ export async function mintInvite(_prev: MintState | null, formData: FormData): P
     return { ok: false, message: parsed.error.issues[0]?.message ?? "Check what you picked." };
   }
 
-  const supabase = await callerOrNull();
-  if (!supabase) return { ok: false, message: "Sign in again to continue." };
+  const caller = await callerOrNull();
+  if (!caller) return { ok: false, message: "Sign in again to continue." };
+  const { supabase } = caller;
 
   const token = mintInviteToken(serverEnv().VERIFICATION_SECRET);
 
@@ -112,10 +115,10 @@ export async function revokeInvite(_prev: ActionState | null, formData: FormData
   const sesh = seshId.safeParse(formData.get("seshId"));
   if (!invite.success || !sesh.success) return { ok: false, message: "Could not find that link." };
 
-  const supabase = await callerOrNull();
-  if (!supabase) return { ok: false, message: "Sign in again to continue." };
+  const caller = await callerOrNull();
+  if (!caller) return { ok: false, message: "Sign in again to continue." };
 
-  const { error } = await supabase.rpc("revoke_invite", { p_invite: invite.data });
+  const { error } = await caller.supabase.rpc("revoke_invite", { p_invite: invite.data });
   if (error) return { ok: false, message: readable(error.code) };
 
   revalidatePath(`/seshes/${sesh.data}`);
@@ -124,7 +127,21 @@ export async function revokeInvite(_prev: ActionState | null, formData: FormData
 
 /**
  * THE POST. This is the only thing in the app that spends a use, and it is
- * reached by a signed-in human pressing a button — never by a page load.
+ * reached by a signed-in human pressing a button — never by a page load and
+ * never by a redirect.
+ *
+ * TWO PRESSES CAN HAPPEN, AND ONLY THE SECOND ONE SPENDS ANYTHING.
+ *
+ *   1. Pressed with no account. There is nobody to spend a use FOR, so
+ *      nothing is spent. The token goes into a short-lived httpOnly cookie
+ *      (lib/sesh/held-invite.ts) and the person is sent to sign up. The
+ *      redirect carries no token: not in the path, not in a query string.
+ *   2. Pressed again after signing up, now signed in. THAT press spends the
+ *      use and writes the claim.
+ *
+ * There is no third, invisible way. A redirect that spent a use would be the
+ * hardest thing in this app to debug the day it went wrong, and the cost of
+ * refusing to build it is one extra button press.
  *
  * The tag is verified BEFORE the rate limiter and before the database: a
  * flipped byte costs an attacker a round trip to this server and nothing
@@ -142,13 +159,32 @@ export async function revokeInvite(_prev: ActionState | null, formData: FormData
 export async function redeemInvite(_prev: ActionState | null, formData: FormData): Promise<ActionState> {
   const token = String(formData.get("token") ?? "");
 
-  const supabase = await callerOrNull();
-  // This ticket requires an authenticated caller. The signed-out path is #31.
-  if (!supabase) return { ok: false, message: "Sign in, then press it again." };
-
+  // Checked before anything else, and before we know who is pressing. A bad
+  // tag is the same dead link for a stranger and for a member, and a cookie
+  // must never be set for one.
   if (!token || !verifyInviteToken(serverEnv().VERIFICATION_SECRET, token)) {
     return { ok: false, message: INVITE_FAILED };
   }
+
+  const caller = await callerOrNull();
+
+  // THE COLD PATH. Nothing is spent, nothing is written, and the database is
+  // not touched at all — there is no member yet for a claim to belong to.
+  // Hold the token and send them to make an account.
+  if (!caller) {
+    await holdInvite(token);
+    redirect("/login?mode=sign-up");
+  }
+
+  const { supabase, userId } = caller;
+
+  // THE COOKIE'S ONLY JOB WAS TO SURVIVE SIGN-UP, and they are signed in, so
+  // it is finished — whatever happens below. Dropped BEFORE the press is
+  // decided, not after it succeeds: a cookie kept through a refusal sits in
+  // the browser for half an hour and bounces their NEXT sign-in to a link
+  // that is already dead. Nothing is lost by dropping it, because they are
+  // holding the token in the form they just posted.
+  await releaseHeldInvite();
 
   const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   const allowed = await inviteLimitsFromEnv().claimRedemption(ip, floridaToday());
@@ -160,10 +196,32 @@ export async function redeemInvite(_prev: ActionState | null, formData: FormData
   if (error) return { ok: false, message: readable(error.code) };
 
   const sesh = String(data ?? "");
+
   revalidatePath(`/seshes/${sesh}`);
   revalidatePath("/seshes/mine");
 
+  // WHERE THEY LAND DEPENDS ON THEIR CARD, NOT ON THEIR CLAIM. redeem_invite()
+  // writes the claim for an unverified or pending member on purpose — that is
+  // what makes a link wait across a multi-day review — but private.can_browse
+  // still refuses them the sesh. Sending them to /seshes/<id> anyway showed
+  // them a 404 for a sesh that is genuinely theirs. This reads the status to
+  // pick a screen and decides nothing: the database is still the one refusing.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("status")
+    .eq("id", userId)
+    .maybeSingle();
+  const status = (profile as { status?: string } | null)?.status;
+
+  // A STATUS WE COULD NOT READ IS NOT EVIDENCE THEY ARE WAITING. The held
+  // screen tells somebody their card needs approving, and saying that to a
+  // verified member because one self-read hiccuped is a lie on the one
+  // screen that has to be plainly true. With nothing to go on, send them to
+  // the sesh and let the database answer, the way it did before this branch
+  // existed.
+  const held = status !== undefined && !canBrowse(status);
+
   // Throws. Nothing after this runs, and the invite page is never re-rendered
   // with a link that has just been spent.
-  redirect(`/seshes/${sesh}`);
+  redirect(held ? "/invite/held" : `/seshes/${sesh}`);
 }

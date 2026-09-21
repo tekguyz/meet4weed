@@ -676,6 +676,40 @@ describe.skipIf(!configured)("invites", () => {
       expect(afterReview).toBe(true);
     });
 
+    /**
+     * #31, THE WHOLE COLD PATH, END TO END AND AGAINST THE DATABASE.
+     *
+     * Somebody with no account presses an invite button, signs up, comes
+     * back and presses again. By the time they press the second time they
+     * are a real member whose card nobody has looked at yet — which is
+     * exactly this member. The claim is written, the sesh stays shut, and
+     * the day a reviewer approves the card the sesh is there and they can
+     * ask to come.
+     *
+     * Proved on rows, not on a screen. The screen half is
+     * app/invite/__tests__/held.test.tsx.
+     */
+    it("opens the sesh and lets them ask to come the day a reviewer approves them", async () => {
+      const sesh = await makeSesh();
+      const { hash } = await mustMint(sesh);
+
+      // The second press, while the card is still unreviewed.
+      expect((await redeem(unverified, hash)).error).toBeNull();
+
+      const whileWaiting = await canSee(unverified, sesh);
+      const askedWhileWaiting = await ask(unverified, sesh);
+
+      await setStatus(unverified.id, "verified");
+      const afterReview = await canSee(unverified, sesh);
+      const askedAfterReview = await ask(unverified, sesh);
+      await setStatus(unverified.id, "unverified");
+
+      expect(whileWaiting).toBe(false);
+      expect(askedWhileWaiting.error).not.toBeNull();
+      expect(afterReview).toBe(true);
+      expect(askedAfterReview.error).toBeNull();
+    });
+
     /** A use spent by somebody who never finishes verification STAYS spent.
      *  Nothing about a link's liveness may depend on a future event — that is
      *  the race the row lock exists to kill. */
@@ -1096,8 +1130,9 @@ describe.skipIf(!configured)("invites", () => {
   describe("the functions are not callable by anon", () => {
     /** Postgres grants EXECUTE to PUBLIC by default, and "Automatically
      *  expose new tables" does not change that. Every one of these was
-     *  revoked. The signed-out path is #31 and will widen only the two it
-     *  needs. */
+     *  revoked, and #31 WIDENED NOTHING. The signed-out invite page reads
+     *  its preview through the service-role client on the server instead —
+     *  see lib/sesh/invite-reads.ts. The anon key never gets to guess. */
     it("refuses every new function to the anon key", async () => {
       const anon = createClient(URL!, PUBLISHABLE!, { auth: { persistSession: false, autoRefreshToken: false } });
 
@@ -1114,6 +1149,47 @@ describe.skipIf(!configured)("invites", () => {
       ]);
 
       for (const call of calls) expect(call.error).not.toBeNull();
+    });
+
+    /**
+     * THE GRANT #31 NEEDED, AND THE THREE IT DID NOT.
+     *
+     * The signed-out invite page has no session, so the server reads the
+     * preview for the visitor with the service-role key after checking the
+     * token's HMAC tag — lib/sesh/invite-reads.ts. `service_role` bypasses
+     * row POLICIES and not PRIVILEGES, and privileges are checked first, so
+     * without an explicit grant that read raised
+     *   42501  permission denied for function invite_preview
+     * on every cold invite page. Nothing caught it: the unit tests mock the
+     * client away, and this file only ever called it as a member or as anon.
+     * This is the test that would have.
+     *
+     * Differential, not a weakened rule: the SAME key that may now preview
+     * still may not redeem. Granting service_role EXECUTE on redeem_invite
+     * would be a way to spend a use with no member attached, and auth.uid()
+     * inside it is the whole reason a claim belongs to anybody.
+     */
+    it("lets service_role preview a link and still refuses it the three that act", async () => {
+      const sesh = await makeSesh();
+      const { hash } = await mustMint(sesh);
+
+      const previewed = await service.rpc("invite_preview", { p_token_hash: hash });
+
+      expect(previewed.error).toBeNull();
+      expect((previewed.data as unknown[]).length).toBe(1);
+
+      const acts = await Promise.all([
+        service.rpc("redeem_invite", { p_token_hash: hash }),
+        service.rpc("mint_invite", {
+          p_sesh: sesh,
+          p_token_hash: freshHash(),
+          p_max_uses: 1,
+          p_expires_at: hoursFromNow(5),
+        }),
+        service.rpc("revoke_invite", { p_invite: randomUUID() }),
+      ]);
+
+      for (const act of acts) expect(act.error?.code).toBe("42501");
     });
   });
 });
