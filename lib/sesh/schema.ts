@@ -29,6 +29,26 @@ export const SESH_TYPE_OPTIONS = SESH_TYPES.map((value) => ({
 export const SESH_STATUSES = ["open", "cancelled"] as const;
 export type SeshStatus = (typeof SESH_STATUSES)[number];
 
+/** Mirrors the public.sesh_visibility enum. `listed` is first because it is
+ *  the default in the column, in the schema below and on the form — a host
+ *  who never reads the question posts a public sesh, exactly as every sesh
+ *  behaved before unlisted existed. */
+export const SESH_VISIBILITIES = ["listed", "unlisted"] as const;
+export type SeshVisibility = (typeof SESH_VISIBILITIES)[number];
+
+/** Nothing here enforces anything. Who can see an unlisted sesh is decided by
+ *  the seshes_select policy and nowhere else — see
+ *  supabase/migrations/…_sesh_visibility.sql. This is the wording only. */
+export const SESH_VISIBILITY_LABELS: Record<SeshVisibility, string> = {
+  listed: "Anyone can find it",
+  unlisted: "Only people you send it to",
+};
+
+export const SESH_VISIBILITY_OPTIONS = SESH_VISIBILITIES.map((value) => ({
+  value,
+  label: SESH_VISIBILITY_LABELS[value],
+}));
+
 /** Every limit here mirrors a CHECK constraint on public.seshes. When one
  *  moves, both move — a zod schema looser than its column turns a friendly
  *  form error into a 500. */
@@ -40,6 +60,10 @@ export const seshInputSchema = z.object({
     .max(80, "Keep the name under 80 characters."),
   description: z.string().trim().max(1000, "Keep it under 1000 characters.").optional(),
   seshType: z.enum(SESH_TYPES, { message: "Pick a type." }),
+  /** Defaulted rather than required. A form that loses this field must post a
+   *  listed sesh, never fail — and `listed` is what the column would have
+   *  given it anyway. */
+  visibility: z.enum(SESH_VISIBILITIES, { message: "Pick who can find it." }).default("listed"),
   /** A `datetime-local` value. Always read as Florida time — see
    *  floridaWallClockToInstant in lib/dates.ts. */
   startsAtLocal: z.string().trim().min(1, "Say when it starts."),

@@ -122,6 +122,7 @@ describe("createSesh", () => {
       "starts_at",
       "title",
       "unit_note",
+      "visibility",
     ]);
   });
 
@@ -225,6 +226,34 @@ describe("createSesh", () => {
     expect(result?.ok).toBe(false);
     expect(insert).not.toHaveBeenCalled();
   });
+
+  /** Listed is the default everywhere — in the column, in the schema and on
+   *  the form. A host who never notices the question posts a public sesh,
+   *  which is the behaviour every sesh had before unlisted existed. */
+  it("posts a listed sesh when the host says nothing about it", async () => {
+    const fd = form();
+    fd.delete("visibility");
+
+    await act("createSesh", fd);
+
+    expect((insert.mock.calls[0][0] as Record<string, unknown>).visibility).toBe("listed");
+  });
+
+  it("posts an unlisted sesh when the host asks for one", async () => {
+    await act("createSesh", form({ visibility: "unlisted" }));
+
+    expect((insert.mock.calls[0][0] as Record<string, unknown>).visibility).toBe("unlisted");
+  });
+
+  /** The column is an enum, so a value it does not know would come back as a
+   *  22P02 the member cannot act on. It is refused here instead. */
+  it("refuses a visibility the column does not know", async () => {
+    const result = await act("createSesh", form({ visibility: "secret" }));
+
+    expect(result?.ok).toBe(false);
+    expect(result?.fieldErrors?.visibility).toBeTruthy();
+    expect(insert).not.toHaveBeenCalled();
+  });
 });
 
 describe("editSesh", () => {
@@ -249,6 +278,7 @@ describe("editSesh", () => {
       "starts_at",
       "title",
       "unit_note",
+      "visibility",
     ]);
   });
 
@@ -285,6 +315,21 @@ describe("editSesh", () => {
 
     expect(result?.ok).toBe(false);
     expect(update).not.toHaveBeenCalled();
+  });
+
+  /** Flipping it either way is an ordinary edit, not its own act like
+   *  cancelling: nobody is evicted in either direction, so nothing here has
+   *  to warn or confirm. */
+  it("takes a sesh out of the feed when the host unlists it", async () => {
+    await act("editSesh", editForm({ visibility: "unlisted" }));
+
+    expect((update.mock.calls[0][0] as Record<string, unknown>).visibility).toBe("unlisted");
+  });
+
+  it("puts it back when the host lists it again", async () => {
+    await act("editSesh", editForm({ visibility: "listed" }));
+
+    expect((update.mock.calls[0][0] as Record<string, unknown>).visibility).toBe("listed");
   });
 });
 

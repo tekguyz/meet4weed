@@ -6,7 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { LocationPicker } from "@/components/sesh/location-picker";
-import { SESH_TYPE_OPTIONS, type SeshType } from "@/lib/sesh/schema";
+import {
+  SESH_TYPE_OPTIONS,
+  SESH_VISIBILITY_OPTIONS,
+  type SeshType,
+  type SeshVisibility,
+} from "@/lib/sesh/schema";
 import type { ActionState } from "@/lib/forms/action-state";
 
 export type SeshFormDefaults = {
@@ -14,6 +19,7 @@ export type SeshFormDefaults = {
   title?: string;
   description?: string | null;
   seshType?: SeshType;
+  visibility?: SeshVisibility;
   startsAtLocal?: string;
   capacity?: number;
   areaName?: string | null;
@@ -75,6 +81,20 @@ export function SeshForm({ action, defaults = {}, submitLabel, pendingLabel }: P
         options={SESH_TYPE_OPTIONS}
         defaultValue={defaults.seshType ?? "chill"}
       />
+
+      <div className="flex flex-col gap-1.5">
+        <Select
+          label="Who can find it?"
+          name="visibility"
+          options={SESH_VISIBILITY_OPTIONS}
+          defaultValue={defaults.visibility ?? "listed"}
+        />
+        <p className="text-sm text-ink-muted">
+          Unlisted keeps it out of the feed, the map and search. Anyone already coming still sees
+          it, and you can change your mind later without dropping them.
+        </p>
+        <FieldError state={state} name="visibility" />
+      </div>
 
       <div className="flex flex-col gap-1.5">
         <Input

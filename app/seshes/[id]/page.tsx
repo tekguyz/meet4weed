@@ -65,6 +65,15 @@ export default async function SeshPage({ params }: { params: Promise<{ id: strin
           </span>
         </div>
         <p className="text-sm text-ink-muted">{WHEN.format(new Date(sesh.startsAt))} ET</p>
+        {/* Shown to everyone who can read the sesh at all, not just the host.
+            Somebody holding a seat should know this one is not public before
+            they paste it into a group chat. */}
+        {sesh.visibility === "unlisted" ? (
+          <p className="text-sm text-ink-muted">
+            Unlisted — not in the feed, the map or search. Only the host and the people coming can
+            see it.
+          </p>
+        ) : null}
         <p className="text-sm text-ink-muted">
           {sesh.areaName ? `${sesh.areaName} · ` : ""}
           {left === 0 ? "full" : `${left} spot${left === 1 ? "" : "s"} left`}

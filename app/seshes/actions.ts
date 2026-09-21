@@ -42,6 +42,10 @@ function readForm(formData: FormData) {
     title: formData.get("title"),
     description: optional(formData.get("description")),
     seshType: formData.get("seshType"),
+    // optional(), not get(): a missing field must arrive as undefined so the
+    // schema's default can take it. formData.get() returns null, which a
+    // zod default does not fill in.
+    visibility: optional(formData.get("visibility")),
     startsAtLocal: formData.get("startsAtLocal"),
     capacity: formData.get("capacity"),
     exactLat: formData.get("exactLat"),
@@ -107,6 +111,7 @@ export async function createSesh(
       title: parsed.data.title,
       description: parsed.data.description ?? null,
       sesh_type: parsed.data.seshType,
+      visibility: parsed.data.visibility,
       starts_at: when.at.toISOString(),
       capacity: parsed.data.capacity,
       exact_lat: parsed.data.exactLat,
@@ -164,6 +169,7 @@ export async function editSesh(
       title: parsed.data.title,
       description: parsed.data.description ?? null,
       sesh_type: parsed.data.seshType,
+      visibility: parsed.data.visibility,
       starts_at: when.at.toISOString(),
       capacity: parsed.data.capacity,
       exact_lat: parsed.data.exactLat,

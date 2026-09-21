@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { SeshStatus, SeshType } from "@/lib/sesh/schema";
+import type { SeshStatus, SeshType, SeshVisibility } from "@/lib/sesh/schema";
 import { FEED_PAGE_SIZE, MAP_LIMIT, type FeedFilters } from "@/lib/sesh/feed-filters";
 import type { ContributionKind } from "@/lib/sesh/on-deck";
 
@@ -10,8 +10,13 @@ import type { ContributionKind } from "@/lib/sesh/on-deck";
  *  wildcard names every column on the table, so `*` does not quietly trim the
  *  private ones — it fails the whole query with 42501. Proved in
  *  supabase/tests/__tests__/sesh-rls.test.ts. */
+/** `visibility` is here so a host's own screens can show it and the edit form
+ *  can post it back. It is NOT how an unlisted sesh is kept out of the feed:
+ *  no query in this file filters on it, and listFeed's `where` is byte for
+ *  byte what it was before unlisted existed. The seshes_select policy does
+ *  the excluding, so the feed, the map and the search cannot get it wrong. */
 const LIST_COLUMNS =
-  "id, host_id, title, description, sesh_type, starts_at, capacity, status, area_name, approved_count, materially_changed_at, fuzzy_lat, fuzzy_lng, fuzzy_radius_m";
+  "id, host_id, title, description, sesh_type, starts_at, capacity, status, visibility, area_name, approved_count, materially_changed_at, fuzzy_lat, fuzzy_lng, fuzzy_radius_m";
 
 export type SeshListItem = {
   id: string;
@@ -22,6 +27,7 @@ export type SeshListItem = {
   startsAt: string;
   capacity: number;
   status: SeshStatus;
+  visibility: SeshVisibility;
   areaName: string | null;
   approvedCount: number;
   materiallyChangedAt: string | null;
@@ -42,6 +48,7 @@ function toListItem(row: Row): SeshListItem {
     startsAt: row.starts_at as string,
     capacity: row.capacity as number,
     status: row.status as SeshStatus,
+    visibility: row.visibility as SeshVisibility,
     areaName: (row.area_name as string | null) ?? null,
     approvedCount: (row.approved_count as number | null) ?? 0,
     materiallyChangedAt: (row.materially_changed_at as string | null) ?? null,
