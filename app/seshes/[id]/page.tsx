@@ -2,11 +2,13 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AddressPanel } from "@/components/sesh/address-panel";
 import { ChangedBanner } from "@/components/sesh/changed-banner";
+import { InvitePanel } from "@/components/sesh/invite-panel";
 import { OnDeck } from "@/components/sesh/on-deck";
 import { AskToJoin, DecideButtons, WithdrawRsvp } from "@/components/sesh/rsvp-buttons";
 import { floridaToday } from "@/lib/dates";
 import { memberAccess } from "@/lib/member/gate";
 import { getMyProfile } from "@/lib/profiles/queries";
+import { listSeshInvites, type InviteRow } from "@/lib/sesh/invite-reads";
 import {
   getSesh,
   getSeshAddress,
@@ -43,6 +45,9 @@ export default async function SeshPage({ params }: { params: Promise<{ id: strin
   // locked state — the screen is not told why, and must not ask.
   const onDeck = await listContributions(id);
   const iAmHost = sesh.hostId === profile.id;
+  // Only ever fetched for the host. The invites_select policy would refuse
+  // anybody else anyway; not asking is one fewer query on every other read.
+  const invites = iAmHost ? await listSeshInvites(id) : [];
   const mine = rsvps.find((r) => r.memberId === profile.id) ?? null;
   const approved = rsvps.filter((r) => r.status === "approved");
   const waiting = rsvps.filter((r) => r.status === "requested");
@@ -87,7 +92,7 @@ export default async function SeshPage({ params }: { params: Promise<{ id: strin
       <OnDeck seshId={sesh.id} rows={onDeck} />
 
       {iAmHost ? (
-        <HostQueue seshId={sesh.id} waiting={waiting} approved={approved} />
+        <HostQueue seshId={sesh.id} waiting={waiting} approved={approved} invites={invites} />
       ) : (
         <GuestActions
           sesh={sesh}
@@ -117,10 +122,12 @@ function HostQueue({
   seshId,
   waiting,
   approved,
+  invites,
 }: {
   seshId: string;
   waiting: RsvpRow[];
   approved: RsvpRow[];
+  invites: InviteRow[];
 }) {
   return (
     <>
@@ -157,6 +164,8 @@ function HostQueue({
           </ul>
         )}
       </section>
+
+      <InvitePanel seshId={seshId} invites={invites} />
     </>
   );
 }
