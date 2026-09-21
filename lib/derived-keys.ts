@@ -1,7 +1,7 @@
 import "server-only";
 import { hkdfSync } from "node:crypto";
 
-export type KeyPurpose = "image" | "challenge";
+export type KeyPurpose = "image" | "challenge" | "invite";
 
 /** One secret in the environment, one independent key per job. HKDF means a
  *  key recovered from one purpose says nothing about the other. */
