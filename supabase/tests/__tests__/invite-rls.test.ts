@@ -1150,5 +1150,46 @@ describe.skipIf(!configured)("invites", () => {
 
       for (const call of calls) expect(call.error).not.toBeNull();
     });
+
+    /**
+     * THE GRANT #31 NEEDED, AND THE THREE IT DID NOT.
+     *
+     * The signed-out invite page has no session, so the server reads the
+     * preview for the visitor with the service-role key after checking the
+     * token's HMAC tag — lib/sesh/invite-reads.ts. `service_role` bypasses
+     * row POLICIES and not PRIVILEGES, and privileges are checked first, so
+     * without an explicit grant that read raised
+     *   42501  permission denied for function invite_preview
+     * on every cold invite page. Nothing caught it: the unit tests mock the
+     * client away, and this file only ever called it as a member or as anon.
+     * This is the test that would have.
+     *
+     * Differential, not a weakened rule: the SAME key that may now preview
+     * still may not redeem. Granting service_role EXECUTE on redeem_invite
+     * would be a way to spend a use with no member attached, and auth.uid()
+     * inside it is the whole reason a claim belongs to anybody.
+     */
+    it("lets service_role preview a link and still refuses it the three that act", async () => {
+      const sesh = await makeSesh();
+      const { hash } = await mustMint(sesh);
+
+      const previewed = await service.rpc("invite_preview", { p_token_hash: hash });
+
+      expect(previewed.error).toBeNull();
+      expect((previewed.data as unknown[]).length).toBe(1);
+
+      const acts = await Promise.all([
+        service.rpc("redeem_invite", { p_token_hash: hash }),
+        service.rpc("mint_invite", {
+          p_sesh: sesh,
+          p_token_hash: freshHash(),
+          p_max_uses: 1,
+          p_expires_at: hoursFromNow(5),
+        }),
+        service.rpc("revoke_invite", { p_invite: randomUUID() }),
+      ]);
+
+      for (const act of acts) expect(act.error?.code).toBe("42501");
+    });
   });
 });

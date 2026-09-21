@@ -435,9 +435,12 @@ describe("redeeming", () => {
       expect(redirect).toHaveBeenCalledWith("/invite/held");
     });
 
-    /** A profile row that cannot be read is not a reason to show somebody a
-     *  404 for a sesh they just claimed. */
-    it("sends a member with no readable status to the held screen", async () => {
+    /** A STATUS WE COULD NOT READ IS NOT EVIDENCE THEY ARE WAITING. The held
+     *  screen tells somebody their card needs approving. Saying that to a
+     *  VERIFIED member because one self-read hiccuped is a lie on the one
+     *  screen that has to be plainly true, so with nothing to go on the
+     *  database gets to answer instead. */
+    it("sends a member with no readable status to the sesh, not the held screen", async () => {
       profileStatus.mockReturnValue(null);
       rpc.mockResolvedValue({ data: SESH, error: null });
       const { redeemInvite } = await actions();
@@ -446,7 +449,7 @@ describe("redeeming", () => {
         "NEXT_REDIRECT",
       );
 
-      expect(redirect).toHaveBeenCalledWith("/invite/held");
+      expect(redirect).toHaveBeenCalledWith(`/seshes/${SESH}`);
     });
 
     /** An expired card is read-only, not gone. private.can_browse lets it
@@ -476,8 +479,10 @@ describe("redeeming", () => {
     });
   });
 
-  /** The claim is a row on the server now, so the cookie is finished. A
-   *  member who loses it after this point loses nothing. */
+  /** The cookie's ONLY job was to survive sign-up. Once they are signed in
+   *  it is finished, whatever the press does next — they are holding the
+   *  token in the form they just posted, and the claim, if there is one, is
+   *  a row on the server. */
   describe("the held cookie", () => {
     it("is cleared once the claim is written", async () => {
       rpc.mockResolvedValue({ data: SESH, error: null });
@@ -490,13 +495,34 @@ describe("redeeming", () => {
       expect(cookieDelete).toHaveBeenCalledWith("m4w_held_invite");
     });
 
-    /** A refused press has to be able to try again. Clearing on failure
-     *  would throw away the link of somebody who signed in a minute late. */
-    it("is kept when the press is refused", async () => {
+    /** A cookie kept through a refusal sits in the browser for half an hour
+     *  and bounces their NEXT sign-in to a link that is already dead. */
+    it("is cleared when the press is refused too", async () => {
       rpc.mockResolvedValue({ error: { code: "M4W19", message: "that link does not work" } });
       const { redeemInvite } = await actions();
 
       await redeemInvite(null, form({ token: await liveToken() }));
+
+      expect(cookieDelete).toHaveBeenCalledWith("m4w_held_invite");
+    });
+
+    it("is cleared when the IP is over its allowance", async () => {
+      claimRedemption.mockResolvedValue(false);
+      const { redeemInvite } = await actions();
+
+      await redeemInvite(null, form({ token: await liveToken() }));
+
+      expect(cookieDelete).toHaveBeenCalledWith("m4w_held_invite");
+    });
+
+    /** Not on the cold press. That press is the one that SETS it. */
+    it("is not cleared by a press with no account", async () => {
+      getUser.mockResolvedValue({ data: { user: null } });
+      const { redeemInvite } = await actions();
+
+      await expect(redeemInvite(null, form({ token: await liveToken() }))).rejects.toThrow(
+        "NEXT_REDIRECT",
+      );
 
       expect(cookieDelete).not.toHaveBeenCalled();
     });

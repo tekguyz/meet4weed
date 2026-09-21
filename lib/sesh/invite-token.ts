@@ -15,6 +15,28 @@ import { deriveKey } from "@/lib/derived-keys";
  */
 const RANDOM_BYTES = 16;
 
+/**
+ * Is this SHAPED like a token? base64url, a dot, base64url, and nothing else.
+ *
+ * NOT a signature check, and no substitute for one. Only
+ * [[verifyInviteToken]] says a token is real. This exists for the one caller
+ * that must NOT verify — lib/sesh/held-invite.ts, which carries whatever a
+ * cookie held back to the invite page so a tampered token reads the same one
+ * sentence as every other dead link. It checks shape only so a junk cookie
+ * cannot become a path.
+ *
+ * It lives here because this module owns the format. A second copy of the
+ * rule somewhere else is a second thing to update the day the format moves.
+ *
+ * 16 random bytes and a SHA-256 tag make a token about 65 characters, so the
+ * cap is slack, not a measurement.
+ */
+const SHAPE = /^[A-Za-z0-9_-]{1,128}\.[A-Za-z0-9_-]{1,128}$/;
+
+export function looksLikeInviteToken(token: string): boolean {
+  return SHAPE.test(token);
+}
+
 function sign(secret: string, body: string): string {
   return createHmac("sha256", deriveKey(secret, "invite")).update(body).digest("base64url");
 }

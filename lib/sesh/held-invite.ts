@@ -1,5 +1,6 @@
 import "server-only";
 import { cookies } from "next/headers";
+import { looksLikeInviteToken } from "@/lib/sesh/invite-token";
 import { invitePath } from "@/lib/sesh/invites";
 
 /**
@@ -26,8 +27,9 @@ import { invitePath } from "@/lib/sesh/invites";
  *
  * Nothing here verifies the tag. That is deliberate: a tampered cookie has to
  * reach the invite page and get the SAME sentence as an expired link, a
- * revoked link and a link that never existed. Shape is all that is checked,
- * and only so a junk cookie cannot become a path.
+ * revoked link and a link that never existed. Shape is all that is checked —
+ * looksLikeInviteToken(), which lives beside the format it describes — and
+ * only so a junk cookie cannot become a path.
  */
 export const HELD_INVITE_COOKIE = "m4w_held_invite";
 
@@ -35,16 +37,11 @@ export const HELD_INVITE_COOKIE = "m4w_held_invite";
  *  shared or borrowed browser is not carrying somebody else's link around. */
 export const HELD_INVITE_MAX_AGE = 30 * 60;
 
-/** base64url "." base64url, and nothing else. A token is 16 random bytes and
- *  a SHA-256 tag, so the real thing is ~65 characters; the cap is slack, not
- *  a measurement. This is a shape check, NOT a signature check. */
-const SHAPE = /^[A-Za-z0-9_-]{1,128}\.[A-Za-z0-9_-]{1,128}$/;
-
 /** Hold the token across sign-up. `httpOnly` keeps it out of any script,
  *  `sameSite: "lax"` keeps another site from steering the bounce, and
  *  `secure` is off only for plain-http `next dev`. */
 export async function holdInvite(token: string): Promise<void> {
-  if (!SHAPE.test(token)) return;
+  if (!looksLikeInviteToken(token)) return;
   (await cookies()).set(HELD_INVITE_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
@@ -63,7 +60,7 @@ export async function holdInvite(token: string): Promise<void> {
  */
 export async function heldInvitePath(): Promise<string | null> {
   const token = (await cookies()).get(HELD_INVITE_COOKIE)?.value;
-  if (!token || !SHAPE.test(token)) return null;
+  if (!token || !looksLikeInviteToken(token)) return null;
   return invitePath(token);
 }
 

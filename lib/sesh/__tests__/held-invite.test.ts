@@ -91,18 +91,31 @@ describe("coming back", () => {
     expect(await heldInvitePath()).toBeNull();
   });
 
-  /** A crafted cookie must not become an off-site redirect. Shape refuses
-   *  the obvious ones, and invitePath() encodes whatever is left into one
-   *  path segment. */
-  it("cannot be steered off this origin", async () => {
+  /** A crafted cookie must not become an off-site redirect. None of these
+   *  is token-shaped, so every one is refused outright.
+   *
+   *  Asserted as `toBeNull()` and not as "null OR starts with /invite/",
+   *  which was true whatever the code did and proved nothing. */
+  it("refuses a value that is not a token, so it can never steer a redirect", async () => {
     const { heldInvitePath } = await held();
 
     for (const junk of ["//evil.test", "/\\evil.test", "https://evil.test", "..%2F..%2F"]) {
       cookieGet.mockReturnValue({ value: junk });
-      const path = await heldInvitePath();
-      expect(path === null || path.startsWith("/invite/")).toBe(true);
-      expect(path ?? "").not.toContain("evil.test");
+
+      expect(await heldInvitePath()).toBeNull();
     }
+  });
+
+  /** And if one ever did get past the shape check, invitePath() encodes it
+   *  into ONE path segment, so it is still a path on this origin. */
+  it("encodes whatever it does carry into a single path segment", async () => {
+    cookieGet.mockReturnValue({ value: TOKEN });
+    const { heldInvitePath } = await held();
+
+    const path = (await heldInvitePath())!;
+
+    expect(path.startsWith("/invite/")).toBe(true);
+    expect(path.slice("/invite/".length)).not.toContain("/");
   });
 
   /** THE TAG IS NOT CHECKED HERE, and that is the design. A flipped byte

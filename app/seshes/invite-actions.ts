@@ -178,6 +178,14 @@ export async function redeemInvite(_prev: ActionState | null, formData: FormData
 
   const { supabase, userId } = caller;
 
+  // THE COOKIE'S ONLY JOB WAS TO SURVIVE SIGN-UP, and they are signed in, so
+  // it is finished — whatever happens below. Dropped BEFORE the press is
+  // decided, not after it succeeds: a cookie kept through a refusal sits in
+  // the browser for half an hour and bounces their NEXT sign-in to a link
+  // that is already dead. Nothing is lost by dropping it, because they are
+  // holding the token in the form they just posted.
+  await releaseHeldInvite();
+
   const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   const allowed = await inviteLimitsFromEnv().claimRedemption(ip, floridaToday());
   // Fails open on an Upstash outage — see lib/sesh/invite-limits.ts. Over the
@@ -188,12 +196,6 @@ export async function redeemInvite(_prev: ActionState | null, formData: FormData
   if (error) return { ok: false, message: readable(error.code) };
 
   const sesh = String(data ?? "");
-
-  // The claim is a row now. The cookie has no job left, and a link left lying
-  // in a browser is a link that can be carried somewhere it was not meant to
-  // go. Cleared on success ONLY — a failed press must still be able to try
-  // again after signing in.
-  await releaseHeldInvite();
 
   revalidatePath(`/seshes/${sesh}`);
   revalidatePath("/seshes/mine");
@@ -209,9 +211,17 @@ export async function redeemInvite(_prev: ActionState | null, formData: FormData
     .select("status")
     .eq("id", userId)
     .maybeSingle();
-  const status = (profile as { status?: string } | null)?.status ?? "";
+  const status = (profile as { status?: string } | null)?.status;
+
+  // A STATUS WE COULD NOT READ IS NOT EVIDENCE THEY ARE WAITING. The held
+  // screen tells somebody their card needs approving, and saying that to a
+  // verified member because one self-read hiccuped is a lie on the one
+  // screen that has to be plainly true. With nothing to go on, send them to
+  // the sesh and let the database answer, the way it did before this branch
+  // existed.
+  const held = status !== undefined && !canBrowse(status);
 
   // Throws. Nothing after this runs, and the invite page is never re-rendered
   // with a link that has just been spent.
-  redirect(canBrowse(status) ? `/seshes/${sesh}` : "/invite/held");
+  redirect(held ? "/invite/held" : `/seshes/${sesh}`);
 }
