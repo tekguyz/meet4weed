@@ -25,6 +25,8 @@ describe("deriveKey", () => {
 
   it("gives each purpose an independent key", () => {
     expect(deriveKey(SECRET, "image").equals(deriveKey(SECRET, "challenge"))).toBe(false);
+    expect(deriveKey(SECRET, "invite").equals(deriveKey(SECRET, "challenge"))).toBe(false);
+    expect(deriveKey(SECRET, "invite").equals(deriveKey(SECRET, "image"))).toBe(false);
   });
 
   it("refuses a secret shorter than 32 bytes", () => {
