@@ -1,0 +1,31 @@
+-- ---------------------------------------------------------------------------
+-- Plan 03, ticket #9 — the missing SELECT grant. Found while verifying #30.
+--
+-- NOT AN INVITES CHANGE. It is here because the invite work could not be
+-- demonstrated without it, and because what it fixes is worse than the
+-- feature it was blocking.
+--
+-- 20260920090000 added public.seshes.materially_changed_at and granted
+-- `authenticated` nothing on it. Its comment reasons carefully about not
+-- granting UPDATE — a host who could set the stamp could hide a move — and
+-- never grants SELECT either. "Automatically expose new tables" is OFF, so
+-- a column nobody grants is a column nobody can read.
+--
+-- lib/sesh/queries.ts names materially_changed_at in LIST_COLUMNS, and per
+-- CLAUDE.md a SELECT that names a non-granted column fails WHOLE with 42501.
+-- So every query in that module — the feed, the map, search, my seshes, one
+-- sesh's page — has been returning 42501 against the hosted project.
+--
+-- It was invisible because those functions end `return (data ?? []).map(...)`.
+-- A refused query and an empty project look identical from a screen: the feed
+-- renders "nothing on yet" and a sesh page renders a 404. Nothing throws and
+-- nothing logs. That is the actual lesson here, and the new test
+-- supabase/tests/__tests__/sesh-list-columns.test.ts is the guard: it reads
+-- the column list out of lib/sesh/queries.ts and sends it as one query, so
+-- the next column added without a grant goes red instead of quiet.
+--
+-- SELECT only. The write reasoning in #9 stands untouched: the stamp stays
+-- derived, and no grant lets a host write it.
+-- ---------------------------------------------------------------------------
+
+grant select (materially_changed_at) on public.seshes to authenticated;
