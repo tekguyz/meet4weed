@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { SeshStatus, SeshType } from "@/lib/sesh/schema";
 import { FEED_PAGE_SIZE, MAP_LIMIT, type FeedFilters } from "@/lib/sesh/feed-filters";
+import type { ContributionKind } from "@/lib/sesh/on-deck";
 
 /** Named columns, never `select *`.
  *
@@ -218,4 +219,50 @@ export async function pendingCounts(seshIds: string[]): Promise<Record<string, n
   const counts: Record<string, number> = {};
   for (const row of data ?? []) counts[(row as Row).sesh_id as string] = (counts[(row as Row).sesh_id as string] ?? 0) + 1;
   return counts;
+}
+
+export type ContributionRow = {
+  id: string;
+  memberId: string;
+  kind: ContributionKind;
+  label: string | null;
+  strainType: string | null;
+  handle: string;
+  displayName: string | null;
+};
+
+/** Named columns, never `select *` — the habit this whole module keeps. */
+const CONTRIBUTION_COLUMNS =
+  "id, member_id, kind, label, strain_type, created_at, profiles(handle, display_name)";
+
+function toContribution(row: Row): ContributionRow {
+  const profile = (row.profiles ?? {}) as Record<string, unknown>;
+  return {
+    id: row.id as string,
+    memberId: row.member_id as string,
+    kind: row.kind as ContributionKind,
+    label: (row.label as string | null) ?? null,
+    strainType: (row.strain_type as string | null) ?? null,
+    handle: (profile.handle as string) ?? "unknown",
+    displayName: (profile.display_name as string | null) ?? null,
+  };
+}
+
+/** The on-deck list, or an empty array.
+ *
+ *  AN EMPTY ARRAY IS THE LOCKED STATE. A requester reads no rows, not an
+ *  error and not a partial list, and the screen renders from that emptiness
+ *  exactly as AddressPanel renders the locked address. This function asks for
+ *  the whole list and takes what comes back; private.can_browse plus the
+ *  contributions_select policy do all the deciding. There is no admin branch
+ *  to mirror here, because there is none in the database.
+ */
+export async function listContributions(seshId: string): Promise<ContributionRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("contributions")
+    .select(CONTRIBUTION_COLUMNS)
+    .eq("sesh_id", seshId)
+    .order("created_at", { ascending: true });
+  return (data ?? []).map((row) => toContribution(row as Row));
 }
