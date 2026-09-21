@@ -15,7 +15,9 @@ import {
   INVITE_USES_DEFAULT,
   INVITE_USES_MAX,
   INVITES_PER_SESH,
+  claimsAwaitingMention,
   expiryFromDays,
+  isInviteLive,
   inviteMintSchema,
   invitePath,
   inviteUrl,
@@ -92,6 +94,84 @@ describe("the link", () => {
   it("does not double the slash after an origin with a trailing one", () => {
     expect(inviteUrl("https://meet4weed.app/", "tok")).toBe("https://meet4weed.app/invite/tok");
     expect(inviteUrl("https://meet4weed.app", "tok")).toBe("https://meet4weed.app/invite/tok");
+  });
+});
+
+describe("who gets the sentence", () => {
+  const known = (...ids: string[]) => new Set(ids);
+
+  /** The one person it exists for: somebody spent a use and never appeared.
+   *  That is a use the host cannot otherwise account for. */
+  it("counts a claimant the host has never met", () => {
+    expect(claimsAwaitingMention(["ghost"], known())).toBe(1);
+  });
+
+  /** THE RULE IS "HAS THE HOST MET THIS PERSON", not "can they join".
+   *  Somebody the host DECLINED has already surfaced by name in the queue and
+   *  been acted on. Saying "claimed, not yet able to join" about them would
+   *  imply they are still waiting, which is the opposite of true. Any rsvp
+   *  row at all — waiting, coming, declined, removed, withdrawn — means met. */
+  it("says nothing about anybody who holds an rsvp row of any kind", () => {
+    expect(claimsAwaitingMention(["declined"], known("declined"))).toBe(0);
+    expect(claimsAwaitingMention(["waiting"], known("waiting"))).toBe(0);
+  });
+
+  it("counts only the ones the host has not met", () => {
+    expect(claimsAwaitingMention(["a", "b", "c"], known("b"))).toBe(2);
+  });
+
+  it("is nothing when nobody claimed", () => {
+    expect(claimsAwaitingMention([], known("a"))).toBe(0);
+  });
+
+  /** It takes ids and ids only. Nothing about verification reaches it, so
+   *  nothing about verification can leak out of it. */
+  it("takes no status of any kind", () => {
+    expect(claimsAwaitingMention.length).toBe(2);
+  });
+});
+
+describe("whether a link still works", () => {
+  const base = {
+    revokedAt: null as string | null,
+    expiresAt: "2026-09-30T00:00:00.000Z",
+    useCount: 0,
+    maxUses: 1,
+  };
+  const NOW = new Date("2026-09-21T00:00:00.000Z").getTime();
+
+  it("is live when nothing has happened to it", () => {
+    expect(isInviteLive(base, NOW)).toBe(true);
+  });
+
+  it("is dead once revoked", () => {
+    expect(isInviteLive({ ...base, revokedAt: "2026-09-21T00:00:00.000Z" }, NOW)).toBe(false);
+  });
+
+  it("is dead once the expiry has passed", () => {
+    expect(isInviteLive({ ...base, expiresAt: "2026-09-20T00:00:00.000Z" }, NOW)).toBe(false);
+  });
+
+  it("is dead once the uses are gone, and live while any remain", () => {
+    expect(isInviteLive({ ...base, useCount: 1, maxUses: 1 }, NOW)).toBe(false);
+    expect(isInviteLive({ ...base, useCount: 1, maxUses: 3 }, NOW)).toBe(true);
+  });
+
+  /** A COPY of private.invite_is_live, and cosmetic only. The database is the
+   *  boundary — mint counts with its own copy and redeem checks under a row
+   *  lock — so nothing a browser believes here can let a use be spent. The
+   *  three SQL conditions are mirrored, and this test is the note saying that
+   *  when one moves, both move. */
+  it("mirrors the three conditions the migration uses", () => {
+    const sql = readFileSync(
+      resolve(process.cwd(), "supabase/migrations/20260921090000_invites.sql"),
+      "utf8",
+    );
+    const fn = sql.slice(sql.indexOf("function private.invite_is_live"));
+
+    expect(fn).toContain("revoked_at is null");
+    expect(fn).toContain("expires_at > now()");
+    expect(fn).toContain("use_count < p_invite.max_uses");
   });
 });
 

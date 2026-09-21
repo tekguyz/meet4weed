@@ -97,3 +97,46 @@ export type InviteMintInput = z.infer<typeof inviteMintSchema>;
 export function expiryFromDays(days: number, now: Date = new Date()): string {
   return new Date(now.getTime() + days * 86_400_000).toISOString();
 }
+
+/**
+ * Which claims still need [[CLAIMED_NOT_YET]] said about them.
+ *
+ * THE RULE IS "HAS THE HOST MET THIS PERSON", and it is deliberately not
+ * "can this person join". A claimant who holds ANY rsvp row — waiting,
+ * coming, declined, removed, withdrawn — has already surfaced to the host by
+ * name somewhere, and the host either acted on them or is about to. Saying
+ * "claimed, not yet able to join" about somebody the host declined last
+ * Tuesday would imply that person is still waiting, which is the opposite of
+ * true.
+ *
+ * The sentence exists for exactly one person: the one who spent a use and
+ * then never appeared. Parent #23 — "their invite list shows that a claim
+ * was made and that the claimant cannot join yet". That is a use the host
+ * cannot otherwise account for, and it is why the count is the ONLY thing
+ * the host is told. Not a name, not a status, not a reason.
+ *
+ * It takes ids and ids only. Nothing about verification reaches it, so
+ * nothing about verification can leak out of it.
+ */
+export function claimsAwaitingMention(claimants: string[], knownToHost: ReadonlySet<string>): number {
+  return claimants.filter((id) => !knownToHost.has(id)).length;
+}
+
+/** Not revoked, not expired, uses remaining.
+ *
+ *  A COPY OF private.invite_is_live, and cosmetic ONLY. The database is the
+ *  boundary: mint_invite counts with its own copy and redeem_invite checks
+ *  under a row lock, so nothing a browser believes about liveness can let a
+ *  use be spent. This one greys out a button and picks a sentence. If the
+ *  two ever disagree the database wins and the host sees a refusal, which is
+ *  the right way round for a disagreement to fail. */
+export function isInviteLive(
+  invite: { revokedAt: string | null; expiresAt: string; useCount: number; maxUses: number },
+  now: number = Date.now(),
+): boolean {
+  return (
+    invite.revokedAt === null &&
+    new Date(invite.expiresAt).getTime() > now &&
+    invite.useCount < invite.maxUses
+  );
+}

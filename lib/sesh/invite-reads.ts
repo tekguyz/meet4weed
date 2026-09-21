@@ -2,6 +2,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { serverEnv } from "@/lib/server-env";
 import { hashInviteToken, verifyInviteToken } from "@/lib/sesh/invite-token";
+import { claimsAwaitingMention, isInviteLive } from "@/lib/sesh/invites";
 
 /**
  * Reading invites. Two readers, and neither of them spends anything.
@@ -97,35 +98,36 @@ export async function listSeshInvites(seshId: string): Promise<InviteRow[]> {
 
   const { data: rsvpRows } = await supabase.from("rsvps").select("member_id").eq("sesh_id", seshId);
 
-  const inQueue = new Set((rsvpRows ?? []).map((r) => (r as Record<string, unknown>).member_id as string));
+  // Ids only. Every rsvp row on this sesh is somebody the host has already
+  // met by name in their own queue — see claimsAwaitingMention for why that,
+  // and not "can this person join", is the rule.
+  const knownToHost = new Set(
+    (rsvpRows ?? []).map((r) => (r as Record<string, unknown>).member_id as string),
+  );
 
-  const claims = new Map<string, { total: number; waiting: number }>();
+  const claimantsByInvite = new Map<string, string[]>();
   for (const row of (claimRows ?? []) as Record<string, unknown>[]) {
     const key = row.invite_id as string;
-    const seen = claims.get(key) ?? { total: 0, waiting: 0 };
-    seen.total += 1;
-    if (!inQueue.has(row.member_id as string)) seen.waiting += 1;
-    claims.set(key, seen);
+    claimantsByInvite.set(key, [...(claimantsByInvite.get(key) ?? []), row.member_id as string]);
   }
 
   const now = Date.now();
 
   return invites.map((row) => {
-    const counted = claims.get(row.id as string) ?? { total: 0, waiting: 0 };
-    const maxUses = row.max_uses as number;
-    const useCount = row.use_count as number;
-    const expiresAt = row.expires_at as string;
-    const revokedAt = (row.revoked_at as string | null) ?? null;
+    const claimants = claimantsByInvite.get(row.id as string) ?? [];
+    const invite = {
+      id: row.id as string,
+      expiresAt: row.expires_at as string,
+      maxUses: row.max_uses as number,
+      useCount: row.use_count as number,
+      revokedAt: (row.revoked_at as string | null) ?? null,
+    };
 
     return {
-      id: row.id as string,
-      expiresAt,
-      maxUses,
-      useCount,
-      revokedAt,
-      live: revokedAt === null && new Date(expiresAt).getTime() > now && useCount < maxUses,
-      claimCount: counted.total,
-      waitingCount: counted.waiting,
+      ...invite,
+      live: isInviteLive(invite, now),
+      claimCount: claimants.length,
+      waitingCount: claimsAwaitingMention(claimants, knownToHost),
     };
   });
 }
