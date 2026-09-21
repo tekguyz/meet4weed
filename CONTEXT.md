@@ -92,16 +92,79 @@ renders the locked card from it rather than deciding anything itself.
 
 ## Wipe
 
-Deletion of the exact location seven days after a sesh, leaving the title,
-times and area name as history. Different from the unlock ending at 12 hours:
-that is about who may read the data, this is about the data no longer being
-there.
+What the app forgets seven days after a sesh starts: the exact location, the
+bring list, the invites and the invite claims. The title, the times, the area
+name and the fuzzy circle stay, so a member keeps a history of where they went
+without the app keeping who was in the room.
+
+Different from the unlock ending at 12 hours: that is about who may read the
+data, this is about the data no longer being there.
+
+One function, `public.sesh_address_reaper()`, and one schedule. The name is
+narrower than the job for a reason the migration header states. It rides inside
+the daily expiry sweep; there is no second cron entry.
+
+`rsvps` is deliberately **not** wiped, and nothing has decided whether it
+should be.
 
 ## Area name
 
 A short public label for roughly where a sesh is — "Riverside", "South Tampa".
 Looked up from the **fuzzy** point, never the exact one, so nothing private
 leaves the app.
+
+## On deck
+
+The bring list for one sesh. Table `public.contributions`, one row per thing
+per member. **Not "inventory" and not "stash"** — nobody is offering anything,
+they are saying what they are bringing to a room they were already invited to.
+
+Three states are three row shapes: `strain` (a name and a strain type), `item`
+(a name), and `none` (the member is bringing nothing, said out loud). A
+trigger keeps `none` and the other two exclusive, so nobody is ever in both
+states and no screen has to pick one to hide.
+
+Losing `approved` takes your rows with you. A host is never left counting on
+something nobody is bringing.
+
+## Invite
+
+A link a host hands somebody. Table `public.invites`.
+
+**The token is never stored.** The row holds `sha256(token)` only, and
+`token_hash` carries no SELECT grant for `authenticated`, so a host's own panel
+cannot rebuild the link either. The host sees it once, in the reply to
+`mint_invite()`.
+
+An invite lets somebody **ask**. It never admits them. Redeeming writes a
+claim, never an RSVP, and **the host still approves by hand.**
+
+**A use is spent by a signed-in person pressing a button, never by a page
+load.** `invite_preview()` reads and changes nothing; `redeem_invite()` spends.
+Group-chat link previews fetch a pasted URL, and a one-use link that spent
+itself on that fetch would be dead before a human saw it.
+
+## Claim
+
+`public.invite_claims`: this member walked through that link. It is **never**
+an RSVP and **never** an input to `private.can_see_address()`.
+
+A claim is permanent until the wipe takes it. Only being denied or kicked ends
+what it lets somebody see.
+
+## Unlisted
+
+`seshes.visibility = 'unlisted'`: absent from the feed, the map and search.
+Readable by the host, by anybody holding a live RSVP, and by anybody holding an
+invite claim.
+
+It is not a secret sesh — the same RLS decides everything else about it — it is
+a sesh that does not advertise. Every existing row is `listed`, and `listed`
+behaves exactly as a sesh behaved before the column existed.
+
+**The exclusion lives in the policy, never in a query.** `lib/sesh/queries.ts`
+kept the `where` clauses it already had. The feed, the map and search cannot
+get this wrong, because none of the three knows the rule exists.
 
 ## Active member vs. browsing member
 
