@@ -47,8 +47,9 @@ grant insert (visibility) on public.seshes to authenticated;
 grant update (visibility) on public.seshes to authenticated;
 
 -- "Automatically expose new tables" is OFF. A table-level ALL covers columns
--- added later, so this is a re-statement rather than a change — kept because
--- every migration in this repo that touches a table says it out loud.
+-- added later, so the grant #4 already made covers `visibility` too and this
+-- line changes nothing. It is here so that this file, read on its own, says
+-- what service_role holds rather than sending the reader to another one.
 grant all on public.seshes to service_role;
 
 -- ---------------------------------------------------------------------------
@@ -60,8 +61,12 @@ grant all on public.seshes to service_role;
 -- is `visibility = 'listed' and status = 'open'`, and the feed orders by
 -- starts_at inside exactly that set.
 --
--- seshes_open_upcoming_idx (#6) is left in place. The feed's own `where` still
--- names status and nothing else, so that index still serves it.
+-- seshes_open_upcoming_idx (#6) is left in place and is what the feed will
+-- usually get: a host's own unlisted rows also satisfy the policy, so the
+-- planner cannot prove the feed's rows all sit inside this narrower index.
+-- This one is here to keep the rule — index every column a policy reads —
+-- honest, and it is the index the public branch would want if the planner
+-- ever can use it. Two partial indexes on a small table is the price.
 -- ---------------------------------------------------------------------------
 
 create index seshes_listed_open_upcoming_idx on public.seshes (starts_at)
@@ -123,7 +128,7 @@ returns void
 language plpgsql
 security definer
 set search_path = ''
-as $fn$
+as $$
 declare
   v_caller uuid := (select auth.uid());
   v_sesh public.seshes;
@@ -180,7 +185,7 @@ begin
      where id = v_existing.id;
   end if;
 end;
-$fn$;
+$$;
 
 -- CREATE OR REPLACE keeps the old grants, so these are a re-statement. They
 -- are written out anyway: a function whose EXECUTE grants you have to go and

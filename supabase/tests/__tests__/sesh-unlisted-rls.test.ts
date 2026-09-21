@@ -104,13 +104,36 @@ describe.skipIf(!configured)("unlisted seshes", () => {
   const setVisibility = (as: Member, sesh: string, visibility: string) =>
     as.db.from("seshes").update({ visibility }).eq("id", sesh);
 
+  const visibilityOf = async (sesh: string) =>
+    (await service.from("seshes").select("visibility").eq("id", sesh).single()).data!.visibility;
+
+  /** Setup, never the thing under test. A row policy refuses an UPDATE by
+   *  matching no rows, not by raising, so a setup step can be a silent no-op
+   *  — and every test after it would then pass for the wrong reason. This
+   *  reads the value back and refuses to carry on if it did not move. */
+  async function mustSetVisibility(as: Member, sesh: string, visibility: string) {
+    const { error } = await setVisibility(as, sesh, visibility);
+    if (error) throw new Error(`could not set visibility: ${error.message}`);
+    const now = await visibilityOf(sesh);
+    if (now !== visibility) throw new Error(`visibility stayed ${now}, wanted ${visibility}`);
+  }
+
   const ask = (as: Member, sesh: string) => as.db.rpc("request_rsvp", { p_sesh: sesh });
 
-  async function approve(as: Member, sesh: string, member: string) {
-    const { data } = await service.from("rsvps").select("id").eq("sesh_id", sesh).eq("member_id", member).single();
-    const { error } = await as.db.rpc("decide_rsvp", { p_rsvp: data!.id as string, p_decision: "approved" });
-    if (error) throw new Error(`could not approve: ${error.message}`);
+  /** Same reason as mustSetVisibility. */
+  async function mustAsk(as: Member, sesh: string) {
+    const { error } = await ask(as, sesh);
+    if (error) throw new Error(`could not ask for a seat: ${error.message}`);
   }
+
+  async function decide(as: Member, sesh: string, member: string, decision: string) {
+    const { data } = await service.from("rsvps").select("id").eq("sesh_id", sesh).eq("member_id", member).single();
+    const { error } = await as.db.rpc("decide_rsvp", { p_rsvp: data!.id as string, p_decision: decision });
+    if (error) throw new Error(`could not ${decision}: ${error.message}`);
+  }
+
+  const approve = (as: Member, sesh: string, member: string) => decide(as, sesh, member, "approved");
+  const deny = (as: Member, sesh: string, member: string) => decide(as, sesh, member, "denied");
 
   /** The list columns lib/sesh/queries.ts asks for. Naming a private address
    *  column here would fail the whole query with 42501, which is the point of
@@ -181,13 +204,20 @@ describe.skipIf(!configured)("unlisted seshes", () => {
     it("refuses a member setting it on somebody else's sesh, and allows service_role", async () => {
       const sesh = await create();
 
+      // The refusal is proved by reading the row back BEFORE service_role
+      // touches it. A PostgREST update without .select() answers with no rows
+      // whether it wrote or was refused, so the returned payload proves
+      // nothing on its own.
       const asStranger = await setVisibility(stranger, sesh, "unlisted");
-      const asService = await service.from("seshes").update({ visibility: "unlisted" }).eq("id", sesh);
+      const afterStranger = await visibilityOf(sesh);
 
-      expect(asStranger.data).toBeNull();
+      const asService = await service.from("seshes").update({ visibility: "unlisted" }).eq("id", sesh);
+      const afterService = await visibilityOf(sesh);
+
+      expect(asStranger.error).toBeNull();
+      expect(afterStranger).toBe("listed");
       expect(asService.error).toBeNull();
-      const { data } = await service.from("seshes").select("visibility").eq("id", sesh).single();
-      expect(data!.visibility).toBe("unlisted");
+      expect(afterService).toBe("unlisted");
     });
   });
 
@@ -247,6 +277,55 @@ describe.skipIf(!configured)("unlisted seshes", () => {
       expect(after.data).toBeNull();
     });
 
+    /** The one the host would never have seen. A denied member keeps their
+     *  ROW, and the row was the only thing the door checked — so asking again
+     *  set them back to `requested`, and `requested` is a read branch. The
+     *  host denied them and then made the sesh private, and they let
+     *  themselves back in. */
+    it("cannot ask again after being denied, once the host unlists it", async () => {
+      const sesh = await create();
+      await mustAsk(guest, sesh);
+      await deny(host, sesh, guest.id);
+      await mustSetVisibility(host, sesh, "unlisted");
+
+      const { error } = await ask(guest, sesh);
+
+      expect(error?.code).toBe(NOT_TAKING_REQUESTS);
+      const after = await guest.db.from("seshes").select(LIST).eq("id", sesh).maybeSingle();
+      expect(after.data).toBeNull();
+      const row = await service.from("rsvps").select("status").eq("sesh_id", sesh).eq("member_id", guest.id).single();
+      expect(row.data!.status).toBe("denied");
+    });
+
+    /** Somebody who WITHDREW is a different person to somebody who was
+     *  refused. The host never turned them away, and they were on the guest
+     *  list when the sesh was made private. */
+    it("can ask again after withdrawing, because the host never refused them", async () => {
+      const sesh = await create();
+      await mustAsk(guest, sesh);
+      const withdrawn = await guest.db.rpc("cancel_rsvp", { p_sesh: sesh });
+      expect(withdrawn.error).toBeNull();
+      await mustSetVisibility(host, sesh, "unlisted");
+
+      const { error } = await ask(guest, sesh);
+
+      expect(error).toBeNull();
+    });
+
+    /** Unchanged from Plan 03, and stated here so the tightening above cannot
+     *  quietly spread to a listed sesh. A denied member can read a listed
+     *  sesh through the public branch anyway, so re-asking gains them
+     *  nothing and there is nothing to shut. */
+    it("can still ask again after being denied on a listed sesh", async () => {
+      const sesh = await create();
+      await mustAsk(guest, sesh);
+      await deny(host, sesh, guest.id);
+
+      const { error } = await ask(guest, sesh);
+
+      expect(error).toBeNull();
+    });
+
     it("can still ask for a seat on a listed one", async () => {
       const listed = await create();
 
@@ -287,10 +366,10 @@ describe.skipIf(!configured)("unlisted seshes", () => {
   describe("somebody already coming", () => {
     it("keeps seeing the sesh after the host unlists it", async () => {
       const sesh = await create();
-      await ask(guest, sesh);
+      await mustAsk(guest, sesh);
       await approve(host, sesh, guest.id);
 
-      await setVisibility(host, sesh, "unlisted");
+      await mustSetVisibility(host, sesh, "unlisted");
 
       const { data } = await guest.db.from("seshes").select(LIST).eq("id", sesh).maybeSingle();
       expect(data).not.toBeNull();
@@ -299,10 +378,10 @@ describe.skipIf(!configured)("unlisted seshes", () => {
 
     it("keeps their seat, so unlisting evicts nobody", async () => {
       const sesh = await create();
-      await ask(guest, sesh);
+      await mustAsk(guest, sesh);
       await approve(host, sesh, guest.id);
 
-      await setVisibility(host, sesh, "unlisted");
+      await mustSetVisibility(host, sesh, "unlisted");
 
       const { data } = await service.from("rsvps").select("status").eq("sesh_id", sesh).eq("member_id", guest.id).single();
       expect(data!.status).toBe("approved");
@@ -310,10 +389,10 @@ describe.skipIf(!configured)("unlisted seshes", () => {
 
     it("keeps the address, which is a different rule and is not touched here", async () => {
       const sesh = await create({ starts_at: hoursFromNow(2) });
-      await ask(guest, sesh);
+      await mustAsk(guest, sesh);
       await approve(host, sesh, guest.id);
 
-      await setVisibility(host, sesh, "unlisted");
+      await mustSetVisibility(host, sesh, "unlisted");
 
       const { data } = await guest.db.rpc("sesh_address", { p_sesh: sesh });
       expect((data as Record<string, unknown>[])[0].address_line).toBe("1 Test Street");
@@ -324,9 +403,9 @@ describe.skipIf(!configured)("unlisted seshes", () => {
      *  that back. */
     it("keeps seeing it while still waiting on the host", async () => {
       const sesh = await create();
-      await ask(guest, sesh);
+      await mustAsk(guest, sesh);
 
-      await setVisibility(host, sesh, "unlisted");
+      await mustSetVisibility(host, sesh, "unlisted");
 
       const { data } = await guest.db.from("seshes").select(LIST).eq("id", sesh).maybeSingle();
       expect(data).not.toBeNull();
@@ -339,7 +418,7 @@ describe.skipIf(!configured)("unlisted seshes", () => {
       const before = await feed(stranger);
       expect(idsFrom(before.data)).not.toContain(sesh);
 
-      await setVisibility(host, sesh, "listed");
+      await mustSetVisibility(host, sesh, "listed");
 
       const after = await feed(stranger);
       expect(idsFrom(after.data)).toContain(sesh);
@@ -347,11 +426,11 @@ describe.skipIf(!configured)("unlisted seshes", () => {
 
     it("admits nobody who was not already there, and drops nobody who was", async () => {
       const sesh = await create();
-      await ask(guest, sesh);
+      await mustAsk(guest, sesh);
       await approve(host, sesh, guest.id);
 
-      await setVisibility(host, sesh, "unlisted");
-      await setVisibility(host, sesh, "listed");
+      await mustSetVisibility(host, sesh, "unlisted");
+      await mustSetVisibility(host, sesh, "listed");
 
       const seat = await service.from("rsvps").select("status").eq("sesh_id", sesh).eq("member_id", guest.id).single();
       expect(seat.data!.status).toBe("approved");
@@ -369,8 +448,8 @@ describe.skipIf(!configured)("unlisted seshes", () => {
       // unlisted sesh, which the stranger tests above prove. Then unlisted,
       // which is the state this test is about.
       const sesh = await create();
-      await ask(guest, sesh);
-      await setVisibility(host, sesh, "unlisted");
+      await mustAsk(guest, sesh);
+      await mustSetVisibility(host, sesh, "unlisted");
 
       const readable = await guest.db.from("seshes").select("id").eq("id", sesh).maybeSingle();
       const asMember = await guest.db.from("seshes").select("address_line").eq("id", sesh);
