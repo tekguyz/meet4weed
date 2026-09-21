@@ -79,6 +79,12 @@ reason so nobody has to rediscover it.
   afterwards. They **skip without `SUPABASE_SECRET_KEY`**, so CI never runs
   them. Run them locally before merging anything that touches a migration, and
   report whether they ran — the summary line hides a skip.
+- **Run them serially.** `npm test` runs every file at once, which creates
+  members faster than Supabase Auth allows; unrelated suites then die in
+  `beforeAll` with `Request rate limit reached`, which reads like a failure and
+  is not one. Re-run serially before calling an integration red a real red:
+  `npx vitest run supabase/tests --no-file-parallelism`. The README says this
+  too; it is here because this file is read first.
 - **Never weaken a live security rule to prove a test fails.** Prove it
   differentially: the same statement on the same row fails for a member and
   succeeds for `service_role`.
