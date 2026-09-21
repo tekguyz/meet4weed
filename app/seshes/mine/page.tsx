@@ -105,6 +105,7 @@ function HostingCard({ sesh, waiting }: { sesh: SeshListItem; waiting: number })
       <p className="text-sm text-ink-muted">
         {sesh.areaName ? `${sesh.areaName} · ` : ""}
         {cancelled ? "Cancelled" : left === 0 ? "full" : `${left} spot${left === 1 ? "" : "s"} left`}
+        {sesh.visibility === "unlisted" ? " · Unlisted" : ""}
       </p>
 
       {/* The only way a host learns somebody is waiting, in this plan. Email

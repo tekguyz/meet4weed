@@ -50,6 +50,7 @@ export default async function EditSeshPage({ params }: { params: Promise<{ id: s
             title: sesh.title,
             description: sesh.description,
             seshType: sesh.seshType,
+            visibility: sesh.visibility,
             startsAtLocal: floridaWallClock(new Date(sesh.startsAt)),
             capacity: sesh.capacity,
             areaName: sesh.areaName,
