@@ -175,3 +175,45 @@ lets them host.
   not passed. Every **write** uses this.
 - `private.can_browse` — status `verified` **or** `expired`. Every **read**
   uses this, because an expired member is read-only rather than shut out.
+
+## Notification
+
+A row in `public.notifications`: one thing that happened, addressed to one
+member. Seven types, fixed by spec §5 — RSVP requested, RSVP approved, RSVP
+denied, sesh edited, sesh cancelled, sesh reminder, card expiry.
+
+**The feed is the truth; push is a tap on the shoulder.** Spec §8 makes push
+best-effort and silent on failure, so nothing may exist only as a push.
+
+**One row per event, never a rollup.** Five people asking to join one sesh is
+five rows, because the host approves five people one at a time. "5 people want
+in" hides who.
+
+A member reads their own rows and marks `read_at`. Nothing else. Deleting is
+the reaper's job — a member who could delete could erase the record of a kick.
+
+## Push subscription
+
+A row in `public.push_subscriptions`: one browser on one device that agreed to
+receive push. Endpoint URL plus its crypto keys.
+
+**It is a tracking handle, so it is write-only to the member.** They insert
+theirs and delete theirs; only `service_role` selects. "Are notifications on?"
+is answered on the device by `pushManager.getSubscription()`, never by reading
+this table back.
+
+**A `410` or `404` from the push service deletes the row on the spot.** Those
+two codes mean permanently gone. Every other error is dropped silently.
+
+**Discreet by design.** What a push says on a locked screen names no member and
+no sesh. Anyone holding the phone can read it.
+
+## App shell
+
+The cached part of the installed PWA: the HTML fallback, CSS, JS, fonts and
+icons. It is **all** the service worker may cache.
+
+**Never a sesh, never an API response, never an address.** A cached sesh page
+is an exact address sitting in device storage after the RSVP that unlocked it
+was revoked, which defeats spec §6.1. Offline shows "you are offline", not
+stale data. See `docs/adr/0001-app-shell-caching-only.md`.
