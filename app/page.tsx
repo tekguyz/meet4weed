@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { amIAdmin } from "@/lib/admin/queries";
 import { getMyProfile } from "@/lib/profiles/queries";
 import { RESERVED_HANDLE_PREFIX } from "@/lib/profiles/schema";
 import { floridaToday } from "@/lib/dates";
 import { APP_NAME } from "@/lib/env";
-import { expiryBanner, memberAccess } from "@/lib/member/gate";
+import { expiryBanner, memberAccess, type MemberAccess } from "@/lib/member/gate";
 import type { Profile } from "@/lib/profiles/schema";
 import { getMyVerification, type MyVerification } from "@/lib/verification/status";
 
@@ -18,13 +19,17 @@ export default async function HomePage() {
     redirect("/onboarding");
   }
 
+  const today = floridaToday();
+  const access = memberAccess(profile, today);
+
   return (
     <main className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-10">
       <h1 className="text-3xl">{APP_NAME}</h1>
       <p className="text-sm text-ink-muted">
         Signed in as @{profile.handle}. Card status: {profile.status.replace("_", " ")}.
       </p>
-      <AccessNotice profile={profile} today={floridaToday()} />
+      <HomeNav access={access} isAdmin={await amIAdmin()} />
+      <AccessNotice profile={profile} today={today} />
       <VerificationSummary status={profile.status} latest={await getMyVerification()} />
       <ThemeToggle />
       <form action="/auth/sign-out" method="post">
@@ -33,6 +38,32 @@ export default async function HomePage() {
         </button>
       </form>
     </main>
+  );
+}
+
+/** The way into the app. Without this the home page is a dead end: every sesh
+ *  screen exists but nothing links to one, so the app reads as unbuilt.
+ *  The sesh links are hidden until the card gate opens, because RLS returns
+ *  nothing to a member who is not active and an empty screen reads as broken. */
+function HomeNav({ access, isAdmin }: { access: MemberAccess; isAdmin: boolean }) {
+  const canBrowse = access === "full" || access === "read_only";
+  if (!canBrowse && !isAdmin) return null;
+
+  return (
+    <nav aria-label="Main" className="flex flex-wrap gap-4 text-sm text-ink-muted">
+      {canBrowse ? (
+        <>
+          <Link href="/seshes" className="underline">Seshes</Link>
+          <Link href="/seshes/mine" className="underline">My seshes</Link>
+        </>
+      ) : null}
+      {access === "full" ? (
+        <Link href="/seshes/new" className="underline">New sesh</Link>
+      ) : null}
+      {isAdmin ? (
+        <Link href="/admin/verifications" className="underline">Verification queue</Link>
+      ) : null}
+    </nav>
   );
 }
 
