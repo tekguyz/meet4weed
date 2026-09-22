@@ -98,6 +98,14 @@ export function SeshMap({ circles, marker, onPick, centre, label }: Props) {
       if (cancelled || !container.current) return;
 
       const accent = token("--map-accent");
+
+      // MapLibre otherwise builds this address from `import.meta.url` and the
+      // production build emits no chunk there, so the request fell through to
+      // the app shell and the browser refused an HTML file as a module script.
+      // The worker parses tiles, so the map drew its background and nothing
+      // else. scripts/copy-maplibre-worker.mjs puts the file at this path.
+      maplibre.setWorkerUrl("/maplibre/maplibre-gl-worker.js");
+
       const instance = new maplibre.Map({
         container: container.current,
         style: token("--map-style"),

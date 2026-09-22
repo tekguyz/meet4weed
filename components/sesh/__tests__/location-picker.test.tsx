@@ -7,6 +7,7 @@ import { LocationPicker } from "@/components/sesh/location-picker";
  *  registers, so a test can make the map behave as though somebody tapped it. */
 const handlers = new Map<string, (event: unknown) => void>();
 const removed = vi.fn();
+const setWorkerUrl = vi.fn();
 
 vi.mock("maplibre-gl", () => {
   class FakeMap {
@@ -46,7 +47,7 @@ vi.mock("maplibre-gl", () => {
     }
   }
   // maplibre-gl v6 exports by name, with no default export.
-  return { Map: FakeMap, Marker: FakeMarker };
+  return { Map: FakeMap, Marker: FakeMarker, setWorkerUrl };
 });
 
 function tapTheMapAt(lat: number, lng: number) {
@@ -69,7 +70,17 @@ describe("LocationPicker", () => {
   beforeEach(() => {
     handlers.clear();
     removed.mockReset();
+    setWorkerUrl.mockReset();
     vi.stubGlobal("navigator", { ...navigator, geolocation: { getCurrentPosition: vi.fn(), watchPosition: vi.fn() } });
+  });
+
+  // Left to itself MapLibre derives this address from `import.meta.url`, the
+  // production build emits nothing there, and the browser gets the app shell
+  // back. The failure is silent: the map draws its background, keeps its
+  // controls, and never loads a tile. So it is asserted rather than trusted.
+  it("points MapLibre at the worker copied into public/", async () => {
+    renderPicker();
+    await waitFor(() => expect(setWorkerUrl).toHaveBeenCalledWith("/maplibre/maplibre-gl-worker.js"));
   });
 
   it("tells the host, before they type anything, that nobody sees this until they approve them", () => {

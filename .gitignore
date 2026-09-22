@@ -22,3 +22,6 @@ supabase/.temp
 
 # MediaPipe wasm runtime, copied from node_modules by scripts/copy-mediapipe.mjs
 public/mediapipe/wasm/
+
+# MapLibre worker, copied from node_modules by scripts/copy-maplibre-worker.mjs
+public/maplibre/
