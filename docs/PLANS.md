@@ -32,6 +32,21 @@ are still the truth about those steps. Nothing new is added there.
 
 See `docs/agents/issue-tracker.md` for the conventions.
 
+### 2026-09-21 — `docs/superpowers/plans/` was kept on purpose
+
+Job 3 of `C:\Projects\tekguyz-one\docs\WORKFLOW-PLAN-2026-09-20.md` also says to
+delete or archive the leftover Superpowers plan files that its §1.3 lists per
+repo. **§1.3 mis-listed this repo's two plan files as leftovers.** They are not.
+`CLAUDE.md` § Agent skills → Issue tracker says `docs/superpowers/plans/` and
+`docs/superpowers/specs/` "stay as they are", and the section above says the
+folder "is kept because Plans 01 and 02 record what actually shipped".
+`README.md` links both files as that record.
+
+**Nothing under `docs/superpowers/` was deleted, archived or moved.** The survey
+behind §1.3 never read this repo's `CLAUDE.md`. The thing that needs correcting
+is §1.3 in `tekguyz-one`, not this repo — and that correction belongs to a
+session started in that repo.
+
 ## Starting the next plan
 
 In a fresh session, one command:
