@@ -2,13 +2,16 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { FeedControls } from "@/components/sesh/feed-controls";
 import { FeedMap } from "@/components/sesh/feed-map";
-import { Banner } from "@/components/ui/banner";
+import { WhereYouStand } from "@/components/member/where-you-stand";
+import { amIAdmin } from "@/lib/admin/queries";
 import { floridaToday } from "@/lib/dates";
-import { memberAccess } from "@/lib/member/gate";
+import { frameAccess, memberAccess } from "@/lib/member/gate";
+import { standing } from "@/lib/member/standing";
 import { getMyProfile } from "@/lib/profiles/queries";
 import { feedHref, parseFeedFilters, type SearchParams } from "@/lib/sesh/feed-filters";
 import { listFeed, type SeshListItem } from "@/lib/sesh/queries";
 import { SESH_TYPE_LABELS } from "@/lib/sesh/schema";
+import { getMyVerification } from "@/lib/verification/status";
 
 const WHEN = new Intl.DateTimeFormat("en-US", {
   timeZone: "America/New_York",
@@ -23,54 +26,25 @@ export default async function SeshesPage({ searchParams }: { searchParams: Promi
   const profile = await getMyProfile();
   if (!profile) redirect("/login");
 
-  const access = memberAccess(profile, floridaToday());
+  const today = floridaToday();
+  const access = memberAccess(profile, today);
 
-  // The database already returns an unverified member nothing. This is so
-  // they read a sentence rather than an empty feed and think it is broken.
-  if (access === "unverified" || access === "pending" || access === "suspended") {
-    return (
-      <main className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-10">
-        <h1 className="text-3xl">Almost there</h1>
-        <p className="text-sm text-ink-muted">
-          {access === "pending"
-            ? "A person is checking your card. Seshes open up as soon as that is done."
-            : access === "suspended"
-              ? "This account cannot browse seshes."
-              : "Seshes are for verified patients. Add your card and a person will check it."}
-        </p>
-        {access === "unverified" ? (
-          <Link href="/verify" className="text-sm font-semibold text-primary underline">
-            Verify your card
-          </Link>
-        ) : null}
-        <Link href="/" className="text-sm text-ink-muted underline">
-          Back
-        </Link>
-      </main>
-    );
-  }
+  // RLS gives a member who cannot browse an empty feed, which reads as broken.
+  // Their tab is hidden; a typed URL goes to their where-you-stand card.
+  if (frameAccess(access, await amIAdmin()).home !== "/seshes") redirect("/");
+
+  // Expiring soon, expired, or a renewal that did not go through. A browsing
+  // member never sees `/`, so the card rides at the top of the feed.
+  const mine = standing(profile, access === "full" ? null : await getMyVerification(), today);
 
   const filters = parseFeedFilters(await searchParams);
   const { seshes, hasMore } = await listFeed(filters);
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-10">
-      <header className="flex items-baseline justify-between gap-4">
-        <h1 className="text-3xl">Seshes</h1>
-        <Link href="/seshes/mine" className="text-sm font-semibold text-primary underline">
-          My seshes
-        </Link>
-      </header>
+    <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-6">
+      <h1 className="text-3xl">Seshes</h1>
 
-      {access === "read_only" ? (
-        <Banner>
-          Your card has expired, so you can look but not join or host.{" "}
-          <Link href="/verify" className="underline">
-            Add your renewed card
-          </Link>{" "}
-          to get the rest back.
-        </Banner>
-      ) : null}
+      {mine.kind === "verified" ? null : <WhereYouStand standing={mine} />}
 
       <FeedControls filters={filters} />
 
@@ -115,11 +89,7 @@ export default async function SeshesPage({ searchParams }: { searchParams: Promi
           ) : null}
         </nav>
       ) : null}
-
-      <Link href="/" className="text-sm text-ink-muted underline">
-        Back
-      </Link>
-    </main>
+    </div>
   );
 }
 

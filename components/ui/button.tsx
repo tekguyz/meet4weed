@@ -1,7 +1,9 @@
 import type { ButtonHTMLAttributes } from "react";
 
+type Variant = "primary" | "quiet";
+
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "quiet";
+  variant?: Variant;
 };
 
 const BASE =
@@ -12,6 +14,11 @@ const VARIANTS = {
   quiet: "bg-surface-2 text-ink hover:bg-rule",
 } as const;
 
+/** For a link that should look like a button — a next step that navigates. */
+export function buttonClass(variant: Variant = "primary") {
+  return `${BASE} ${VARIANTS[variant]}`;
+}
+
 export function Button({ variant = "primary", className = "", ...props }: Props) {
-  return <button className={`${BASE} ${VARIANTS[variant]} ${className}`} {...props} />;
+  return <button className={`${buttonClass(variant)} ${className}`} {...props} />;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { cancelSesh } from "@/app/seshes/actions";
+import { cancelSesh } from "@/app/(frame)/seshes/actions";
 import { Button } from "@/components/ui/button";
 import type { ActionState } from "@/lib/forms/action-state";
 

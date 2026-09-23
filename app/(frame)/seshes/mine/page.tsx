@@ -28,7 +28,7 @@ export default async function MySeshesPage() {
   const pending = await pendingCounts(hosting.map((sesh) => sesh.id));
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-col gap-8 px-4 py-10">
+    <div className="mx-auto flex w-full max-w-md flex-col gap-8 px-4 py-6">
       <header className="flex items-baseline justify-between gap-4">
         <h1 className="text-3xl">My seshes</h1>
         <Link href="/seshes/new" className="text-sm font-semibold text-primary underline">
@@ -73,11 +73,7 @@ export default async function MySeshesPage() {
           </ul>
         )}
       </section>
-
-      <Link href="/" className="text-sm text-ink-muted underline">
-        Back
-      </Link>
-    </main>
+    </div>
   );
 }
 

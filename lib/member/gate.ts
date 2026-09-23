@@ -26,6 +26,31 @@ export function memberAccess(profile: Card, today: string): MemberAccess {
   }
 }
 
+/** The Frame's tabs, in the order they always appear. */
+export type FrameTab = "seshes" | "mine" | "new" | "me";
+
+export type FrameAccess = {
+  tabs: FrameTab[];
+  /** Where `/` sends the member: the feed, or their where-you-stand card. */
+  home: "/seshes" | "standing";
+  /** The Admin row inside Me. Never a tab. */
+  adminLink: boolean;
+};
+
+/**
+ * The one place that decides what the Frame shows (issue #62). Screens render
+ * its answer and decide nothing, the way the address panel renders
+ * can_see_address(). Hidden tabs are hidden, not greyed: a member whose gate is
+ * shut is not invited into an empty screen. RLS is still what refuses them.
+ */
+export function frameAccess(access: MemberAccess, isAdmin: boolean): FrameAccess {
+  const canBrowse = access === "full" || access === "read_only";
+  const tabs: FrameTab[] = canBrowse ? ["seshes", "mine"] : [];
+  if (access === "full") tabs.push("new");
+  tabs.push("me");
+  return { tabs, home: canBrowse ? "/seshes" : "standing", adminLink: isAdmin };
+}
+
 export const EXPIRY_BANNER_DAYS = 30;
 
 const SHORT_DATE = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });

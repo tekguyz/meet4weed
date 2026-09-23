@@ -22,7 +22,7 @@ vi.mock("@/lib/verification/resize", () => ({
   drawScaled: () => document.createElement("canvas"),
   fitWithin: (w: number, h: number) => ({ width: w, height: h }),
 }));
-vi.mock("@/app/verify/actions", () => ({
+vi.mock("@/app/(frame)/verify/actions", () => ({
   issueFaceChallenge: async () => ({ ok: true, challenge: "Raise your eyebrows", token: "t0ken" }),
 }));
 

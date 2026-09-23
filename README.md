@@ -250,14 +250,15 @@ runs only with `VISION_LIVE=1`. Every other vision test uses a mocked client.
 ## Project layout
 
 ```
-app/                  routes: /login, /onboarding, /auth/confirm, /verify, /seshes, /invite, /admin, /api/verification, /api/cron/*
-components/           UI; ui/ holds the primitives, sesh/ the sesh screens
+app/                  routes: /login, /onboarding, /auth/confirm, /invite, /admin, /api/verification, /api/cron/*
+app/(frame)/          signed-in routes inside the Frame: /, /seshes, /verify, /me
+components/           UI; ui/ holds the primitives, sesh/ the sesh screens, frame/ the Frame
 lib/auth/             auth error mapping, link lifetime, safe redirects
 lib/supabase/         browser client, server client, session refresh
 lib/profiles/         zod schemas, types, queries
 lib/sesh/             sesh and RSVP queries, invite tokens, the column lists
 lib/verification/     capture checks, limits, Claude reader, submission pipeline, reaper
-lib/member/           read-only gate, expiry sweep
+lib/member/           read-only gate, what the Frame shows, where-you-stand, expiry sweep
 lib/admin/            review-queue queries
 lib/forms/            shared form helpers
 scripts/              admin grant, cron runner, fixtures, MediaPipe copy

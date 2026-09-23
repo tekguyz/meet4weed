@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { RedeemInvite } from "@/components/sesh/redeem-invite";
 import { Banner } from "@/components/ui/banner";
+import { FOCUS_RING } from "@/components/ui/focus";
 import { APP_NAME } from "@/lib/env";
 import { getInvitePreview } from "@/lib/sesh/invite-reads";
 import { INVITE_FAILED } from "@/lib/sesh/invites";
@@ -54,7 +56,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
   // not know or care whether anyone is signed in, so there is no second
   // rendering to keep in step with this one.
   //
-  // The split happens on the press, inside app/seshes/invite-actions.ts, and
+  // The split happens on the press, inside app/(frame)/seshes/invite-actions.ts, and
   // nowhere else. A signed-out press spends nothing: the token goes into a
   // short-lived httpOnly cookie and the person is sent to sign up. They come
   // back here and press again, and that press spends the use.
@@ -83,6 +85,12 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
       ) : (
         <Banner>{INVITE_FAILED}</Banner>
       )}
+
+      {/* The way back in, the same for everyone: `/` sends a signed-out
+          visitor to sign in. The page still does not know who is looking. */}
+      <Link href="/" className={`text-sm text-ink-muted underline ${FOCUS_RING}`}>
+        Go to {APP_NAME}
+      </Link>
     </main>
   );
 }

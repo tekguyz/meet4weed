@@ -13,7 +13,7 @@ const redirect = vi.fn((to: string) => {
 vi.mock("@/lib/sesh/invite-reads", () => ({ getInvitePreview: (t: string) => getInvitePreview(t) }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({ auth: { getUser } }) }));
 vi.mock("next/navigation", () => ({ redirect: (to: string) => redirect(to) }));
-vi.mock("@/app/seshes/invite-actions", () => ({ redeemInvite: vi.fn() }));
+vi.mock("@/app/(frame)/seshes/invite-actions", () => ({ redeemInvite: vi.fn() }));
 
 /** The page an invite link opens.
  *

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AddressPanel } from "@/components/sesh/address-panel";
 import { ChangedBanner } from "@/components/sesh/changed-banner";
@@ -57,7 +56,7 @@ export default async function SeshPage({ params }: { params: Promise<{ id: strin
   const over = new Date(sesh.startsAt).getTime() <= Date.now();
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-10">
+    <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-6">
       <header className="flex flex-col gap-2">
         {sesh.status === "cancelled" ? (
           <Banner tone="danger">This sesh was cancelled. Do not turn up.</Banner>
@@ -100,11 +99,7 @@ export default async function SeshPage({ params }: { params: Promise<{ id: strin
           canAct={canAct && !over && sesh.status === "open"}
         />
       )}
-
-      <Link href="/seshes" className="text-sm text-ink-muted underline">
-        Back to seshes
-      </Link>
-    </main>
+    </div>
   );
 }
 

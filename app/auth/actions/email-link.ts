@@ -23,7 +23,7 @@ import { heldInvitePath } from "@/lib/sesh/held-invite";
  */
 
 const DESTINATION = {
-  // app/page.tsx sends an account without attestation on to /onboarding.
+  // app/(frame)/layout.tsx sends an account without attestation on to /onboarding.
   email: "/",
   recovery: "/login/new-password",
 } as const;
@@ -45,7 +45,7 @@ export async function confirmEmailLink(formData: FormData): Promise<void> {
   // with no account; the token went into a short-lived cookie and they were
   // sent here to make one. Put them back on that invite page so they can
   // press it again — the second press is what spends the use. This redirect
-  // spends nothing; see app/seshes/invite-actions.ts.
+  // spends nothing; see app/(frame)/seshes/invite-actions.ts.
   //
   // Confirmation only. A password reset is not a sign-up and must land on
   // the new-password screen.

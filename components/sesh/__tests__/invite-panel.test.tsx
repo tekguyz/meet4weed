@@ -6,7 +6,7 @@ import { InvitePanel } from "@/components/sesh/invite-panel";
 import type { InviteRow } from "@/lib/sesh/invite-reads";
 import { CLAIMED_NOT_YET, INVITES_PER_SESH } from "@/lib/sesh/invites";
 
-vi.mock("@/app/seshes/invite-actions", () => ({
+vi.mock("@/app/(frame)/seshes/invite-actions", () => ({
   mintInvite: vi.fn(),
   revokeInvite: vi.fn(),
 }));

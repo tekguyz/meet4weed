@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { CardReading } from "@/lib/verification/reading";
 
@@ -5,11 +6,12 @@ import type { CardReading } from "@/lib/verification/reading";
  *  supabase/migrations/20260917090000_verification.sql decide what comes back;
  *  a non-admin simply gets nothing. */
 
-export async function amIAdmin(): Promise<boolean> {
+/** Cached per request, like getMyProfile(). */
+export const amIAdmin = cache(async function amIAdmin(): Promise<boolean> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("am_i_admin");
   return !error && data === true;
-}
+});
 
 export type PendingSubmission = {
   id: string;

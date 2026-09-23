@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { addContribution, removeContribution } from "@/app/seshes/on-deck-actions";
+import { addContribution, removeContribution } from "@/app/(frame)/seshes/on-deck-actions";
 import { ActionResult } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import type { ActionState } from "@/lib/forms/action-state";

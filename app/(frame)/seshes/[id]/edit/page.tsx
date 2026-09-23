@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { editSesh } from "@/app/seshes/actions";
+import { editSesh } from "@/app/(frame)/seshes/actions";
 import { CancelSesh } from "@/components/sesh/cancel-sesh";
 import { SeshForm } from "@/components/sesh/sesh-form";
 import { Banner } from "@/components/ui/banner";
@@ -25,7 +24,7 @@ export default async function EditSeshPage({ params }: { params: Promise<{ id: s
   const cancelled = sesh.status === "cancelled";
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-col gap-8 px-4 py-10">
+    <div className="mx-auto flex w-full max-w-md flex-col gap-8 px-4 py-6">
       <header className="flex flex-col gap-2">
         <h1 className="text-3xl">{cancelled ? "Cancelled sesh" : "Edit your sesh"}</h1>
         {cancelled ? (
@@ -67,10 +66,6 @@ export default async function EditSeshPage({ params }: { params: Promise<{ id: s
       )}
 
       {cancelled ? null : <CancelSesh id={sesh.id} />}
-
-      <Link href="/seshes/mine" className="text-sm text-ink-muted underline">
-        Back to my seshes
-      </Link>
-    </main>
+    </div>
   );
 }

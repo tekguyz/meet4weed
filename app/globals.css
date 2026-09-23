@@ -92,6 +92,20 @@ h3 {
   letter-spacing: -0.02em;
 }
 
+/* The Frame pins a header to the top and, on a phone, a tab bar to the bottom.
+   Scroll padding keeps a field or link reached by Tab from sliding under either
+   (WCAG 2.2, 2.4.11). Sizes match components/frame/frame.tsx. */
+html:has([data-frame]) {
+  scroll-padding-top: calc(3.5rem + env(safe-area-inset-top));
+  scroll-padding-bottom: calc(3.5rem + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 48rem) {
+  html:has([data-frame]) {
+    scroll-padding-bottom: 0;
+  }
+}
+
 /* Respect the OS setting for people who never touch the toggle. */
 @media (prefers-reduced-motion: reduce) {
   *,

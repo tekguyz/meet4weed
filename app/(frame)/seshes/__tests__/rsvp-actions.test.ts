@@ -40,7 +40,7 @@ function refuse(code: string) {
 }
 
 async function act(name: "askToJoin" | "withdrawRsvp" | "decideRsvp", fd: FormData) {
-  const actions = await import("@/app/seshes/rsvp-actions");
+  const actions = await import("@/app/(frame)/seshes/rsvp-actions");
   return actions[name](null, fd);
 }
 

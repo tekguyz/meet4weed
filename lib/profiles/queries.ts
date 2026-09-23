@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { Profile, PublicProfile } from "@/lib/profiles/schema";
 
@@ -26,7 +27,8 @@ function toProfile(row: Row): Profile {
   };
 }
 
-export async function getMyProfile(): Promise<Profile | null> {
+/** Cached per request: the Frame's layout and the page under it both ask. */
+export const getMyProfile = cache(async function getMyProfile(): Promise<Profile | null> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -35,7 +37,7 @@ export async function getMyProfile(): Promise<Profile | null> {
 
   const { data } = await supabase.from("profiles").select(COLUMNS).eq("id", user.id).maybeSingle();
   return data ? toProfile(data) : null;
-}
+});
 
 /** Selects the public column list rather than trimming a full row, so the card
  *  fields never travel to the caller in the first place. */
