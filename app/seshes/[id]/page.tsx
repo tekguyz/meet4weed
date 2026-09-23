@@ -208,7 +208,7 @@ function GuestActions({
           <WithdrawRsvp seshId={sesh.id} approved={false} />
         </>
       ) : mine?.status === "kicked" ? (
-        <Banner>The host removed you from this sesh.</Banner>
+        <Banner tone="warning">The host removed you from this sesh.</Banner>
       ) : !canAct ? (
         <p className="text-sm text-ink-muted">
           {sesh.status === "cancelled"

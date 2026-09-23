@@ -2,16 +2,9 @@
 
 import { useActionState } from "react";
 import { askToJoin, decideRsvp, withdrawRsvp } from "@/app/seshes/rsvp-actions";
-import { Banner } from "@/components/ui/banner";
+import { ActionResult } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import type { ActionState } from "@/lib/forms/action-state";
-
-function Result({ state }: { state: ActionState | null }) {
-  if (!state) return null;
-  return (
-    <Banner tone={state.ok ? "success" : "danger"}>{state.message}</Banner>
-  );
-}
 
 export function AskToJoin({ seshId }: { seshId: string }) {
   const [state, action, pending] = useActionState<ActionState | null, FormData>(askToJoin, null);
@@ -22,7 +15,7 @@ export function AskToJoin({ seshId }: { seshId: string }) {
       <Button type="submit" disabled={pending || state?.ok}>
         {pending ? "Asking…" : state?.ok ? "Asked" : "Ask to join"}
       </Button>
-      <Result state={state} />
+      <ActionResult state={state} />
       <p className="text-sm text-ink-muted">
         The host decides. The address only appears if they say yes.
       </p>
@@ -39,7 +32,7 @@ export function WithdrawRsvp({ seshId, approved }: { seshId: string; approved: b
       <Button type="submit" variant="quiet" disabled={pending}>
         {pending ? "Withdrawing…" : approved ? "Give up my spot" : "Withdraw my request"}
       </Button>
-      <Result state={state} />
+      <ActionResult state={state} />
     </form>
   );
 }
@@ -93,7 +86,8 @@ export function DecideButtons({
           </>
         )}
       </div>
-      <Result state={state} />
+      {/* The host's queue row is already a card. */}
+      <ActionResult state={state} nested />
     </form>
   );
 }

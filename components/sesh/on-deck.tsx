@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { addContribution, removeContribution } from "@/app/seshes/on-deck-actions";
-import { Banner } from "@/components/ui/banner";
+import { ActionResult } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import type { ActionState } from "@/lib/forms/action-state";
 import { CONTRIBUTION_LABEL_MAX, BRINGING_NONE } from "@/lib/sesh/on-deck";
@@ -40,13 +40,6 @@ type Props = {
 const CARD = "flex flex-col gap-2 rounded-card bg-surface p-4";
 const ANSWER = "text-sm text-ink";
 
-function Result({ state }: { state: ActionState | null }) {
-  if (!state) return null;
-  return (
-    <Banner tone={state.ok ? "success" : "danger"}>{state.message}</Banner>
-  );
-}
-
 function ContributionCard({ seshId, row }: { seshId: string; row: ContributionRow }) {
   const [state, action, pending] = useActionState<ActionState | null, FormData>(
     removeContribution,
@@ -77,7 +70,7 @@ function ContributionCard({ seshId, row }: { seshId: string; row: ContributionRo
           {pending ? "Removing…" : "Remove"}
         </button>
       </form>
-      <Result state={state} />
+      <ActionResult state={state} nested />
     </li>
   );
 }
@@ -130,7 +123,7 @@ function AddForm({ seshId }: { seshId: string }) {
           Add an item
         </Button>
       </div>
-      <Result state={state} />
+      <ActionResult state={state} nested />
     </form>
   );
 }
@@ -151,7 +144,7 @@ function NoneForm({ seshId }: { seshId: string }) {
       <Button type="submit" variant="quiet" disabled={pending}>
         {pending ? "Saying…" : BRINGING_NONE}
       </Button>
-      <Result state={state} />
+      <ActionResult state={state} nested />
     </form>
   );
 }

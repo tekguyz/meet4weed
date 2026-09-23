@@ -1,8 +1,10 @@
 /** @vitest-environment node
  *
- *  Every feedback line goes through the shared Banner (issue #61), so the app
- *  has one pattern a member learns once. A hand-made `role="status"` line is
- *  the first sign of a new feature inventing its own.
+ *  Every polite feedback line goes through the shared Banner (issue #61), so
+ *  the app has one pattern a member learns once. A hand-made `role="status"`
+ *  line is the first sign of a new feature inventing its own.
+ *
+ *  `role="alert"` error lines are out of #61's scope and not checked here.
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
