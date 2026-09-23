@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { profilePath } from "@/components/member/handle-link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { FOCUS_RING } from "@/components/ui/focus";
 import { amIAdmin } from "@/lib/admin/queries";
@@ -26,6 +27,13 @@ export default async function MePage() {
         <h1 className="truncate text-3xl">@{profile.handle}</h1>
         {profile.displayName ? <p className="truncate text-sm text-ink-muted">{profile.displayName}</p> : null}
       </header>
+
+      <Link
+        href={profilePath(profile.handle)}
+        className={`flex min-h-11 items-center rounded-card bg-surface px-4 text-sm text-ink ${FOCUS_RING}`}
+      >
+        See your profile as others see it
+      </Link>
 
       <section className="flex flex-col gap-2">
         <h2 className="text-xl">Theme</h2>

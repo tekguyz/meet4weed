@@ -144,12 +144,28 @@ export async function listFeed(filters: FeedFilters): Promise<{ seshes: SeshList
   return { seshes: rows.slice(0, limit).map(toListItem), hasMore: rows.length > limit };
 }
 
+export type SeshDetail = SeshListItem & {
+  /** Null when the profiles select policy hides the host from the caller. It
+   *  should not, for anybody who can read the sesh — both policies ask
+   *  can_browse — but the screen draws nothing rather than "@unknown". */
+  hostHandle: string | null;
+};
+
 /** One sesh, for its own page. The select policy decides whether the caller
- *  gets it at all. */
-export async function getSesh(id: string): Promise<SeshListItem | null> {
+ *  gets it at all. The host's handle comes in the same round trip, through the
+ *  host_id foreign key. */
+export async function getSesh(id: string): Promise<SeshDetail | null> {
   const supabase = await createClient();
-  const { data } = await supabase.from("seshes").select(LIST_COLUMNS).eq("id", id).maybeSingle();
-  return data ? toListItem(data as Row) : null;
+  const { data } = await supabase
+    .from("seshes")
+    .select(`${LIST_COLUMNS}, host:profiles(handle)`)
+    .eq("id", id)
+    .maybeSingle();
+  if (!data) return null;
+
+  const row = data as Row;
+  const host = row.host as { handle?: string } | null;
+  return { ...toListItem(row), hostHandle: host?.handle ?? null };
 }
 
 export type RsvpStatus = "requested" | "approved" | "denied" | "cancelled" | "kicked";

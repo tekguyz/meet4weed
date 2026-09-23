@@ -14,6 +14,7 @@ describe("activeTab", () => {
     ["/", null],
     ["/verify", null],
     ["/messages", null],
+    ["/m/ryder", null],
   ])("%s is %s", (path, tab) => {
     expect(activeTab(path)).toBe(tab);
   });
@@ -30,6 +31,9 @@ describe("frameHeader", () => {
     ["/seshes/abc/edit", "Edit sesh", "/seshes/abc"],
     ["/verify", "Verify your card", "/"],
     ["/invite/held", "Invite saved", null],
+    // Reached from a sesh or from Me, so there is no one parent to go up to,
+    // and /m on its own is not a page. The tabs are the way out.
+    ["/m/ryder", "Profile", null],
   ])("%s is titled %s with back %s", (path, title, back) => {
     expect(frameHeader(path)).toEqual({ title, back });
   });
