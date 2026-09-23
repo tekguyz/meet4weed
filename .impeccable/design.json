@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-23T00:00:00Z",
+  "title": "Design System: Meet4Weed",
+  "extensions": {
+    "colorMeta": {
+      "warm-night": { "role": "neutral", "displayName": "Warm Night", "canonical": "oklch(18.31% 0.0085 84.57)", "tonalRamp": ["oklch(15% 0.0085 84.57)", "oklch(18.31% 0.0085 84.57)", "oklch(30% 0.0085 84.57)", "oklch(45% 0.0085 84.57)", "oklch(60% 0.0085 84.57)", "oklch(72% 0.0085 84.57)", "oklch(84% 0.0085 84.57)", "oklch(95% 0.0085 84.57)"] },
+      "ember-card": { "role": "neutral", "displayName": "Ember Card", "canonical": "oklch(21.60% 0.0129 77.94)" },
+      "ember-raised": { "role": "neutral", "displayName": "Ember Raised", "canonical": "oklch(24.26% 0.0149 76.18)" },
+      "charred-rule": { "role": "neutral", "displayName": "Charred Rule", "canonical": "oklch(28.83% 0.0195 80.41)" },
+      "cream-ink": { "role": "neutral", "displayName": "Cream Ink", "canonical": "oklch(95.58% 0.0168 88.00)" },
+      "dusk-ink": { "role": "neutral", "displayName": "Dusk Ink", "canonical": "oklch(69.43% 0.0317 80.59)" },
+      "sage": { "role": "primary", "displayName": "Sage", "canonical": "oklch(83.85% 0.1202 127.58)", "tonalRamp": ["oklch(15% 0.1202 127.58)", "oklch(27% 0.1202 127.58)", "oklch(39% 0.1202 127.58)", "oklch(51% 0.1202 127.58)", "oklch(63% 0.1202 127.58)", "oklch(75% 0.1202 127.58)", "oklch(83.85% 0.1202 127.58)", "oklch(95% 0.05 127.58)"] },
+      "sage-pressed": { "role": "primary", "displayName": "Sage Pressed", "canonical": "oklch(77.35% 0.1204 127.99)" },
+      "on-sage": { "role": "primary", "displayName": "On Sage", "canonical": "oklch(18.79% 0.0203 125.99)" },
+      "honey": { "role": "secondary", "displayName": "Honey", "canonical": "oklch(81.04% 0.1127 80.25)", "tonalRamp": ["oklch(15% 0.1127 80.25)", "oklch(27% 0.1127 80.25)", "oklch(39% 0.1127 80.25)", "oklch(51% 0.1127 80.25)", "oklch(63% 0.1127 80.25)", "oklch(72% 0.1127 80.25)", "oklch(81.04% 0.1127 80.25)", "oklch(95% 0.05 80.25)"] },
+      "clay": { "role": "tertiary", "displayName": "Clay", "canonical": "oklch(68.35% 0.1405 35.10)" },
+      "paper": { "role": "neutral", "displayName": "Paper (light bg)", "canonical": "oklch(97.35% 0.0139 88.68)" },
+      "paper-card": { "role": "neutral", "displayName": "Paper Card (light surface)", "canonical": "oklch(100% 0 89.88)" },
+      "paper-raised": { "role": "neutral", "displayName": "Paper Raised (light surface-2)", "canonical": "oklch(94.37% 0.0209 88.72)" },
+      "paper-rule": { "role": "neutral", "displayName": "Paper Rule (light rule)", "canonical": "oklch(88.10% 0.0286 86.65)" },
+      "paper-ink": { "role": "neutral", "displayName": "Paper Ink (light ink)", "canonical": "oklch(21.47% 0.0122 84.54)" },
+      "paper-ink-muted": { "role": "neutral", "displayName": "Paper Ink Muted (light ink-muted)", "canonical": "oklch(49.99% 0.0270 82.01)" },
+      "sage-deep": { "role": "primary", "displayName": "Deep Sage (light primary)", "canonical": "oklch(55.50% 0.1076 129.11)" },
+      "sage-deep-pressed": { "role": "primary", "displayName": "Deep Sage Pressed (light)", "canonical": "oklch(48.62% 0.0984 129.59)" },
+      "on-sage-deep": { "role": "primary", "displayName": "On Deep Sage (light)", "canonical": "oklch(100% 0 89.88)" },
+      "honey-deep": { "role": "secondary", "displayName": "Deep Honey (light secondary)", "canonical": "oklch(60.36% 0.1161 75.43)" },
+      "clay-deep": { "role": "tertiary", "displayName": "Deep Clay (light danger)", "canonical": "oklch(52.60% 0.1547 33.86)" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "The one page heading (h1)." },
+      "headline": { "displayName": "Headline", "purpose": "Section headings." },
+      "title": { "displayName": "Title", "purpose": "Card headings." },
+      "body": { "displayName": "Body", "purpose": "Most text in the app." },
+      "input": { "displayName": "Input", "purpose": "Text typed into a field. Never below 16px." },
+      "label": { "displayName": "Label", "purpose": "Field labels and button text." },
+      "caption": { "displayName": "Caption", "purpose": "Timestamps and fine print." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "colour-transition", "value": "Tailwind transition-colors (150ms, cubic-bezier(0.4, 0, 0.2, 1))", "purpose": "Button hover. Reduced motion collapses every transition to 0.01ms." }
+    ],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one next action on a screen. Full width.",
+      "html": "<button class=\"ds-btn-primary\">Request a spot</button>",
+      "css": ".ds-btn-primary { display: inline-flex; width: 100%; align-items: center; justify-content: center; border: none; border-radius: 0.875rem; padding: 12px 16px; font: 600 0.875rem/1.25rem Inter, system-ui, sans-serif; background: var(--primary); color: var(--on-primary); transition: background-color 150ms; cursor: pointer; } .ds-btn-primary:hover { background: var(--primary-pressed); } .ds-btn-primary:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.5; }"
+    },
+    {
+      "name": "Quiet Button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Every action that is not the one next step.",
+      "html": "<button class=\"ds-btn-quiet\">Cancel</button>",
+      "css": ".ds-btn-quiet { display: inline-flex; width: 100%; align-items: center; justify-content: center; border: none; border-radius: 0.875rem; padding: 12px 16px; font: 600 0.875rem/1.25rem Inter, system-ui, sans-serif; background: var(--surface-2); color: var(--ink); transition: background-color 150ms; cursor: pointer; } .ds-btn-quiet:hover { background: var(--rule); } .ds-btn-quiet:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Label above, 16px text, border turns sage on focus.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Handle</span><input class=\"ds-input\" placeholder=\"ryder\"></label>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 6px; } .ds-field-label { font: 500 0.875rem/1.25rem Inter, system-ui, sans-serif; color: var(--ink-muted); } .ds-input { border: 1px solid var(--rule); border-radius: 0.875rem; background: var(--surface); padding: 12px 16px; font: 400 1rem/1.5rem Inter, system-ui, sans-serif; color: var(--ink); } .ds-input::placeholder { color: var(--ink-muted); } .ds-input:focus { border-color: var(--primary); outline: none; }"
+    },
+    {
+      "name": "Filter Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Feed type filter; a link, selected state is sage.",
+      "html": "<a class=\"ds-chip\" href=\"#\">Smoke circle</a> <a class=\"ds-chip ds-chip-on\" href=\"#\" aria-current=\"true\">Edibles</a>",
+      "css": ".ds-chip { display: inline-block; border-radius: 0.875rem; padding: 8px 12px; font: 400 0.875rem/1.25rem Inter, system-ui, sans-serif; background: var(--surface-2); color: var(--ink); text-decoration: none; } .ds-chip-on { background: var(--primary); color: var(--on-primary); } .ds-chip:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Flat panel one tonal step above the field. No border, no shadow.",
+      "html": "<section class=\"ds-card\"><h3 class=\"ds-card-title\">Friday wind-down</h3><p class=\"ds-card-body\">South Tampa · 6 spots</p></section>",
+      "css": ".ds-card { display: flex; flex-direction: column; gap: 8px; border-radius: 1.125rem; background: var(--surface); padding: 16px; color: var(--ink); } .ds-card-title { margin: 0; font: 600 1.125rem/1.75rem Fraunces, Georgia, serif; letter-spacing: -0.02em; } .ds-card-body { margin: 0; font: 400 0.875rem/1.25rem Inter, system-ui, sans-serif; color: var(--ink-muted); }"
+    },
+    {
+      "name": "Notice Card",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "A card whose text colour carries the tone: honey for warning or change.",
+      "html": "<p class=\"ds-notice\" role=\"status\">Your card expires in 12 days. Renew it to keep full access.</p>",
+      "css": ".ds-notice { margin: 0; border-radius: 1.125rem; background: var(--surface); padding: 16px; font: 400 0.875rem/1.25rem Inter, system-ui, sans-serif; color: var(--secondary); }"
+    },
+    {
+      "name": "Theme Toggle",
+      "kind": "custom",
+      "description": "Segmented Dark / Light / System control.",
+      "html": "<div class=\"ds-seg\" role=\"group\" aria-label=\"Colour theme\"><button class=\"ds-seg-btn ds-seg-on\" aria-pressed=\"true\">Dark</button><button class=\"ds-seg-btn\" aria-pressed=\"false\">Light</button><button class=\"ds-seg-btn\" aria-pressed=\"false\">System</button></div>",
+      "css": ".ds-seg { display: inline-flex; gap: 4px; border-radius: 0.875rem; background: var(--surface-2); padding: 4px; } .ds-seg-btn { border: none; border-radius: 0.875rem; background: transparent; padding: 6px 12px; font: 400 0.875rem/1.25rem Inter, system-ui, sans-serif; color: var(--ink-muted); cursor: pointer; } .ds-seg-btn:hover { color: var(--ink); } .ds-seg-on { background: var(--primary); color: var(--on-primary); font-weight: 600; } .ds-seg-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Warm Ink",
+    "overview": "A late-evening room lit by one lamp. The field is a warm brown-black, never a neutral or blue black. Text is cream, not white. The single living colour is a soft sage, used for the one thing to do next. Honey-gold is the second voice, kept for strain tags, notices and small accents. Headings are set in Fraunces, a warm serif with a slight softness; everything else is Inter.\n\nThe system is calm and quiet on purpose. It is used on a phone, often at night, often where someone might glance at the screen. Nothing glows, nothing shouts, and nothing looks like cannabis branding. Depth comes from stepping the surface a shade lighter, not from shadows. Shapes are generously rounded, so the app reads as soft and friendly rather than as a tool.\n\nDark is the default and the design reference. Light mode (\"paper\") uses the same token names, re-pointed, and is a full theme, not an afterthought.",
+    "keyCharacteristics": [
+      "Warm brown-black field, cream ink, one sage action colour.",
+      "Serif headings (Fraunces) over a neutral sans body (Inter).",
+      "Flat surfaces; depth by tonal steps.",
+      "Big rounded cards, fat rounded controls.",
+      "Every colour comes from a token; both themes swap at runtime."
+    ],
+    "rules": [
+      { "name": "The One File Rule", "body": "A colour value is written only in app/globals.css. No oklch(), hex or rgb() inline in a component. One inline colour breaks a theme.", "section": "colors" },
+      { "name": "The One Voice Rule", "body": "Sage marks the single next action on a screen. Two sage buttons side by side means one of them should be quiet.", "section": "colors" },
+      { "name": "The Warm Black Rule", "body": "The field is never neutral black (#000) or a cool grey. The warmth is the identity.", "section": "colors" },
+      { "name": "The Serif Is For Headings Rule", "body": "h1–h3 get Fraunces from globals.css. Nothing else does — not buttons, not labels, not numbers.", "section": "typography" },
+      { "name": "The Sixteen Pixel Rule", "body": "Every text field uses 1rem type.", "section": "typography" },
+      { "name": "The No Shadow Rule", "body": "Lift a surface by making it a shade lighter, never by adding a shadow. Shadows on a warm-black field read as muddy.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use token classes (bg-surface, text-ink, bg-primary) for every colour.",
+      "Do keep one Sage action per screen; make the rest Quiet.",
+      "Do step surfaces lighter (Warm Night → Ember Card → Ember Raised) to show depth.",
+      "Do use 1rem type in every field.",
+      "Do check both themes; light is a full theme.",
+      "Do add a visible :focus-visible treatment when you touch a button or link."
+    ],
+    "donts": [
+      "Don't write oklch(), hex or rgb() in a component.",
+      "Don't add a box-shadow.",
+      "Don't use neutral black, cool grey, neon green or hot green.",
+      "Don't use Fraunces for anything but headings.",
+      "Don't use Honey as a button fill.",
+      "Don't use cannabis imagery or leaf icons as decoration.",
+      "Don't propose a new look here. The beauty pass is Plan 08, and it keeps Warm Ink."
+    ]
+  }
+}
