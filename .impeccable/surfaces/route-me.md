@@ -42,7 +42,7 @@ Plan 08 owns the beauty pass. This brief owns structure.
 - **Structural thesis:** a native-feeling phone app. Bottom tab bar for the
   four places; a thin header that names the page; settings as a grouped list
   that drills into one small page per job, like iOS Settings.
-- **Focal moment on Me:** the standing card at the top — avatar, handle, card
+- **Focal moment on Me:** the where-you-stand card at the top — avatar, handle, card
   status, expiry. It is the one hero card on the screen.
 - **Implementation consequence:** one Frame layout wraps signed-in routes. The
   access model (a pure function in the member gate module) decides which tabs
@@ -66,10 +66,13 @@ Plan 08 owns the beauty pass. This brief owns structure.
   bar with one tab still shows, so the member always sees where Me is.
 - **Admin:** an "Admin" row inside Me. Never a tab.
 - **Handles:** 3 to 20 characters; a long handle truncates with an ellipsis in
-  the header and the standing card, and wraps nowhere.
+  the header and the where-you-stand card, and wraps nowhere.
 - **Card status on Me:** verified (with expiry date), expiring within 30 days
   (Honey notice + Renew), expired (read-only explained + Renew), pending,
-  rejected, retake requested, unverified. Each links to its next step.
+  rejected, retake requested, unverified, suspended (says the account is
+  suspended and gives the Help contact; no other action). Each links to its
+  next step. Rejected and retake requested are not member statuses: they come
+  from the latest verification's status (`lib/verification/status.ts`).
 - **Settings save:** each sub-page shows the shared inline banner on success
   or error, next to the form. No toast.
 - **Handle change:** can be refused as taken, locked, or too soon (once every
@@ -112,7 +115,7 @@ Plan 08 owns the beauty pass. This brief owns structure.
 
 **Me (`/me`)**
 
-1. **Standing card** (the hero): avatar, display name, @handle, card status
+1. **Where-you-stand card** (the hero; the `CONTEXT.md` term): avatar, display name, @handle, card status
    and expiry. A notice line in the card when the card expires soon or has
    expired, with a Renew button.
 2. **"See your profile"** — opens `/m/[handle]`, as others see it.

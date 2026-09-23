@@ -88,8 +88,8 @@ Product truths. Each one is load-bearing; do not design around them.
 - **Avatars are generated, never a photo** in v1.
 - **Words.** "Sesh", never "session". "On deck", never "inventory" or "stash".
   The full glossary is `CONTEXT.md`.
-- **Already ruled out:** Google sign-in, magic-link sign-in, AI auto-approval,
-  a browser extension, React Native before v3.
+- **Already ruled out:** see the list in `CLAUDE.md` (Product rules). Do not
+  re-propose any of it.
 - **Deferred to v2:** direct messages, crews, discreet mode, a signed-out
   landing page, add-to-calendar, a photo avatar, event photos.
 

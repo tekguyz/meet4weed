@@ -198,10 +198,11 @@ Every value lives only in `app/globals.css`. Components use the token classes
 
 **The One File Rule.** A colour value is written only in `app/globals.css`.
 No `oklch()`, hex or `rgb()` inline in a component. One inline colour breaks a
-theme. The only exceptions are the map style (MapLibre cannot read tokens,
-declared in `globals.css` as `--map-accent`), the `theme-color` meta tag in
-`app/layout.tsx`, and email templates in
-`supabase/templates/`, which copy sRGB hex from the tokens.
+theme. The one exception `CLAUDE.md` allows is email templates in
+`supabase/templates/`, which copy sRGB hex from the tokens. The map's
+`--map-accent` is sRGB because MapLibre cannot read oklch, but it still lives
+in `globals.css`. **Known breach:** the `theme-color` meta tag in
+`app/layout.tsx` writes `#14120E` inline and does not swap with the theme.
 
 **The One Voice Rule.** Sage marks the single next action on a screen. Two sage
 buttons side by side means one of them should be quiet.
@@ -241,7 +242,8 @@ Nothing else does — not buttons, not labels, not numbers.
 
 ## Layout
 
-A single phone-width column. Most pages are `max-w-md` (28rem) centred, with
+A single phone-width column. Most pages are `max-w-md` (28rem) centred —
+a few short forms use `max-w-sm` (24rem) — with
 16px side padding and 40px top padding. Content stacks vertically with gaps of
 8, 12, 16 or 24px; 24px separates page sections. The admin area alone widens
 to `max-w-5xl`.

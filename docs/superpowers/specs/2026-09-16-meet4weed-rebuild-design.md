@@ -426,7 +426,7 @@ checked at 375px, in both themes.
 - **The on-screen keyboard never hides the focused field or its submit
   button.**
 
-The accessibility bar is WCAG 2.2 AA (`PRODUCT.md`).
+**The accessibility bar is WCAG 2.2 AA** (owner's decision, 2026-09-23).
 
 ---
 
