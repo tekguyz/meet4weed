@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import HeldInvitePage from "@/app/invite/held/page";
+import HeldInvitePage from "@/app/(frame)/invite/held/page";
 import { canBrowse, INVITE_HELD_BODY } from "@/lib/sesh/invites";
 
 /** Plan 04, ticket #31 — the screen a waiting member lands on.

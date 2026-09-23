@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Banner } from "@/components/ui/banner";
 import { buttonClass } from "@/components/ui/button";
+import { FOCUS_RING } from "@/components/ui/focus";
 import type { Standing } from "@/lib/member/standing";
 
 const LONG_DATE = new Intl.DateTimeFormat("en-US", {
@@ -21,14 +22,14 @@ export function WhereYouStand({ standing }: { standing: Standing }) {
     case "verified":
       return (
         <Card title="Your card is verified">
-          <Text>Valid through {LONG_DATE.format(new Date(`${standing.expiresOn}T00:00:00Z`))}.</Text>
+          <Body>Valid through {LONG_DATE.format(new Date(`${standing.expiresOn}T00:00:00Z`))}.</Body>
         </Card>
       );
     case "expiring":
       return (
         <Banner tone="warning">
           {standing.notice}{" "}
-          <Link href="/verify" className="underline">
+          <Link href="/verify" className={`underline ${FOCUS_RING}`}>
             Renew
           </Link>
         </Banner>
@@ -36,25 +37,25 @@ export function WhereYouStand({ standing }: { standing: Standing }) {
     case "expired":
       return (
         <Card title="Your card has expired">
-          <Text>
+          <Body>
             Your account is read-only. You can browse seshes and see your history, but not join or host.
-          </Text>
+          </Body>
           <Step href="/verify">Renew your card</Step>
         </Card>
       );
     case "pending":
       return (
         <Card title="A person is checking your card">
-          <Text>Seshes open up as soon as they are done. Your photos are deleted when they decide.</Text>
+          <Body>Seshes open up as soon as they are done. Your photos are deleted when they decide.</Body>
         </Card>
       );
     case "rejected":
       return (
         <Card title="Your card was not approved">
           {standing.reason ? <p className="text-sm text-danger">{standing.reason}</p> : null}
-          <Text>
+          <Body>
             <HelpLink>Help</HelpLink> lists the common reasons. Fix it, then send it again.
-          </Text>
+          </Body>
           <Step href="/verify">Try again</Step>
         </Card>
       );
@@ -68,23 +69,23 @@ export function WhereYouStand({ standing }: { standing: Standing }) {
     case "lapsed":
       return (
         <Card title="Please take your photos again">
-          <Text>Nobody reviewed your last photos in time, so they were deleted.</Text>
+          <Body>Nobody reviewed your last photos in time, so they were deleted.</Body>
           <Step href="/verify">Take them again</Step>
         </Card>
       );
     case "unverified":
       return (
         <Card title="Verify your card">
-          <Text>Seshes are for verified patients. Add your card and a person will check it.</Text>
+          <Body>Seshes are for verified patients. Add your card and a person will check it.</Body>
           <Step href="/verify">Verify your card</Step>
         </Card>
       );
     case "suspended":
       return (
         <Card title="This account is suspended">
-          <Text>
+          <Body>
             If you think this is a mistake, <HelpLink>get help</HelpLink>.
-          </Text>
+          </Body>
         </Card>
       );
   }
@@ -99,13 +100,13 @@ function Card({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function Text({ children }: { children: ReactNode }) {
+function Body({ children }: { children: ReactNode }) {
   return <p className="text-sm text-ink-muted">{children}</p>;
 }
 
 function Step({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <Link href={href} className={buttonClass()}>
+    <Link href={href} className={`${buttonClass()} ${FOCUS_RING}`}>
       {children}
     </Link>
   );
@@ -114,7 +115,7 @@ function Step({ href, children }: { href: string; children: ReactNode }) {
 /** /help lands with its own ticket (#68). */
 function HelpLink({ children }: { children: ReactNode }) {
   return (
-    <Link href="/help" className="text-primary underline">
+    <Link href="/help" className={`text-primary underline ${FOCUS_RING}`}>
       {children}
     </Link>
   );

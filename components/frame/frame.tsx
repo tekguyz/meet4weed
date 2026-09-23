@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { FOCUS_RING } from "@/components/ui/focus";
 import { APP_NAME } from "@/lib/env";
 import type { FrameTab } from "@/lib/member/gate";
 import { activeTab, frameHeader, TABS } from "./frame-paths";
-
-const FOCUS = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
 /**
  * The Frame (issue #62; brief in .impeccable/surfaces/route-me.md). It renders
@@ -25,10 +24,10 @@ export function Frame({ tabs, children }: { tabs: FrameTab[]; children: ReactNod
   const { title, back } = frameHeader(pathname);
 
   return (
-    <>
+    <div data-frame>
       <a
         href="#content"
-        className={`sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-30 focus:rounded-control focus:bg-primary focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-on-primary ${FOCUS}`}
+        className={`sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-30 focus:rounded-control focus:bg-primary focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-on-primary ${FOCUS_RING}`}
       >
         Skip to content
       </a>
@@ -40,7 +39,7 @@ export function Frame({ tabs, children }: { tabs: FrameTab[]; children: ReactNod
               <Link
                 href={back}
                 aria-label="Back"
-                className={`-ml-3 flex size-11 shrink-0 items-center justify-center rounded-control text-ink-muted hover:text-ink ${FOCUS}`}
+                className={`-ml-3 flex size-11 shrink-0 items-center justify-center rounded-control text-ink-muted hover:text-ink ${FOCUS_RING}`}
               >
                 <BackIcon />
               </Link>
@@ -50,7 +49,7 @@ export function Frame({ tabs, children }: { tabs: FrameTab[]; children: ReactNod
 
           <Link
             href="/"
-            className={`hidden shrink-0 rounded-control text-base font-semibold text-ink md:mr-4 md:block ${FOCUS}`}
+            className={`hidden shrink-0 rounded-control text-base font-semibold text-ink md:mr-4 md:block ${FOCUS_RING}`}
           >
             {APP_NAME}
           </Link>
@@ -67,7 +66,7 @@ export function Frame({ tabs, children }: { tabs: FrameTab[]; children: ReactNod
                     <Link
                       href={TABS[tab].href}
                       aria-current={here ? "page" : undefined}
-                      className={`flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-control text-xs font-medium md:min-h-11 md:flex-row md:gap-2 md:px-3 md:text-sm ${here ? "text-primary" : "text-ink-muted hover:text-ink"} ${FOCUS}`}
+                      className={`flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-control text-xs font-medium md:min-h-11 md:flex-row md:gap-2 md:px-3 md:text-sm ${here ? "text-primary" : "text-ink-muted hover:text-ink"} ${FOCUS_RING}`}
                     >
                       <TabIcon tab={tab} />
                       {TABS[tab].label}
@@ -91,7 +90,7 @@ export function Frame({ tabs, children }: { tabs: FrameTab[]; children: ReactNod
       >
         {children}
       </main>
-    </>
+    </div>
   );
 }
 

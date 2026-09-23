@@ -244,7 +244,8 @@ Nothing else does — not buttons, not labels, not numbers.
 
 A single phone-width column. Most pages are `max-w-md` (28rem) centred —
 a few short forms use `max-w-sm` (24rem) — with
-16px side padding and 40px top padding. Content stacks vertically with gaps of
+16px side padding and 40px top padding — 24px under the Frame's header, which
+already spaces the page from the top. Content stacks vertically with gaps of
 8, 12, 16 or 24px; 24px separates page sections. The admin area alone widens
 to `max-w-5xl`.
 

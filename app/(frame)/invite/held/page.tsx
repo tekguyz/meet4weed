@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Banner } from "@/components/ui/banner";
-import { APP_NAME } from "@/lib/env";
+import { FOCUS_RING } from "@/components/ui/focus";
 import { INVITE_HELD_BODY, INVITE_HELD_TITLE } from "@/lib/sesh/invites";
 
 export const metadata = { title: INVITE_HELD_TITLE };
@@ -23,19 +23,15 @@ export const metadata = { title: INVITE_HELD_TITLE };
  */
 export default function HeldInvitePage() {
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center gap-8 px-4">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-3xl">{APP_NAME}</h1>
-      </header>
-
+    <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-6">
       <Banner className="flex flex-col gap-2">
-        <h2 className="text-xl text-ink">{INVITE_HELD_TITLE}</h2>
+        <h1 className="text-xl text-ink">{INVITE_HELD_TITLE}</h1>
         <p className="text-sm text-ink-muted">{INVITE_HELD_BODY}</p>
       </Banner>
 
-      <Link href="/verify" className="text-sm font-semibold text-primary underline">
+      <Link href="/verify" className={`text-sm font-semibold text-primary underline ${FOCUS_RING}`}>
         Verify your card
       </Link>
-    </main>
+    </div>
   );
 }

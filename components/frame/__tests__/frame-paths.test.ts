@@ -29,6 +29,7 @@ describe("frameHeader", () => {
     ["/seshes/abc", "Sesh", "/seshes"],
     ["/seshes/abc/edit", "Edit sesh", "/seshes/abc"],
     ["/verify", "Verify your card", "/"],
+    ["/invite/held", "Invite saved", null],
   ])("%s is titled %s with back %s", (path, title, back) => {
     expect(frameHeader(path)).toEqual({ title, back });
   });

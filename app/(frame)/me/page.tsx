@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { FOCUS_RING } from "@/components/ui/focus";
 import { amIAdmin } from "@/lib/admin/queries";
 import { floridaToday } from "@/lib/dates";
 import { frameAccess, memberAccess } from "@/lib/member/gate";
@@ -27,18 +28,18 @@ export default async function MePage() {
       </header>
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-lg">Theme</h2>
+        <h2 className="text-xl">Theme</h2>
         <ThemeToggle />
       </section>
 
       {adminLink ? (
-        <Link href="/admin" className="flex min-h-11 items-center rounded-card bg-surface px-4 text-sm text-ink">
+        <Link href="/admin" className={`flex min-h-11 items-center rounded-card bg-surface px-4 text-sm text-ink ${FOCUS_RING}`}>
           Admin
         </Link>
       ) : null}
 
       <form action="/auth/sign-out" method="post">
-        <button type="submit" className="min-h-11 text-sm text-ink-muted underline">
+        <button type="submit" className={`min-h-11 text-sm text-ink-muted underline ${FOCUS_RING}`}>
           Sign out
         </button>
       </form>

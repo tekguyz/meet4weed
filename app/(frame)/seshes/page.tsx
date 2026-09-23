@@ -29,9 +29,8 @@ export default async function SeshesPage({ searchParams }: { searchParams: Promi
   const today = floridaToday();
   const access = memberAccess(profile, today);
 
-  // The database already returns a member who cannot browse nothing. The tab
-  // is hidden for them; a typed URL goes to their where-you-stand card rather
-  // than an empty feed that reads as broken.
+  // RLS gives a member who cannot browse an empty feed, which reads as broken.
+  // Their tab is hidden; a typed URL goes to their where-you-stand card.
   if (frameAccess(access, await amIAdmin()).home !== "/seshes") redirect("/");
 
   // Expiring soon, expired, or a renewal that did not go through. A browsing

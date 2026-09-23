@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { RedeemInvite } from "@/components/sesh/redeem-invite";
 import { Banner } from "@/components/ui/banner";
+import { FOCUS_RING } from "@/components/ui/focus";
 import { APP_NAME } from "@/lib/env";
 import { getInvitePreview } from "@/lib/sesh/invite-reads";
 import { INVITE_FAILED } from "@/lib/sesh/invites";
@@ -87,7 +88,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
 
       {/* The way back in, the same for everyone: `/` sends a signed-out
           visitor to sign in. The page still does not know who is looking. */}
-      <Link href="/" className="text-sm text-ink-muted underline">
+      <Link href="/" className={`text-sm text-ink-muted underline ${FOCUS_RING}`}>
         Go to {APP_NAME}
       </Link>
     </main>

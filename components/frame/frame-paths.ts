@@ -27,12 +27,16 @@ const TITLES: [RegExp, string][] = [
   [/^\/seshes\/[^/]+\/edit$/, "Edit sesh"],
   [/^\/me$/, "Me"],
   [/^\/verify$/, "Verify your card"],
+  [/^\/invite\/held$/, "Invite saved"],
 ];
+
+/** Pages reached from outside the tabs, whose parent path is not a page. */
+const NO_BACK = new Set(["/invite/held"]);
 
 /** The phone header's title, and where its back arrow goes. A tab has no back
  *  arrow; anything under one goes up a level, so no page is a dead end. */
 export function frameHeader(pathname: string): { title: string; back: string | null } {
   const title = TITLES.find(([pattern]) => pattern.test(pathname))?.[1] ?? APP_NAME;
-  if (TAB_ROOTS.has(pathname)) return { title, back: null };
+  if (TAB_ROOTS.has(pathname) || NO_BACK.has(pathname)) return { title, back: null };
   return { title, back: pathname.slice(0, pathname.lastIndexOf("/")) || "/" };
 }
