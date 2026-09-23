@@ -34,6 +34,11 @@ describe("frameHeader", () => {
     // Reached from a sesh or from Me, so there is no one parent to go up to,
     // and /m on its own is not a page. The tabs are the way out.
     ["/m/ryder", "Profile", null],
+    ["/me/settings", "Settings", "/me"],
+    ["/me/settings/profile", "Edit profile", "/me/settings"],
+    ["/me/settings/theme", "Theme", "/me/settings"],
+    ["/me/settings/password", "Password", "/me/settings"],
+    ["/me/settings/sessions", "Sessions", "/me/settings"],
   ])("%s is titled %s with back %s", (path, title, back) => {
     expect(frameHeader(path)).toEqual({ title, back });
   });

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { profileInputSchema } from "@/lib/profiles/schema";
+import { parseTags, profileInputSchema } from "@/lib/profiles/schema";
 import type { ActionState } from "@/lib/forms/action-state";
 
 const checked = z.literal("on");
@@ -49,14 +49,6 @@ export async function recordAttestation(
 
   revalidatePath("/onboarding");
   return { ok: true, message: "" };
-}
-
-function parseTags(raw: FormDataEntryValue | null): string[] {
-  if (typeof raw !== "string") return [];
-  return raw
-    .split(",")
-    .map((tag) => tag.trim())
-    .filter(Boolean);
 }
 
 export async function saveProfile(

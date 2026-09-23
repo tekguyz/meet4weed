@@ -44,7 +44,9 @@ export async function requestPasswordReset(input: z.input<typeof Request>): Prom
   return { ok: true };
 }
 
-export async function setNewPassword(input: z.input<typeof NewPassword>): Promise<Result> {
+/** Changing it while signed in (Settings → Password, issue #65). The same
+ *  update as step 3, but the member stays on the page to read the banner. */
+export async function changePassword(input: z.input<typeof NewPassword>): Promise<Result> {
   const parsed = NewPassword.safeParse(input);
   if (!parsed.success) return { ok: false, failure: "invalid_input" };
 
@@ -56,6 +58,11 @@ export async function setNewPassword(input: z.input<typeof NewPassword>): Promis
 
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
   if (error) return { ok: false, failure: toAuthFailure(error) };
+  return { ok: true };
+}
 
+export async function setNewPassword(input: z.input<typeof NewPassword>): Promise<Result> {
+  const result = await changePassword(input);
+  if (!result.ok) return result;
   redirect("/");
 }

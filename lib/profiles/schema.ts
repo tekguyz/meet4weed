@@ -44,6 +44,19 @@ export const profileInputSchema = z.object({
 
 export type ProfileInput = z.infer<typeof profileInputSchema>;
 
+/** Everything on the profile but the handle, which has its own page and its
+ *  own rules. What Settings → Edit profile saves. */
+export const profileFieldsSchema = profileInputSchema.omit({ handle: true });
+
+/** Vibe tags arrive as one comma-separated field. */
+export function parseTags(raw: FormDataEntryValue | null): string[] {
+  if (typeof raw !== "string") return [];
+  return raw
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+}
+
 export type Profile = {
   id: string;
   handle: string;
