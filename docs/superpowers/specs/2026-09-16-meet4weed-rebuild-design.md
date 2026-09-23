@@ -289,7 +289,10 @@ replaces it.
 - Email + password auth (confirm and reset by emailed link) + 21+/OMMU attestation
 - Card verification, admin review queue, expiry lifecycle
 - Profile: handle, avatar, bio, city, preferred strain types, consumption
-  methods, vibe tags
+  methods, vibe tags. **The avatar is a generated mark** drawn from a seed the
+  member can shuffle, never a photo. A face on a profile in a discreet app is
+  a separate decision, so the photo avatar moves to v2. (Amended 2026-09-23,
+  Plan 04b, #59.)
 - Sesh create / edit / cancel with capacity and session type
 - Feed with type-chip filters and text search; map view with fuzzy circles
 - **Fuzzy location:** public view shows neighbourhood + a randomized offset
@@ -312,7 +315,14 @@ replaces it.
 
 - v2: direct messages, crews, vibe matching, strain locker + PWA share-target
   import, **event photos** (attendees only, never public, auto-delete at 30
-  days, self-removal from any photo)
+  days, self-removal from any photo). Added 2026-09-23 (Plan 04b, #59):
+  - **Discreet mode** — a plain app name and icon on the home screen.
+  - **A signed-out landing page.** v1 keeps one line on the login page.
+  - **Add-to-calendar** — never carrying the address. A calendar entry is the
+    address sitting on the device after the RSVP that unlocked it is gone,
+    the same harm `docs/adr/0001-app-shell-caching-only.md` rules out.
+  - **A photo avatar.** `profiles.avatar_url` stays in the schema, unused,
+    for it.
 - v3: Expo native client on the same Supabase backend
 - **Never:** browser extension; any sales, cart, or dispensary ordering feature
 
@@ -391,6 +401,32 @@ one-job-per-screen stepper with an illustration instead of a wall of text.
 
 The **impeccable** skill drives the visual build. It is not a Tailwind default
 look.
+
+`DESIGN.md` at the repo root records Warm Ink as built, for impeccable and for
+anyone adding a screen; `PRODUCT.md` holds the product truths it designs
+against. Neither proposes a new look. (Added 2026-09-23, #60.)
+
+### 7.1 Mobile
+
+Added 2026-09-23 (Plan 04b, #59). Meet4Weed is an installed PWA used on a
+phone (§4.5 chose password auth for exactly that reason), so the phone is the
+design reference and wide screens adapt from it. Every route that ships is
+checked at 375px, in both themes.
+
+- **375px is the base width.** Every route works there first.
+- **Tap targets are at least 44px** in both directions, including links in
+  lists and icon buttons.
+- **Primary actions sit within thumb reach** — in the lower part of the
+  screen or directly after the last field, never only in a top corner.
+- **Safe-area insets are respected** on anything pinned to an edge — the
+  Frame's header and bottom tab bar in particular — so nothing hides under a
+  notch or a home bar.
+- **No route scrolls sideways.** A row of chips may scroll inside itself; the
+  page never does.
+- **The on-screen keyboard never hides the focused field or its submit
+  button.**
+
+**The accessibility bar is WCAG 2.2 AA** (owner's decision, 2026-09-23).
 
 ---
 
