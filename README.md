@@ -142,7 +142,9 @@ so a change means editing both:
 | `npm run dev` | Dev server on port 3000 |
 | `npm run build` | Production build |
 | `npm run typecheck` | `tsc --noEmit` |
-| `npm test` | Every vitest suite, including the database security tests |
+| `npm test` | The same as `npm run test:unit` |
+| `npm run test:unit` | Every vitest suite except the database security tests |
+| `npm run test:db` | The database security tests, one file at a time |
 | `npm run db:push` | Apply new migrations to the linked hosted project |
 | `npm run admin:grant -- <email>` | Make an existing account an admin |
 | `npm run cron:run -- verification-reaper` | Run a cron job against the local dev server (also `expiry-sweep`) |
@@ -206,9 +208,26 @@ Forget it and every server-side write to that table fails with `42501`.
 
 ## Tests
 
+Two commands, never one:
+
 ```bash
-npm test
+npm run test:unit
+npm run test:db
 ```
+
+`test:unit` skips `supabase/`. `test:db` runs only `supabase/`, one file at a
+time. `npm test` is `test:unit`, so it is safe too.
+
+*Why two:* the database tests make real accounts on the hosted project. Run
+all at once, they sign in faster than Supabase allows, suites die in
+`beforeAll`, and `afterAll` never deletes what they made. A path filter does
+not keep them out: vitest matches each word as part of a path, so
+`npx vitest run lib app components __tests__` still runs them, because every
+test path contains `__tests__`. Issue #64 hit exactly that and left 10 junk
+accounts.
+
+While working, run only the test files you touched. Run `test:unit` once at the
+end, and `test:db` once when a migration changed.
 
 The security tests run against the hosted project and delete what they create:
 
@@ -232,10 +251,10 @@ secret, so **CI does not run the security tests.** Run them locally before
 merging anything that touches a migration, and **check they ran** — the
 summary line hides a skip.
 
-Run them **serially**:
+Run them **serially**, which is what `test:db` does:
 
 ```bash
-npx vitest run supabase/tests --no-file-parallelism
+npm run test:db
 ```
 
 In parallel they create members faster than Supabase Auth allows and a suite
