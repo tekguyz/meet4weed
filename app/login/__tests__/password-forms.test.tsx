@@ -3,9 +3,13 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const setNewPassword = vi.fn();
+const changePassword = vi.fn();
 const signUpWithPassword = vi.fn();
 
-vi.mock("@/app/auth/actions/recovery", () => ({ setNewPassword: (...a: unknown[]) => setNewPassword(...a) }));
+vi.mock("@/app/auth/actions/recovery", () => ({
+  setNewPassword: (...a: unknown[]) => setNewPassword(...a),
+  changePassword: (...a: unknown[]) => changePassword(...a),
+}));
 vi.mock("@/app/auth/actions/sign-up", () => ({ signUpWithPassword: (...a: unknown[]) => signUpWithPassword(...a) }));
 
 import { NewPasswordForm } from "@/app/login/new-password/new-password-form";
@@ -14,6 +18,7 @@ import { PASSWORDS_DIFFER } from "@/app/login/failure-text";
 
 beforeEach(() => {
   setNewPassword.mockReset();
+  changePassword.mockReset().mockResolvedValue({ ok: true });
   signUpWithPassword.mockReset().mockResolvedValue({ ok: true });
 });
 
@@ -35,6 +40,48 @@ describe("new password", () => {
     await userEvent.click(screen.getByRole("button", { name: "Save password" }));
 
     expect(setNewPassword).toHaveBeenCalledWith({ password: "Abcdef1!" });
+  });
+});
+
+describe("changing the password while signed in (issue #65)", () => {
+  async function submit(password: string) {
+    await userEvent.type(screen.getByLabelText("New password"), password);
+    await userEvent.type(screen.getByLabelText("Type the new password again"), password);
+    await userEvent.click(screen.getByRole("button", { name: "Save password" }));
+  }
+
+  it("uses the signed-in action, not the reset one, and shows the banner", async () => {
+    render(<NewPasswordForm mode="change" />);
+    await submit("Abcdef1!");
+
+    expect(changePassword).toHaveBeenCalledWith({ password: "Abcdef1!" });
+    expect(setNewPassword).not.toHaveBeenCalled();
+    expect(await screen.findByRole("status")).toHaveTextContent("Password changed.");
+  });
+
+  it("clears both fields after a change, so the page does not hold the password", async () => {
+    render(<NewPasswordForm mode="change" />);
+    await submit("Abcdef1!");
+
+    await screen.findByRole("status");
+    expect(screen.getByLabelText("New password")).toHaveValue("");
+    expect(screen.getByLabelText("Type the new password again")).toHaveValue("");
+  });
+
+  it("says why a change was refused, in the banner", async () => {
+    changePassword.mockResolvedValue({ ok: false, failure: "same_password" });
+    render(<NewPasswordForm mode="change" />);
+    await submit("Abcdef1!");
+
+    expect(await screen.findByRole("status")).toHaveTextContent(/have not used/i);
+  });
+
+  it("does not talk about a reset link when the session has gone", async () => {
+    changePassword.mockResolvedValue({ ok: false, failure: "no_session" });
+    render(<NewPasswordForm mode="change" />);
+    await submit("Abcdef1!");
+
+    expect(await screen.findByRole("status")).toHaveTextContent(/sign in again/i);
   });
 });
 

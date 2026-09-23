@@ -49,8 +49,8 @@ export function ThemeToggle() {
           onClick={() => choose(option)}
           className={
             theme === option
-              ? "rounded-control bg-primary px-3 py-1.5 text-sm font-semibold capitalize text-on-primary"
-              : "rounded-control px-3 py-1.5 text-sm capitalize text-ink-muted hover:text-ink"
+              ? "min-h-11 rounded-control bg-primary px-4 py-1.5 text-sm font-semibold capitalize text-on-primary"
+              : "min-h-11 rounded-control px-4 py-1.5 text-sm capitalize text-ink-muted hover:text-ink"
           }
         >
           {option}

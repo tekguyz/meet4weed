@@ -27,6 +27,8 @@ const BY_CODE: Record<string, AuthFailure> = {
   weak_password: "weak_password",
   same_password: "same_password",
   session_not_found: "no_session",
+  // "Secure password change" wants a fresh sign-in on an old session.
+  reauthentication_needed: "no_session",
   over_email_send_rate_limit: "email_send_limit",
   over_request_rate_limit: "rate_limited",
   validation_failed: "invalid_input",

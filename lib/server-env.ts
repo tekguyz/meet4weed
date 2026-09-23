@@ -23,6 +23,8 @@ const Schema = z.object({
   VISION_DAILY_CEILING: z.coerce.number().int().min(0).default(50),
   VERIFY_MEMBER_DAILY_LIMIT: z.coerce.number().int().min(1).default(3),
   VERIFY_IP_DAILY_LIMIT: z.coerce.number().int().min(1).default(10),
+  // Set by Vercel at build. Not a secret: it names the build on Me's About line.
+  VERCEL_GIT_COMMIT_SHA: z.string().optional(),
 });
 
 export type ServerEnv = z.infer<typeof Schema>;

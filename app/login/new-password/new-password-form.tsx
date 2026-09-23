@@ -1,29 +1,50 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { setNewPassword } from "@/app/auth/actions/recovery";
+import { changePassword, setNewPassword } from "@/app/auth/actions/recovery";
+import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { PasswordInput } from "@/components/ui/password-input";
 import { FAILURE_TEXT, PASSWORDS_DIFFER } from "../failure-text";
 
-/** Step 3 of the three in app/auth/actions/recovery.ts. */
-export function NewPasswordForm() {
+/** A signed-in member has no reset link to run out; their session did. */
+const CHANGE_TEXT = { ...FAILURE_TEXT, no_session: "Your session has ended. Sign in again, then change it." };
+
+type Props = {
+  /** `reset` is step 3 of the three in app/auth/actions/recovery.ts and goes
+   *  home when done. `change` is Settings → Password (issue #65): the member
+   *  stays and the shared banner says it worked. */
+  mode?: "reset" | "change";
+};
+
+export function NewPasswordForm({ mode = "reset" }: Props) {
   const [password, setPassword] = useState("");
   const [again, setAgain] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
+  const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setMessage(null);
+    setResult(null);
     if (password !== again) {
-      setMessage(PASSWORDS_DIFFER);
+      setResult({ ok: false, text: PASSWORDS_DIFFER });
       return;
     }
     startTransition(async () => {
-      // Resolves only on failure; success redirects.
-      const result = await setNewPassword({ password });
-      if (result && !result.ok) setMessage(FAILURE_TEXT[result.failure]);
+      if (mode === "reset") {
+        // Resolves only on failure; success redirects.
+        const outcome = await setNewPassword({ password });
+        if (outcome && !outcome.ok) setResult({ ok: false, text: FAILURE_TEXT[outcome.failure] });
+        return;
+      }
+      const outcome = await changePassword({ password });
+      if (!outcome.ok) {
+        setResult({ ok: false, text: CHANGE_TEXT[outcome.failure] });
+        return;
+      }
+      setPassword("");
+      setAgain("");
+      setResult({ ok: true, text: "Password changed." });
     });
   }
 
@@ -35,7 +56,11 @@ export function NewPasswordForm() {
         value={again} onChange={(e) => setAgain(e.target.value)} />
       <p className="text-xs text-ink-muted">{FAILURE_TEXT.weak_password}</p>
       <Button type="submit" disabled={pending}>{pending ? "Saving…" : "Save password"}</Button>
-      {message ? <p role="alert" className="text-sm text-danger">{message}</p> : null}
+      {result && mode === "change" ? (
+        <Banner tone={result.ok ? "success" : "danger"}>{result.text}</Banner>
+      ) : result ? (
+        <p role="alert" className="text-sm text-danger">{result.text}</p>
+      ) : null}
     </form>
   );
 }

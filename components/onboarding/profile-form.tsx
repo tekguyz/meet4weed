@@ -5,6 +5,7 @@ import { saveProfile } from "@/app/onboarding/actions";
 import type { ActionState } from "@/lib/forms/action-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   CONSUMPTION_METHODS,
   RESERVED_HANDLE_PREFIX,
@@ -75,6 +76,33 @@ export function ProfileForm({ profile }: { profile: Profile }) {
         ) : null}
       </div>
 
+      <ProfileFields profile={profile} errors={state?.fieldErrors} />
+
+      <Button type="submit" disabled={pending}>
+        {pending ? "Saving…" : "Save profile"}
+      </Button>
+
+      {/* Failures only: saveProfile redirects home on success, so an ok state
+          never reaches this component. */}
+      {state && !state.ok ? (
+        <p role="alert" className="text-sm text-danger">
+          {state.message}
+        </p>
+      ) : null}
+    </form>
+  );
+}
+
+type FieldsProps = {
+  profile: Pick<Profile, "displayName" | "bio" | "city" | "strainPrefs" | "methodPrefs" | "vibeTags">;
+  errors?: Record<string, string>;
+};
+
+/** Everything on a profile but the handle. Shared by onboarding's last step
+ *  and Settings → Edit profile (issue #65), so the two never drift. */
+export function ProfileFields({ profile, errors }: FieldsProps) {
+  return (
+    <>
       <Input label="Display name" name="displayName" defaultValue={profile.displayName ?? ""} />
       <Input
         label="City"
@@ -82,12 +110,17 @@ export function ProfileForm({ profile }: { profile: Profile }) {
         defaultValue={profile.city ?? ""}
         placeholder="Wilton Manors"
       />
-      <Input
-        label="Bio"
-        name="bio"
-        defaultValue={profile.bio ?? ""}
-        placeholder="Indica after 8pm."
-      />
+      <div className="flex flex-col gap-1.5">
+        <Textarea
+          label="Bio"
+          name="bio"
+          rows={3}
+          maxLength={280}
+          defaultValue={profile.bio ?? ""}
+          placeholder="Indica after 8pm."
+        />
+        <FieldError message={errors?.bio} />
+      </div>
 
       <CheckGroup
         legend="Strains you reach for"
@@ -113,19 +146,16 @@ export function ProfileForm({ profile }: { profile: Profile }) {
         <p id="tags-help" className="text-xs text-ink-muted">
           Up to eight, separated by commas.
         </p>
+        <FieldError message={errors?.vibeTags} />
       </div>
-
-      <Button type="submit" disabled={pending}>
-        {pending ? "Saving…" : "Save profile"}
-      </Button>
-
-      {/* Failures only: saveProfile redirects home on success, so an ok state
-          never reaches this component. */}
-      {state && !state.ok ? (
-        <p role="alert" className="text-sm text-danger">
-          {state.message}
-        </p>
-      ) : null}
-    </form>
+    </>
   );
+}
+
+function FieldError({ message }: { message?: string }) {
+  return message ? (
+    <p role="alert" className="text-xs text-danger">
+      {message}
+    </p>
+  ) : null;
 }
