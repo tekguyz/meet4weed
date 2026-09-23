@@ -81,11 +81,80 @@ describe.skipIf(!configured)("profiles row-level security", () => {
     expect(data!.status).toBe("unverified");
   });
 
-  it("lets a member read the whole directory", async () => {
+  // Issue #64. Both members start unverified, so neither can browse yet.
+  // Onboarding, verification and settings read the member's own row before
+  // the gate opens, which is why the owner branch exists at all.
+  it("lets a member who cannot browse read only their own profile", async () => {
     const { data, error } = await alice.db.from("profiles").select("id").in("id", [alice.id, bob.id]);
 
     expect(error).toBeNull();
+    expect(data!.map((row) => row.id)).toEqual([alice.id]);
+  });
+
+  it("hides another member's profile by handle from a member who cannot browse", async () => {
+    const { data: bobRow } = await admin.from("profiles").select("handle").eq("id", bob.id).single();
+
+    const { data, error } = await alice.db
+      .from("profiles")
+      .select("id")
+      .eq("handle", bobRow!.handle)
+      .maybeSingle();
+
+    expect(error).toBeNull();
+    expect(data).toBeNull();
+  });
+
+  it("lets a member who can browse read other profiles", async () => {
+    await admin
+      .from("profiles")
+      .update({ status: "verified", card_expires_on: "2099-01-01" })
+      .eq("id", bob.id);
+
+    const { data, error } = await bob.db.from("profiles").select("id").in("id", [alice.id, bob.id]);
+
+    expect(error).toBeNull();
     expect(data).toHaveLength(2);
+  });
+
+  it("still lets an expired member read other profiles, because expired is read-only", async () => {
+    await admin.from("profiles").update({ status: "expired" }).eq("id", bob.id);
+
+    // Put Bob back to unverified whatever happens: the tests below were
+    // written for two members who start with nothing.
+    try {
+      const { data, error } = await bob.db.from("profiles").select("id").eq("id", alice.id);
+
+      expect(error).toBeNull();
+      expect(data).toHaveLength(1);
+    } finally {
+      await admin.from("profiles").update({ status: "unverified", card_expires_on: null }).eq("id", bob.id);
+    }
+  });
+
+  it("hides other profiles again when a member is suspended", async () => {
+    await admin.from("profiles").update({ status: "suspended" }).eq("id", bob.id);
+
+    try {
+      const { data } = await bob.db.from("profiles").select("id").in("id", [alice.id, bob.id]);
+      expect(data!.map((row) => row.id)).toEqual([bob.id]);
+    } finally {
+      await admin.from("profiles").update({ status: "unverified" }).eq("id", bob.id);
+    }
+  });
+
+  // The review queue embeds profiles(handle) on each submission, read with the
+  // admin's own session. The owner who reviews need not hold a card, and a
+  // queue of "@unknown" is no queue.
+  it("lets an admin who cannot browse read other profiles", async () => {
+    const { error: grantError } = await admin.from("admins").insert({ user_id: alice.id });
+    expect(grantError).toBeNull();
+
+    try {
+      const { data } = await alice.db.from("profiles").select("id").eq("id", bob.id);
+      expect(data).toHaveLength(1);
+    } finally {
+      await admin.from("admins").delete().eq("user_id", alice.id);
+    }
   });
 
   it("lets a member edit their own bio", async () => {

@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { AddressPanel } from "@/components/sesh/address-panel";
 import { ChangedBanner } from "@/components/sesh/changed-banner";
 import { InvitePanel } from "@/components/sesh/invite-panel";
+import { HandleLink } from "@/components/member/handle-link";
 import { OnDeck } from "@/components/sesh/on-deck";
 import { AskToJoin, DecideButtons, WithdrawRsvp } from "@/components/sesh/rsvp-buttons";
 import { Banner } from "@/components/ui/banner";
@@ -68,6 +69,12 @@ export default async function SeshPage({ params }: { params: Promise<{ id: strin
           </span>
         </div>
         <p className="text-sm text-ink-muted">{WHEN.format(new Date(sesh.startsAt))} ET</p>
+        {sesh.hostHandle ? (
+          <p className="text-sm text-ink-muted">
+            Hosted by{" "}
+            {iAmHost ? "you" : <HandleLink handle={sesh.hostHandle} />}
+          </p>
+        ) : null}
         {/* Shown to everyone who can read the sesh at all, not just the host.
             Somebody holding a seat should know this one is not public before
             they paste it into a group chat. */}
@@ -106,7 +113,7 @@ export default async function SeshPage({ params }: { params: Promise<{ id: strin
 function Person({ rsvp }: { rsvp: RsvpRow }) {
   return (
     <div className="flex flex-col">
-      <span className="text-sm text-ink">@{rsvp.handle}</span>
+      <HandleLink handle={rsvp.handle} className="self-start text-sm" />
       {rsvp.bio ? <span className="line-clamp-2 text-sm text-ink-muted">{rsvp.bio}</span> : null}
     </div>
   );

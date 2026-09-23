@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { profilePath } from "@/components/member/handle-link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { FOCUS_RING } from "@/components/ui/focus";
 import { amIAdmin } from "@/lib/admin/queries";
@@ -8,6 +9,8 @@ import { frameAccess, memberAccess } from "@/lib/member/gate";
 import { getMyProfile } from "@/lib/profiles/queries";
 
 export const metadata = { title: "Me" };
+
+const ROW_LINK = `flex min-h-11 items-center rounded-card bg-surface px-4 text-sm text-ink ${FOCUS_RING}`;
 
 /**
  * A stand-in for Me, so the Me tab goes somewhere and nothing the home page
@@ -27,13 +30,17 @@ export default async function MePage() {
         {profile.displayName ? <p className="truncate text-sm text-ink-muted">{profile.displayName}</p> : null}
       </header>
 
+      <Link href={profilePath(profile.handle)} className={ROW_LINK}>
+        See your profile as others see it
+      </Link>
+
       <section className="flex flex-col gap-2">
         <h2 className="text-xl">Theme</h2>
         <ThemeToggle />
       </section>
 
       {adminLink ? (
-        <Link href="/admin" className={`flex min-h-11 items-center rounded-card bg-surface px-4 text-sm text-ink ${FOCUS_RING}`}>
+        <Link href="/admin" className={ROW_LINK}>
           Admin
         </Link>
       ) : null}

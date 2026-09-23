@@ -19,6 +19,8 @@ export function activeTab(pathname: string): FrameTab | null {
   return null;
 }
 
+const PROFILE_PATH = /^\/m\/[^/]+$/;
+
 const TITLES: [RegExp, string][] = [
   [/^\/seshes$/, "Seshes"],
   [/^\/seshes\/mine$/, "My seshes"],
@@ -28,15 +30,19 @@ const TITLES: [RegExp, string][] = [
   [/^\/me$/, "Me"],
   [/^\/verify$/, "Verify your card"],
   [/^\/invite\/held$/, "Invite saved"],
+  [PROFILE_PATH, "Profile"],
 ];
 
-/** Pages reached from outside the tabs, whose parent path is not a page. */
+/** Pages reached from outside the tabs, whose parent path is not a page. A
+ *  profile is reached from a sesh or from Me, and `/m` alone is nothing. */
 const NO_BACK = new Set(["/invite/held"]);
 
 /** The phone header's title, and where its back arrow goes. A tab has no back
  *  arrow; anything under one goes up a level, so no page is a dead end. */
 export function frameHeader(pathname: string): { title: string; back: string | null } {
   const title = TITLES.find(([pattern]) => pattern.test(pathname))?.[1] ?? APP_NAME;
-  if (TAB_ROOTS.has(pathname) || NO_BACK.has(pathname)) return { title, back: null };
+  if (TAB_ROOTS.has(pathname) || NO_BACK.has(pathname) || PROFILE_PATH.test(pathname)) {
+    return { title, back: null };
+  }
   return { title, back: pathname.slice(0, pathname.lastIndexOf("/")) || "/" };
 }

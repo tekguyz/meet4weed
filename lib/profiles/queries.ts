@@ -8,6 +8,9 @@ const COLUMNS =
 const PUBLIC_COLUMNS =
   "id, handle, display_name, bio, city, avatar_url, strain_prefs, method_prefs, vibe_tags, status";
 
+/** Mirrors profiles_handle_format. */
+const HANDLE_FORMAT = /^[a-z0-9_]{3,20}$/;
+
 type Row = Record<string, unknown>;
 
 function toProfile(row: Row): Profile {
@@ -40,8 +43,15 @@ export const getMyProfile = cache(async function getMyProfile(): Promise<Profile
 });
 
 /** Selects the public column list rather than trimming a full row, so the card
- *  fields never travel to the caller in the first place. */
+ *  fields never travel to the caller in the first place.
+ *
+ *  Null for a handle that does not exist AND for one the caller may not read —
+ *  the profiles select policy returns no row for both, and callers must not
+ *  try to tell them apart. */
 export async function getProfileByHandle(handle: string): Promise<PublicProfile | null> {
+  // Anything that could never be a handle is not worth a round trip.
+  if (!HANDLE_FORMAT.test(handle.toLowerCase())) return null;
+
   const supabase = await createClient();
   const { data } = await supabase
     .from("profiles")

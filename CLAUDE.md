@@ -72,19 +72,29 @@ reason so nobody has to rediscover it.
 
 ## Tests
 
-- `npm test` runs vitest. Tests live in `__tests__/` beside what they test.
+- **Two commands: `npm run test:unit`, then `npm run test:db`.** Tests live in
+  `__tests__/` beside what they test. `test:unit` skips `supabase/`; `npm test`
+  is the same thing. *Why:* a path filter cannot keep the database tests out —
+  vitest matches each word as part of a path, and every test path contains
+  `__tests__`, so `npx vitest run lib app components scripts __tests__` (the
+  command written into the #59 tickets) runs them all at once. Issue #64 hit
+  it. Use the scripts, not a hand-typed filter.
+- **Go light on this machine.** While working, run only the test files you
+  touched. Run `test:unit` once at the end, and `test:db` once when a
+  migration changed. Stop the dev server when the screen check is done.
 - **RLS tests are vitest integration tests**, for example
   `supabase/tests/__tests__/profiles-rls.test.ts`. They create real members
   through the admin API, exercise them through PostgREST, and delete them
   afterwards. They **skip without `SUPABASE_SECRET_KEY`**, so CI never runs
   them. Run them locally before merging anything that touches a migration, and
   report whether they ran — the summary line hides a skip.
-- **Run them serially.** `npm test` runs every file at once, which creates
+- **Run them serially — `npm run test:db`.** Run all at once, they create
   members faster than Supabase Auth allows; unrelated suites then die in
   `beforeAll` with `Request rate limit reached`, which reads like a failure and
-  is not one. Re-run serially before calling an integration red a real red:
-  `npx vitest run supabase/tests --no-file-parallelism`. The README says this
-  too; it is here because this file is read first.
+  is not one, and `afterAll` never deletes what they made. Re-run with
+  `test:db` before calling an integration red a real red. After any red, check
+  for leftover `@meet4weed.test` accounts. The README says this too; it is here
+  because this file is read first.
 - **Never weaken a live security rule to prove a test fails.** Prove it
   differentially: the same statement on the same row fails for a member and
   succeeds for `service_role`.
