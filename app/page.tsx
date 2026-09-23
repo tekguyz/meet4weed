@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Banner } from "@/components/ui/banner";
 import { amIAdmin } from "@/lib/admin/queries";
 import { getMyProfile } from "@/lib/profiles/queries";
 import { RESERVED_HANDLE_PREFIX } from "@/lib/profiles/schema";
@@ -75,10 +76,10 @@ function VerificationSummary({ status, latest }: { status: string; latest: MyVer
   return (
     <div className="flex flex-col gap-2">
       {retry && latest?.decisionReason ? (
-        <p role="status" className="text-sm text-danger">Your last submission was not approved: {latest.decisionReason}</p>
+        <Banner tone="danger">Your last submission was not approved: {latest.decisionReason}</Banner>
       ) : null}
       {latest?.status === "lapsed" ? (
-        <p role="status" className="text-sm text-ink-muted">Nobody reviewed your last photos in time, so they were deleted. Please take them again.</p>
+        <Banner tone="warning">Nobody reviewed your last photos in time, so they were deleted. Please take them again.</Banner>
       ) : null}
       {status !== "verified" ? (
         <Link href="/verify" className="text-sm font-semibold text-primary underline">Verify your card</Link>
@@ -91,17 +92,17 @@ function AccessNotice({ profile, today }: { profile: Profile; today: string }) {
   const banner = expiryBanner(profile, today);
   if (banner) {
     return (
-      <p role="status" className="rounded-card bg-surface p-4 text-sm text-secondary">
+      <Banner tone="warning">
         {banner} <Link href="/verify" className="underline">Renew</Link>
-      </p>
+      </Banner>
     );
   }
   if (memberAccess(profile, today) === "read_only") {
     return (
-      <p role="status" className="rounded-card bg-surface p-4 text-sm text-ink">
+      <Banner>
         Your card has expired, so your account is read-only. You can browse and see your history.{" "}
         <Link href="/verify" className="underline">Add your renewed card</Link> to get full access back.
-      </p>
+      </Banner>
     );
   }
   return null;

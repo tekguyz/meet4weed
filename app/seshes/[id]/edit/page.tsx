@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { editSesh } from "@/app/seshes/actions";
 import { CancelSesh } from "@/components/sesh/cancel-sesh";
 import { SeshForm } from "@/components/sesh/sesh-form";
+import { Banner } from "@/components/ui/banner";
 import { floridaWallClock } from "@/lib/dates";
 import { getMyProfile } from "@/lib/profiles/queries";
 import { getMySesh, getSeshAddress } from "@/lib/sesh/queries";
@@ -34,9 +35,9 @@ export default async function EditSeshPage({ params }: { params: Promise<{ id: s
           </p>
         ) : null}
         {!address ? (
-          <p role="status" className="text-sm text-ink-muted">
+          <Banner>
             The address for this sesh is no longer stored. It is deleted seven days after a sesh.
-          </p>
+          </Banner>
         ) : null}
       </header>
 

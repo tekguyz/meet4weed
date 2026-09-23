@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { issueFaceChallenge } from "@/app/verify/actions";
 import { CameraCapture } from "@/components/verify/camera-capture";
+import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { countFaces } from "@/lib/verification/face-detector";
@@ -33,10 +34,10 @@ export function VerifyFlow({ today }: { today: string }) {
       return <Review />;
     case "sent":
       return (
-        <p role="status" className="text-sm text-ink-muted">
+        <Banner tone="success">
           Sent. A person on our team will check it and you will see the result here. Your photos are deleted as soon as
           they decide.
-        </p>
+        </Banner>
       );
   }
 }

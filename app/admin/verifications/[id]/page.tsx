@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Banner } from "@/components/ui/banner";
 import { amIAdmin, getSubmission } from "@/lib/admin/queries";
 import { DecisionForm } from "./decision-form";
 
@@ -38,12 +39,12 @@ export default async function Review({ params }: { params: Promise<{ id: string 
       </section>
 
       {s.skippedReason ? (
-        <p role="status" className="rounded-card bg-surface p-4 text-sm text-secondary">
+        <Banner tone="warning">
           Claude did not read this card ({s.skippedReason === "daily_ceiling" ? "the daily ceiling was reached" : "the rate limiter was unavailable"}). Read it yourself.
-        </p>
+        </Banner>
       ) : null}
       {s.visionError ? (
-        <p role="status" className="rounded-card bg-surface p-4 text-sm text-secondary">Claude's read failed ({s.visionError}). Read the card yourself.</p>
+        <Banner tone="warning">Claude's read failed ({s.visionError}). Read the card yourself.</Banner>
       ) : null}
 
       <table className="w-full text-left text-sm">

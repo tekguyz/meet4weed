@@ -2,15 +2,14 @@
 
 import { useActionState } from "react";
 import { askToJoin, decideRsvp, withdrawRsvp } from "@/app/seshes/rsvp-actions";
+import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import type { ActionState } from "@/lib/forms/action-state";
 
 function Result({ state }: { state: ActionState | null }) {
   if (!state) return null;
   return (
-    <p role="status" className={`text-sm ${state.ok ? "text-ink-muted" : "text-danger"}`}>
-      {state.message}
-    </p>
+    <Banner tone={state.ok ? "success" : "danger"}>{state.message}</Banner>
   );
 }
 

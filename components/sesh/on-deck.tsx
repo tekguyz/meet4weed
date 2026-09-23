@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { addContribution, removeContribution } from "@/app/seshes/on-deck-actions";
+import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import type { ActionState } from "@/lib/forms/action-state";
 import { CONTRIBUTION_LABEL_MAX, BRINGING_NONE } from "@/lib/sesh/on-deck";
@@ -42,9 +43,7 @@ const ANSWER = "text-sm text-ink";
 function Result({ state }: { state: ActionState | null }) {
   if (!state) return null;
   return (
-    <p role="status" className={`text-sm ${state.ok ? "text-ink-muted" : "text-danger"}`}>
-      {state.message}
-    </p>
+    <Banner tone={state.ok ? "success" : "danger"}>{state.message}</Banner>
   );
 }
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { SeshMap, type Circle, type Point } from "@/components/sesh/sesh-map";
+import { Banner } from "@/components/ui/banner";
 
 type Props = { circles: Circle[] };
 
@@ -54,9 +55,7 @@ export function FeedMap({ circles }: Props) {
       </div>
 
       {problem ? (
-        <p role="status" className="text-sm text-ink-muted">
-          {problem}
-        </p>
+        <Banner tone="warning">{problem}</Banner>
       ) : null}
     </div>
   );

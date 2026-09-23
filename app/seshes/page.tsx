@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { FeedControls } from "@/components/sesh/feed-controls";
 import { FeedMap } from "@/components/sesh/feed-map";
+import { Banner } from "@/components/ui/banner";
 import { floridaToday } from "@/lib/dates";
 import { memberAccess } from "@/lib/member/gate";
 import { getMyProfile } from "@/lib/profiles/queries";
@@ -62,13 +63,13 @@ export default async function SeshesPage({ searchParams }: { searchParams: Promi
       </header>
 
       {access === "read_only" ? (
-        <p role="status" className="rounded-card bg-surface p-4 text-sm text-ink">
+        <Banner>
           Your card has expired, so you can look but not join or host.{" "}
           <Link href="/verify" className="underline">
             Add your renewed card
           </Link>{" "}
           to get the rest back.
-        </p>
+        </Banner>
       ) : null}
 
       <FeedControls filters={filters} />

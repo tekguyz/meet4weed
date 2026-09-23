@@ -1,4 +1,5 @@
 import { RedeemInvite } from "@/components/sesh/redeem-invite";
+import { Banner } from "@/components/ui/banner";
 import { APP_NAME } from "@/lib/env";
 import { getInvitePreview } from "@/lib/sesh/invite-reads";
 import { INVITE_FAILED } from "@/lib/sesh/invites";
@@ -80,9 +81,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
           </p>
         </>
       ) : (
-        <p role="status" className="rounded-card bg-surface p-4 text-sm text-ink">
-          {INVITE_FAILED}
-        </p>
+        <Banner>{INVITE_FAILED}</Banner>
       )}
     </main>
   );

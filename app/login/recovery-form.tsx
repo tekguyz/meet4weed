@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { requestPasswordReset } from "@/app/auth/actions/recovery";
+import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EMAIL_LINK_EXPIRY_MINUTES } from "@/lib/auth/email-link-policy";
@@ -27,10 +28,10 @@ export function RecoveryForm({ onBack }: { onBack: () => void }) {
   if (sent) {
     return (
       <div className="flex flex-col gap-4">
-        <p role="status" className="text-sm text-ink-muted">
+        <Banner tone="success">
           If {email} has an account, we sent it a reset link. It expires in{" "}
           {EMAIL_LINK_EXPIRY_MINUTES} minutes.
-        </p>
+        </Banner>
         <button type="button" onClick={onBack} className={LINK}>Back to sign in</button>
       </div>
     );
