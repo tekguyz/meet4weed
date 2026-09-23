@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { redeemInvite } from "@/app/seshes/invite-actions";
+import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import type { ActionState } from "@/lib/forms/action-state";
 
@@ -29,9 +30,7 @@ export function RedeemInvite({ token }: { token: string }) {
         {pending ? "Opening…" : "Use this invite"}
       </Button>
       {state && !state.ok ? (
-        <p role="status" className="text-sm text-danger">
-          {state.message}
-        </p>
+        <Banner tone="danger">{state.message}</Banner>
       ) : null}
     </form>
   );

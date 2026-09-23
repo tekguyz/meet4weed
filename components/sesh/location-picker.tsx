@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { SeshMap, type Point } from "@/components/sesh/sesh-map";
+import { Banner } from "@/components/ui/banner";
 
 /** The radius the trigger writes. Shown here so the host sees exactly what
  *  the app is about to publish — they cannot reshuffle it, because it is a
@@ -34,10 +35,10 @@ export function LocationPicker({ defaultPoint = null, fieldError }: Props) {
       <input type="hidden" name="exactLng" value={point?.lng ?? ""} readOnly />
 
       {point ? (
-        <p role="status" className="text-sm text-ink-muted">
+        <Banner>
           The shaded circle is what the feed and the map show — about half a mile across, and never
           centred on your door. It is the same circle every time you host here.
-        </p>
+        </Banner>
       ) : (
         <p className="text-sm text-ink-muted">Tap the map to place your pin.</p>
       )}

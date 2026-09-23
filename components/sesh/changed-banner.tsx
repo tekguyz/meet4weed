@@ -1,3 +1,5 @@
+import { Banner } from "@/components/ui/banner";
+
 /**
  * "The host changed this sesh."
  *
@@ -16,9 +18,9 @@ export function ChangedBanner({ changedAt, startsAt }: Props) {
   if (new Date(startsAt).getTime() <= Date.now()) return null;
 
   return (
-    <p role="status" className="rounded-card bg-surface p-4 text-sm text-secondary">
+    <Banner tone="warning">
       The host changed this sesh after you were approved. Check the time and the address again
       before you set off.
-    </p>
+    </Banner>
   );
 }

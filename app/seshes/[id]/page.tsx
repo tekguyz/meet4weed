@@ -5,6 +5,7 @@ import { ChangedBanner } from "@/components/sesh/changed-banner";
 import { InvitePanel } from "@/components/sesh/invite-panel";
 import { OnDeck } from "@/components/sesh/on-deck";
 import { AskToJoin, DecideButtons, WithdrawRsvp } from "@/components/sesh/rsvp-buttons";
+import { Banner } from "@/components/ui/banner";
 import { floridaToday } from "@/lib/dates";
 import { memberAccess } from "@/lib/member/gate";
 import { getMyProfile } from "@/lib/profiles/queries";
@@ -59,9 +60,7 @@ export default async function SeshPage({ params }: { params: Promise<{ id: strin
     <main className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-10">
       <header className="flex flex-col gap-2">
         {sesh.status === "cancelled" ? (
-          <p role="status" className="rounded-card bg-surface p-4 text-sm text-danger">
-            This sesh was cancelled. Do not turn up.
-          </p>
+          <Banner tone="danger">This sesh was cancelled. Do not turn up.</Banner>
         ) : null}
         <div className="flex items-baseline justify-between gap-3">
           <h1 className="text-3xl">{sesh.title}</h1>
@@ -187,9 +186,7 @@ function GuestActions({
     <section className="flex flex-col gap-4">
       {mine?.status === "approved" ? (
         <>
-          <p role="status" className="rounded-card bg-surface p-4 text-sm text-ink">
-            You are going.
-          </p>
+          <Banner tone="success">You are going.</Banner>
           {/* Only an approved guest gets this: nobody else was told a time or
               a place to have it changed out from under them. */}
           <ChangedBanner changedAt={sesh.materiallyChangedAt} startsAt={sesh.startsAt} />
@@ -207,15 +204,11 @@ function GuestActions({
         </>
       ) : mine?.status === "requested" ? (
         <>
-          <p role="status" className="rounded-card bg-surface p-4 text-sm text-ink">
-            You have asked to come. The host has not decided yet.
-          </p>
+          <Banner>You have asked to come. The host has not decided yet.</Banner>
           <WithdrawRsvp seshId={sesh.id} approved={false} />
         </>
       ) : mine?.status === "kicked" ? (
-        <p role="status" className="rounded-card bg-surface p-4 text-sm text-ink-muted">
-          The host removed you from this sesh.
-        </p>
+        <Banner tone="warning">The host removed you from this sesh.</Banner>
       ) : !canAct ? (
         <p className="text-sm text-ink-muted">
           {sesh.status === "cancelled"

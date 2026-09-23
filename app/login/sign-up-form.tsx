@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { signUpWithPassword } from "@/app/auth/actions/sign-up";
+import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -35,10 +36,10 @@ export function SignUpForm({ onBack }: { onBack: () => void }) {
     // same screen and no email.
     return (
       <div className="flex flex-col gap-4">
-        <p role="status" className="text-sm text-ink-muted">
+        <Banner tone="success">
           If {email} can be used, we sent it a confirmation link. It expires in{" "}
           {EMAIL_LINK_EXPIRY_MINUTES} minutes. Open it, then sign in with your password.
-        </p>
+        </Banner>
         <button type="button" onClick={onBack} className={LINK}>Back to sign in</button>
       </div>
     );

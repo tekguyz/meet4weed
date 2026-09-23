@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { mintInvite, revokeInvite, type MintState } from "@/app/seshes/invite-actions";
+import { ActionResult } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import type { ActionState } from "@/lib/forms/action-state";
@@ -45,15 +46,6 @@ const WHEN = new Intl.DateTimeFormat("en-US", {
   hour: "numeric",
   minute: "2-digit",
 });
-
-function Result({ state }: { state: ActionState | null }) {
-  if (!state) return null;
-  return (
-    <p role="status" className={`text-sm ${state.ok ? "text-ink-muted" : "text-danger"}`}>
-      {state.message}
-    </p>
-  );
-}
 
 function CopyBox({ url }: { url: string }) {
   const [copied, setCopied] = useState(false);
@@ -102,7 +94,7 @@ function RevokeButton({ inviteId, seshId }: { inviteId: string; seshId: string }
       >
         {pending ? "Revoking…" : "Revoke"}
       </button>
-      <Result state={state} />
+      <ActionResult state={state} nested />
     </form>
   );
 }
@@ -173,7 +165,7 @@ export function InvitePanel({ seshId, invites }: { seshId: string; invites: Invi
             {INVITES_PER_SESH} live links is the most for one sesh. Revoke one to make another.
           </p>
         ) : null}
-        <Result state={state} />
+        <ActionResult state={state} nested />
         {state?.ok && state.url ? <CopyBox url={state.url} /> : null}
       </form>
 

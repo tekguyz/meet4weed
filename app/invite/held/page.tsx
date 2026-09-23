@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Banner } from "@/components/ui/banner";
 import { APP_NAME } from "@/lib/env";
 import { INVITE_HELD_BODY, INVITE_HELD_TITLE } from "@/lib/sesh/invites";
 
@@ -27,10 +28,10 @@ export default function HeldInvitePage() {
         <h1 className="text-3xl">{APP_NAME}</h1>
       </header>
 
-      <section role="status" className="flex flex-col gap-2 rounded-card bg-surface p-4">
+      <Banner className="flex flex-col gap-2">
         <h2 className="text-xl text-ink">{INVITE_HELD_TITLE}</h2>
         <p className="text-sm text-ink-muted">{INVITE_HELD_BODY}</p>
-      </section>
+      </Banner>
 
       <Link href="/verify" className="text-sm font-semibold text-primary underline">
         Verify your card

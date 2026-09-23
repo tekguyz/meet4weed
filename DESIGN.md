@@ -306,7 +306,11 @@ Full-width, calm and confident.
 - **Border:** none.
 - **Internal Padding:** 16px (12px when nested).
 - **Notice cards** reuse the card with the text colour carrying the tone:
-  Honey for a warning or change, Cream Ink for information, Clay for an error.
+  Honey for a warning or change, Cream Ink for information, Clay for an error,
+  Sage text for a success. Sage here is text, never a fill, so it does not
+  compete with the one sage button. Every notice card is the shared `Banner`
+  (`components/ui/banner.tsx`); nested inside a card it steps up to Ember
+  Raised and 12px.
 
 ### Inputs / Fields
 - **Style:** Ember Card fill, 1px Charred Rule border, control radius, 12px ×
