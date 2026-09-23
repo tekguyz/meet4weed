@@ -217,3 +217,28 @@ icons. It is **all** the service worker may cache.
 is an exact address sitting in device storage after the RSVP that unlocked it
 was revoked, which defeats spec §6.1. Offline shows "you are offline", not
 stale data. See `docs/adr/0001-app-shell-caching-only.md`.
+
+**Not the Frame.** "App shell" is what the service worker caches, nothing else.
+
+## Frame
+
+The header and the bottom tab bar around every signed-in page. Tabs: Seshes,
+My seshes, New, Me. The bell sits in the header.
+
+**Not "shell".** That word is taken by the App shell above.
+
+Tabs a member cannot use are hidden, not greyed out. A member whose card gate
+is shut sees their where-you-stand card, not an empty feed.
+
+## Avatar
+
+A generated mark drawn from a seed the member can shuffle. **Never a photo.**
+A face on a profile in a discreet app is a separate decision, deferred to v2.
+
+## Profile
+
+What one member shows other members: handle, avatar, bio, city, preferences,
+vibe tags. Readable only by a member who can browse.
+
+**A profile never lists seshes** — not hosted, not attended. A list of where
+someone went is a guest list, and guest lists are what this app hides.
