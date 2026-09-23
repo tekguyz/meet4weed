@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { askToJoin, decideRsvp, withdrawRsvp } from "@/app/seshes/rsvp-actions";
+import { askToJoin, decideRsvp, withdrawRsvp } from "@/app/(frame)/seshes/rsvp-actions";
 import { ActionResult } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import type { ActionState } from "@/lib/forms/action-state";

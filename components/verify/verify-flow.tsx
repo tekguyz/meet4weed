@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { issueFaceChallenge } from "@/app/verify/actions";
+import { issueFaceChallenge } from "@/app/(frame)/verify/actions";
 import { CameraCapture } from "@/components/verify/camera-capture";
 import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";

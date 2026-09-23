@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import { APP_NAME, APP_TAGLINE } from "@/lib/env";
 import "./globals.css";
@@ -21,6 +21,10 @@ export const metadata: Metadata = {
   title: APP_NAME,
   description: APP_TAGLINE,
 };
+
+// "cover" lets the page run under a notch and a home bar, so env(safe-area-inset-*)
+// reads real values. The Frame pads what it pins to an edge by exactly those.
+export const viewport: Viewport = { viewportFit: "cover" };
 
 // Dark is the default, so this script only ever ADDS .light — for an explicit
 // "light" choice, or for a "system" choice on a light OS. Runs before paint.

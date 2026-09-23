@@ -79,7 +79,7 @@ function form(fields: Record<string, string>): FormData {
 }
 
 async function actions() {
-  return import("@/app/seshes/invite-actions");
+  return import("@/app/(frame)/seshes/invite-actions");
 }
 
 const NO_POSTGRES_CODES = /M4W\d\d|42501|PGRST|SQLSTATE/;

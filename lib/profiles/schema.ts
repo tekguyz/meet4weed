@@ -13,7 +13,7 @@ export const STRAIN_TYPES = ["indica", "sativa", "hybrid", "any"] as const;
 export const CONSUMPTION_METHODS = ["flower", "vape", "edibles", "dabs", "any"] as const;
 
 /** The signup trigger writes `member_<12 hex>` as a placeholder handle, and
- *  app/page.tsx reads that prefix to decide whether onboarding is finished.
+ *  app/(frame)/layout.tsx reads that prefix to decide whether onboarding is finished.
  *  A member who claimed it for themselves would look permanently un-onboarded
  *  and could squat on another member's future placeholder. */
 export const RESERVED_HANDLE_PREFIX = "member_";

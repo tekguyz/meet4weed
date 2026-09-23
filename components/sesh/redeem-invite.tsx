@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { redeemInvite } from "@/app/seshes/invite-actions";
+import { redeemInvite } from "@/app/(frame)/seshes/invite-actions";
 import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import type { ActionState } from "@/lib/forms/action-state";

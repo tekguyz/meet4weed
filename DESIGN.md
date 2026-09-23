@@ -326,10 +326,16 @@ A segmented control: an Ember Raised track with 4px padding holding Dark,
 Light and System. The chosen segment is a Sage fill with On Sage text.
 
 ### Navigation
-Not yet built. Plan 04b adds the **Frame**: a thin header and, on a phone, a
-bottom tab bar (Seshes, My seshes, New, Me). The shape brief in
-`.impeccable/surfaces/route-me.md` sets its structure; it must be built from the tokens
-above.
+The **Frame** (`components/frame/frame.tsx`, built in #62) wraps every page in
+`app/(frame)/`. On a phone: a thin sticky header in Warm Night naming the page,
+with a back arrow on anything under a tab, and a bottom tab bar in Ember Card —
+Seshes, My seshes, New, Me — each tab a line icon over a caption, 56px tall.
+The current tab is Sage with `aria-current="page"`; the rest are Dusk Ink.
+From `md` up the bar goes away and the same tabs sit in the header after the
+wordmark. A 44px slot at the header's right edge is held for Plan 05's bell.
+Both bars pad by the safe-area insets. `frameAccess()` in `lib/member/gate.ts`
+decides which tabs show; the Frame decides nothing. The structure comes from
+the shape brief in `.impeccable/surfaces/route-me.md`.
 
 ## Do's and Don'ts
 

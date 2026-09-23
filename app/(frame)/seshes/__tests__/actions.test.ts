@@ -96,7 +96,7 @@ beforeEach(() => {
 });
 
 async function act(name: "createSesh" | "editSesh" | "cancelSesh", fd: FormData) {
-  const actions = await import("@/app/seshes/actions");
+  const actions = await import("@/app/(frame)/seshes/actions");
   return actions[name](null, fd);
 }
 

@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { OnDeck } from "@/components/sesh/on-deck";
 import type { ContributionRow } from "@/lib/sesh/queries";
 
-vi.mock("@/app/seshes/on-deck-actions", () => ({
+vi.mock("@/app/(frame)/seshes/on-deck-actions", () => ({
   addContribution: vi.fn(),
   removeContribution: vi.fn(),
 }));
@@ -25,7 +25,7 @@ vi.mock("@/app/seshes/on-deck-actions", () => ({
  *  both and picks neither.
  */
 const SOURCE = readFileSync(resolve(process.cwd(), "components/sesh/on-deck.tsx"), "utf8");
-const FEED_PAGE = readFileSync(resolve(process.cwd(), "app/seshes/page.tsx"), "utf8");
+const FEED_PAGE = readFileSync(resolve(process.cwd(), "app/(frame)/seshes/page.tsx"), "utf8");
 
 const SESH = "11111111-1111-4111-8111-111111111111";
 

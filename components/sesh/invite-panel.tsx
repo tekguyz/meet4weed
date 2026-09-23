@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { mintInvite, revokeInvite, type MintState } from "@/app/seshes/invite-actions";
+import { mintInvite, revokeInvite, type MintState } from "@/app/(frame)/seshes/invite-actions";
 import { ActionResult } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";

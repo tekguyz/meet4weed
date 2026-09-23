@@ -25,7 +25,7 @@ export default async function LoginPage({
         </p>
       ) : null}
 
-      {/* Set by app/seshes/invite-actions.ts when somebody with no account
+      {/* Set by app/(frame)/seshes/invite-actions.ts when somebody with no account
           presses an invite button. It carries NO token — the token is in an
           httpOnly cookie, and a query string is exactly where it must not be. */}
       <LoginForm next={safeNext(next)} signUp={mode === "sign-up"} />
