@@ -21,6 +21,9 @@
 -- Nothing else changes. The UPDATE policy, the column grants and the table
 -- grants in 20260916082218_profiles.sql stand as written.
 --
+-- Each call is wrapped in a subselect, as every earlier policy does, so it
+-- runs once per statement rather than once per row.
+--
 -- Both helpers are SECURITY DEFINER owned by postgres and read public.profiles
 -- themselves; RLS is enabled but not forced, so they do not recurse into this
 -- policy. Both already have EXECUTE revoked from public and anon, and granted
@@ -35,7 +38,7 @@ create policy profiles_select_member
   using (
     id = (select auth.uid())
     or private.can_browse((select auth.uid()))
-    or private.is_admin()
+    or (select private.is_admin())
   );
 
 -- The old comment said the table was the directory any member reads. It no

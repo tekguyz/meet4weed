@@ -10,6 +10,8 @@ import { getMyProfile } from "@/lib/profiles/queries";
 
 export const metadata = { title: "Me" };
 
+const ROW_LINK = `flex min-h-11 items-center rounded-card bg-surface px-4 text-sm text-ink ${FOCUS_RING}`;
+
 /**
  * A stand-in for Me, so the Me tab goes somewhere and nothing the home page
  * held is lost when it stops holding it: the theme toggle, sign out, and the
@@ -28,10 +30,7 @@ export default async function MePage() {
         {profile.displayName ? <p className="truncate text-sm text-ink-muted">{profile.displayName}</p> : null}
       </header>
 
-      <Link
-        href={profilePath(profile.handle)}
-        className={`flex min-h-11 items-center rounded-card bg-surface px-4 text-sm text-ink ${FOCUS_RING}`}
-      >
+      <Link href={profilePath(profile.handle)} className={ROW_LINK}>
         See your profile as others see it
       </Link>
 
@@ -41,7 +40,7 @@ export default async function MePage() {
       </section>
 
       {adminLink ? (
-        <Link href="/admin" className={`flex min-h-11 items-center rounded-card bg-surface px-4 text-sm text-ink ${FOCUS_RING}`}>
+        <Link href="/admin" className={ROW_LINK}>
           Admin
         </Link>
       ) : null}

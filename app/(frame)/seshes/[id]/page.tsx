@@ -72,7 +72,7 @@ export default async function SeshPage({ params }: { params: Promise<{ id: strin
         {sesh.hostHandle ? (
           <p className="text-sm text-ink-muted">
             Hosted by{" "}
-            {iAmHost ? "you" : <HandleLink handle={sesh.hostHandle} className="inline-flex min-h-11 items-center" />}
+            {iAmHost ? "you" : <HandleLink handle={sesh.hostHandle} />}
           </p>
         ) : null}
         {/* Shown to everyone who can read the sesh at all, not just the host.
@@ -113,7 +113,7 @@ export default async function SeshPage({ params }: { params: Promise<{ id: strin
 function Person({ rsvp }: { rsvp: RsvpRow }) {
   return (
     <div className="flex flex-col">
-      <HandleLink handle={rsvp.handle} className="flex min-h-11 items-center self-start text-sm" />
+      <HandleLink handle={rsvp.handle} className="self-start text-sm" />
       {rsvp.bio ? <span className="line-clamp-2 text-sm text-ink-muted">{rsvp.bio}</span> : null}
     </div>
   );

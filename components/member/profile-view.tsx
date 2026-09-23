@@ -24,14 +24,15 @@ export function ProfileView({ profile, isMe }: { profile: PublicProfile; isMe: b
 
       {profile.bio ? <p className="text-sm whitespace-pre-line text-ink">{profile.bio}</p> : null}
 
-      <Chips title="Strains" values={profile.strainPrefs} />
-      <Chips title="How they consume" values={profile.methodPrefs} />
-      <Chips title="Vibe" values={profile.vibeTags} />
+      <Tags title="Strains" values={profile.strainPrefs} />
+      <Tags title="How they consume" values={profile.methodPrefs} />
+      <Tags title="Vibe" values={profile.vibeTags} />
     </article>
   );
 }
 
-function Chips({ title, values }: { title: string; values: string[] }) {
+/** Display-only tags, not chips: DESIGN.md says a chip is a link. */
+function Tags({ title, values }: { title: string; values: string[] }) {
   if (values.length === 0) return null;
 
   return (
@@ -39,7 +40,7 @@ function Chips({ title, values }: { title: string; values: string[] }) {
       <h2 className="text-sm font-medium text-ink-muted">{title}</h2>
       <ul className="flex flex-wrap gap-2">
         {values.map((value) => (
-          <li key={value} className="rounded-control bg-surface-2 px-3 py-1 text-sm capitalize text-ink">
+          <li key={value} className="rounded-control bg-surface-2 px-3 py-2 text-sm capitalize text-ink">
             {value}
           </li>
         ))}

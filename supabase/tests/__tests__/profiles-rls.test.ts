@@ -119,23 +119,27 @@ describe.skipIf(!configured)("profiles row-level security", () => {
   it("still lets an expired member read other profiles, because expired is read-only", async () => {
     await admin.from("profiles").update({ status: "expired" }).eq("id", bob.id);
 
-    const { data, error } = await bob.db.from("profiles").select("id").eq("id", alice.id);
+    // Put Bob back to unverified whatever happens: the tests below were
+    // written for two members who start with nothing.
+    try {
+      const { data, error } = await bob.db.from("profiles").select("id").eq("id", alice.id);
 
-    expect(error).toBeNull();
-    expect(data).toHaveLength(1);
-
-    // Put Bob back to unverified: the tests below were written for two
-    // members who start with nothing.
-    await admin.from("profiles").update({ status: "unverified", card_expires_on: null }).eq("id", bob.id);
+      expect(error).toBeNull();
+      expect(data).toHaveLength(1);
+    } finally {
+      await admin.from("profiles").update({ status: "unverified", card_expires_on: null }).eq("id", bob.id);
+    }
   });
 
   it("hides other profiles again when a member is suspended", async () => {
     await admin.from("profiles").update({ status: "suspended" }).eq("id", bob.id);
 
-    const { data } = await bob.db.from("profiles").select("id").in("id", [alice.id, bob.id]);
-    expect(data!.map((row) => row.id)).toEqual([bob.id]);
-
-    await admin.from("profiles").update({ status: "unverified" }).eq("id", bob.id);
+    try {
+      const { data } = await bob.db.from("profiles").select("id").in("id", [alice.id, bob.id]);
+      expect(data!.map((row) => row.id)).toEqual([bob.id]);
+    } finally {
+      await admin.from("profiles").update({ status: "unverified" }).eq("id", bob.id);
+    }
   });
 
   // The review queue embeds profiles(handle) on each submission, read with the
