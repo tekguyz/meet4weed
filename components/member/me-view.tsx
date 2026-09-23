@@ -1,6 +1,6 @@
 import { profilePath } from "@/components/member/handle-link";
 import { WhereYouStand } from "@/components/member/where-you-stand";
-import { FOCUS_RING } from "@/components/ui/focus";
+import { SignOutButton } from "@/components/member/sign-out-button";
 import { RowGroup, RowLink } from "@/components/ui/row-list";
 import type { Standing } from "@/lib/member/standing";
 
@@ -46,11 +46,7 @@ export function MeView({ handle, displayName, standing, adminLink, version }: Pr
         </RowGroup>
       ) : null}
 
-      <form action="/auth/sign-out" method="post">
-        <button type="submit" className={`min-h-11 text-sm text-ink-muted underline ${FOCUS_RING}`}>
-          Sign out
-        </button>
-      </form>
+      <SignOutButton />
 
       <p className="text-xs text-ink-muted">About: version {version}</p>
     </div>

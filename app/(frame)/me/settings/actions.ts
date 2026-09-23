@@ -57,6 +57,8 @@ export async function updateProfile(
   if (error) return { ok: false, message: "Could not save that. Try again." };
 
   revalidatePath("/me", "layout");
+  // The same fields show on the member's public profile.
+  revalidatePath("/m/[handle]", "page");
   return { ok: true, message: "Profile saved." };
 }
 

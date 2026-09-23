@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { EditProfileForm } from "@/components/member/edit-profile-form";
 import { getMyProfile } from "@/lib/profiles/queries";
-import { SettingsPage } from "../settings-page";
+import { SettingsColumn } from "../settings-column";
 
 export const metadata = { title: "Edit profile" };
 
@@ -10,8 +10,8 @@ export default async function EditProfilePage() {
   if (!profile) redirect("/login");
 
   return (
-    <SettingsPage intro="This is what other members see.">
+    <SettingsColumn intro="This is what other members see.">
       <EditProfileForm profile={profile} />
-    </SettingsPage>
+    </SettingsColumn>
   );
 }

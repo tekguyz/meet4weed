@@ -1,5 +1,5 @@
 import { ThemeToggle } from "@/components/theme-toggle";
-import { SettingsPage } from "../settings-page";
+import { SettingsColumn } from "../settings-column";
 
 export const metadata = { title: "Theme" };
 
@@ -7,8 +7,8 @@ export const metadata = { title: "Theme" };
  *  the page changes colour the moment it is pressed. */
 export default function ThemePage() {
   return (
-    <SettingsPage intro="Saved on this device. System follows your phone's setting.">
+    <SettingsColumn intro="Saved on this device. System follows your phone's setting.">
       <ThemeToggle />
-    </SettingsPage>
+    </SettingsColumn>
   );
 }

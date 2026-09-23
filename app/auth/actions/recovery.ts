@@ -44,8 +44,9 @@ export async function requestPasswordReset(input: z.input<typeof Request>): Prom
   return { ok: true };
 }
 
-/** Changing it while signed in (Settings → Password, issue #65). The same
- *  update as step 3, but the member stays on the page to read the banner. */
+/** Sets the password on the current session and stays put. Settings →
+ *  Password calls it directly (issue #65) so the member can read the banner;
+ *  step 3 below calls it and then goes home. */
 export async function changePassword(input: z.input<typeof NewPassword>): Promise<Result> {
   const parsed = NewPassword.safeParse(input);
   if (!parsed.success) return { ok: false, failure: "invalid_input" };

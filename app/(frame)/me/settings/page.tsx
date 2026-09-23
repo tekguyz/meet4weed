@@ -1,12 +1,12 @@
 import { SettingsList } from "@/components/member/settings-list";
-import { SettingsPage } from "./settings-page";
+import { SettingsColumn } from "./settings-column";
 
 export const metadata = { title: "Settings" };
 
 export default function SettingsIndexPage() {
   return (
-    <SettingsPage>
+    <SettingsColumn>
       <SettingsList />
-    </SettingsPage>
+    </SettingsColumn>
   );
 }

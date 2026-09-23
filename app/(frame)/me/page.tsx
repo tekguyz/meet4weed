@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { MeView } from "@/components/member/me-view";
 import { amIAdmin } from "@/lib/admin/queries";
-import { APP_VERSION } from "@/lib/app-version";
+import { appVersion } from "@/lib/app-version";
 import { floridaToday } from "@/lib/dates";
 import { frameAccess, memberAccess } from "@/lib/member/gate";
 import { standing } from "@/lib/member/standing";
@@ -24,7 +24,7 @@ export default async function MePage() {
       displayName={profile.displayName}
       standing={standing(profile, latest, today)}
       adminLink={adminLink}
-      version={APP_VERSION}
+      version={appVersion()}
     />
   );
 }

@@ -1,20 +1,15 @@
 import { SignOutEverywhere } from "@/components/member/sign-out-everywhere";
-import { Button } from "@/components/ui/button";
-import { SettingsPage } from "../settings-page";
+import { SignOutButton } from "@/components/member/sign-out-button";
+import { SettingsColumn } from "../settings-column";
 
 export const metadata = { title: "Sessions" };
 
 export default function SessionsPage() {
   return (
-    <SettingsPage>
+    <SettingsColumn>
       <section className="flex flex-col gap-3">
         <h2 className="text-lg">This device</h2>
-        {/* A POST, like the one on Me: a GET sign-out can be fired by an <img>. */}
-        <form action="/auth/sign-out" method="post">
-          <Button type="submit" variant="quiet">
-            Sign out
-          </Button>
-        </form>
+        <SignOutButton />
       </section>
       <section className="flex flex-col gap-3">
         <h2 className="text-lg">Every device</h2>
@@ -23,6 +18,6 @@ export default function SessionsPage() {
         </p>
         <SignOutEverywhere />
       </section>
-    </SettingsPage>
+    </SettingsColumn>
   );
 }
