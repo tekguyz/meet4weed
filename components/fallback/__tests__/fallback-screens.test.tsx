@@ -52,3 +52,18 @@ describe("LoadingScreen", () => {
     expect(screen.getByText("Loading").closest("[aria-busy]")).toHaveAttribute("aria-busy", "true");
   });
 });
+
+/** DESIGN.md, Layout: 24px top padding under the Frame's header, 40px without. */
+describe("placement", () => {
+  it.each([
+    ["NotFoundScreen", (framed?: boolean) => <NotFoundScreen framed={framed} />],
+    ["ErrorScreen", (framed?: boolean) => <ErrorScreen onRetry={() => {}} framed={framed} />],
+    ["LoadingScreen", (framed?: boolean) => <LoadingScreen framed={framed} />],
+  ])("%s pads 24px in the Frame and 40px outside it", (_name, make) => {
+    const { container, rerender } = render(make(true));
+    expect(container.firstElementChild).toHaveClass("py-6");
+
+    rerender(make());
+    expect(container.firstElementChild).toHaveClass("py-10");
+  });
+});
