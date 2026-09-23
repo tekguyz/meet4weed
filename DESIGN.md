@@ -338,6 +338,16 @@ Both bars pad by the safe-area insets. `frameAccess()` in `lib/member/gate.ts`
 decides which tabs show; the Frame decides nothing. The structure comes from
 the shape brief in `.impeccable/surfaces/route-me.md`.
 
+### Framework pages
+Not found, error and loading (`components/fallback/fallback-screens.tsx`,
+built in #63) are one page column: a Display heading, one muted line, then
+the actions. Not found has one Sage "Back to Meet4Weed". Error has Sage "Try
+again" over a Quiet "Back to Meet4Weed", and never shows the error's text.
+Loading is a pulsing stand-in — a heading bar in Ember Raised over two Ember
+Card blocks. Inside the Frame each one keeps the Frame; `global-error`
+replaces the root layout, so it loads the styles and fonts itself and sets
+the theme from an effect.
+
 ## Do's and Don'ts
 
 ### Do:
