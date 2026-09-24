@@ -2,8 +2,9 @@
 
 import { useEffect, useRef } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { inFlorida, mapStart, type Point } from "@/lib/sesh/map-centre";
 
-export type Point = { lat: number; lng: number };
+export type { Point };
 
 /** One published circle. Never an exact point — the feed and the map only
  *  ever receive fuzzy coordinates. */
@@ -19,11 +20,6 @@ type Props = {
   centre?: Point | null;
   label: string;
 };
-
-/** Roughly Florida, for when there is nothing to centre on. Never the
- *  member's own position: this map does not ask the browser where anybody is
- *  unless they press the button that says so. */
-const FLORIDA: Point = { lat: 28.1, lng: -82.4 };
 
 /** Every colour and style URL still lives in app/globals.css. A MapLibre
  *  style is its own JSON document that the library fetches, and its paint
@@ -59,12 +55,6 @@ function toGeoJson(circles: Circle[]) {
   };
 }
 
-function meanOf(circles: Circle[]): Point | null {
-  if (!circles.length) return null;
-  const lat = circles.reduce((sum, c) => sum + c.lat, 0) / circles.length;
-  const lng = circles.reduce((sum, c) => sum + c.lng, 0) / circles.length;
-  return { lat, lng };
-}
 
 type MapLike = {
   on(event: string, handler: (event: never) => void): unknown;
@@ -90,7 +80,7 @@ export function SeshMap({ circles, marker, onPick, centre, label }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    const start = meanOf(circles) ?? FLORIDA;
+    const start = mapStart(circles);
 
     // Dynamic, so the library is fetched only on screens that show a map.
     // v6 exports its classes by name; there is no default export.
@@ -109,8 +99,8 @@ export function SeshMap({ circles, marker, onPick, centre, label }: Props) {
       const instance = new maplibre.Map({
         container: container.current,
         style: token("--map-style"),
-        center: [start.lng, start.lat],
-        zoom: circles.length ? 11 : 6,
+        center: [start.centre.lng, start.centre.lat],
+        zoom: start.zoom,
       }) as unknown as MapLike;
       map.current = instance;
       makePin.current = () => new maplibre.Marker({ color: accent }) as unknown as MarkerLike;
@@ -161,7 +151,9 @@ export function SeshMap({ circles, marker, onPick, centre, label }: Props) {
     pin.current = null;
     if (marker) {
       pin.current = makePin.current?.()?.setLngLat([marker.lng, marker.lat]).addTo(instance) ?? null;
-      instance.setCenter([marker.lng, marker.lat]);
+      // A pin outside Florida is bad data (a sesh once saved at 0, 0). Show
+      // it, but keep the map on Florida so the host can drop a real one.
+      if (inFlorida(marker)) instance.setCenter([marker.lng, marker.lat]);
     }
   }, [marker]);
 
