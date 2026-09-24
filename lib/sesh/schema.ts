@@ -52,6 +52,19 @@ export const SESH_VISIBILITY_OPTIONS = SESH_VISIBILITIES.map((value) => ({
 /** Every limit here mirrors a CHECK constraint on public.seshes. When one
  *  moves, both move — a zod schema looser than its column turns a friendly
  *  form error into a 500. */
+const PIN_MISSING = "Put the pin on the map.";
+
+/** One coordinate of the host's pin. The picker posts "" until a pin is
+ *  dropped, and a plain z.coerce.number() turns "" (and a missing field) into
+ *  0 — which is on the planet, so a sesh with no pin was saved at 0, 0 in the
+ *  Atlantic and dragged the feed map's centre out to sea. Blank is missing. */
+function pinCoordinate(limit: number) {
+  return z.preprocess(
+    (value) => (value == null || (typeof value === "string" && value.trim() === "") ? undefined : value),
+    z.coerce.number({ error: PIN_MISSING }).min(-limit, PIN_MISSING).max(limit, PIN_MISSING),
+  );
+}
+
 export const seshInputSchema = z.object({
   title: z
     .string()
@@ -74,8 +87,8 @@ export const seshInputSchema = z.object({
     .max(50, "Fifty guests is the most this app will take."),
   // The host drops a pin; these come from it. A member should never see these
   // messages, so they name the pin rather than the numbers.
-  exactLat: z.coerce.number().min(-90, "Put the pin on the map.").max(90, "Put the pin on the map."),
-  exactLng: z.coerce.number().min(-180, "Put the pin on the map.").max(180, "Put the pin on the map."),
+  exactLat: pinCoordinate(90),
+  exactLng: pinCoordinate(180),
   addressLine: z
     .string()
     .trim()

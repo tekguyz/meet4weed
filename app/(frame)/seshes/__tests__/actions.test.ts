@@ -195,6 +195,17 @@ describe("createSesh", () => {
     expect(result?.fieldErrors?.exactLat).toBeTruthy();
   });
 
+  // The picker posts "" until a pin is dropped. Coerced, "" is 0, and 0 is on
+  // the planet — so a sesh with no pin was saved at 0, 0 in the Atlantic, and
+  // the feed map, which centres on the mean of every circle, went blue.
+  it("refuses a sesh with no pin instead of saving it at 0, 0", async () => {
+    const result = await act("createSesh", form({ exactLat: "", exactLng: "" }));
+
+    expect(result?.fieldErrors?.exactLat).toBe("Put the pin on the map.");
+    expect(result?.fieldErrors?.exactLng).toBe("Put the pin on the map.");
+    expect(insert).not.toHaveBeenCalled();
+  });
+
   it("refuses an area name long enough to hide a street in", async () => {
     const result = await act("createSesh", form({ areaName: "1600 Pennsylvania Avenue Northwest, Washington" }));
 
