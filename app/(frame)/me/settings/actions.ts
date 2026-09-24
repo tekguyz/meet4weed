@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { avatarLook, sameLook } from "@/lib/profiles/avatar";
-import { parseTags, profileFieldsSchema } from "@/lib/profiles/schema";
+import { handleChangeMessage } from "@/lib/profiles/handle-change";
+import { handleSchema, parseTags, profileFieldsSchema } from "@/lib/profiles/schema";
 import type { ActionState } from "@/lib/forms/action-state";
 
 /**
@@ -61,6 +62,44 @@ export async function updateProfile(
   // The same fields show on the member's public profile.
   revalidatePath("/m/[handle]", "page");
   return { ok: true, message: "Profile saved." };
+}
+
+/**
+ * Settings → Handle (issue #70). The only write is public.change_handle(),
+ * which owns the rules: once every 30 days, and never a handle another member
+ * gave up in the last 30. UPDATE on handle is revoked from members.
+ */
+export async function changeHandle(
+  _prevState: ActionState | null,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = handleSchema.safeParse(formData.get("handle") ?? "");
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: "Check the highlighted fields.",
+      fieldErrors: { handle: parsed.error.issues[0]?.message ?? "Pick another handle." },
+    };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, message: "Sign in again to continue." };
+
+  const { error } = await supabase.rpc("change_handle", { p_handle: parsed.data });
+  if (error) {
+    return {
+      ok: false,
+      message: "Check the highlighted fields.",
+      fieldErrors: { handle: handleChangeMessage(error) },
+    };
+  }
+
+  // The handle shows in the Frame, on Me, on sesh pages and in profile URLs.
+  revalidatePath("/", "layout");
+  return { ok: true, message: `Handle changed to @${parsed.data}.` };
 }
 
 /**

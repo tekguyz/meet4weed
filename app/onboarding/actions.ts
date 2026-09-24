@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { TERMS_VERSION } from "@/lib/legal/terms";
+import { handleChangeMessage } from "@/lib/profiles/handle-change";
 import { parseTags, profileInputSchema } from "@/lib/profiles/schema";
 import type { ActionState } from "@/lib/forms/action-state";
 
@@ -84,12 +85,12 @@ export async function saveProfile(
   if (!user) return { ok: false, message: "Sign in again to continue." };
 
   // Only the columns `authenticated` holds an UPDATE grant on. Naming a column
-  // the member cannot write — status, card_expires_on — makes Postgres reject
-  // the whole statement with 42501, even when the value is unchanged.
+  // the member cannot write — status, card_expires_on, and since issue #70
+  // handle — makes Postgres reject the whole statement with 42501, even when
+  // the value is unchanged.
   const { error } = await supabase
     .from("profiles")
     .update({
-      handle: parsed.data.handle,
       display_name: parsed.data.displayName ?? null,
       bio: parsed.data.bio ?? null,
       city: parsed.data.city ?? null,
@@ -99,16 +100,20 @@ export async function saveProfile(
     })
     .eq("id", user.id);
 
-  // 23505 is the unique violation on profiles_handle_key. Surfacing the raw
-  // Postgres message here would print the index name to a member.
-  if (error?.code === "23505") {
+  if (error) return { ok: false, message: "Could not save that. Try again." };
+
+  // The handle goes last, through the one function allowed to change it. The
+  // first real handle waits for nothing. Last, because onboarding counts as
+  // finished once the placeholder is gone; a retry re-sends the same handle,
+  // which the function treats as no change.
+  const { error: handleError } = await supabase.rpc("change_handle", { p_handle: parsed.data.handle });
+  if (handleError) {
     return {
       ok: false,
       message: "Check the highlighted fields.",
-      fieldErrors: { handle: "That handle is taken. Try another." },
+      fieldErrors: { handle: handleChangeMessage(handleError) },
     };
   }
-  if (error) return { ok: false, message: "Could not save that. Try again." };
 
   revalidatePath("/");
 
