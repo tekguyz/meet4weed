@@ -23,6 +23,11 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
+const claimRsvp = vi.fn();
+vi.mock("@/lib/sesh/member-limits", () => ({
+  memberLimitsFromEnv: () => ({ claimRsvp }),
+}));
+
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 
@@ -51,6 +56,7 @@ beforeEach(() => {
   getUser.mockReset().mockResolvedValue({ data: { user: { id: "member-1" } } });
   rpc.mockReset().mockResolvedValue({ error: null });
   select.mockReset().mockResolvedValue({ data: { approved_count: 4 } });
+  claimRsvp.mockReset().mockResolvedValue(true);
 });
 
 describe("askToJoin", () => {
@@ -89,6 +95,32 @@ describe("askToJoin", () => {
 
     expect(result.message).toMatch(/today|tomorrow/i);
     expect(result.message).not.toMatch(NO_POSTGRES_CODES);
+  });
+
+  /** Ticket #66. The database caps new requests at 20 rows a day, but a
+   *  withdraw-and-ask loop reuses one row. This counts presses. */
+  it("counts the press against the member, for today", async () => {
+    await act("askToJoin", form({ seshId: SESH }));
+
+    expect(claimRsvp).toHaveBeenCalledWith("member-1", expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/));
+  });
+
+  it("refuses whole over the daily limit, and never asks the database", async () => {
+    claimRsvp.mockResolvedValue(false);
+
+    const result = await act("askToJoin", form({ seshId: SESH }));
+
+    expect(result.ok).toBe(false);
+    expect(result.message).toMatch(/tomorrow/i);
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("does not count a press from someone signed out", async () => {
+    getUser.mockResolvedValue({ data: { user: null } });
+
+    await act("askToJoin", form({ seshId: SESH }));
+
+    expect(claimRsvp).not.toHaveBeenCalled();
   });
 
   it("tells a member the host removed them, rather than letting them keep trying", async () => {

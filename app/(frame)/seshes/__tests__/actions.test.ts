@@ -50,6 +50,11 @@ vi.mock("@/lib/supabase/server", () => ({
 const areaNameFor = vi.fn();
 vi.mock("@/lib/sesh/area-name", () => ({ areaNameLookup: () => areaNameFor }));
 
+const claimSeshCreate = vi.fn();
+vi.mock("@/lib/sesh/member-limits", () => ({
+  memberLimitsFromEnv: () => ({ claimSeshCreate }),
+}));
+
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 const redirect = vi.fn();
@@ -93,6 +98,7 @@ beforeEach(() => {
   updateResult = { error: null };
   selectOne.mockReset().mockResolvedValue({ data: { approved_count: 4 } });
   insertResult = { data: { id: "sesh-1", fuzzy_lat: 27.95312, fuzzy_lng: -82.45411 }, error: null };
+  claimSeshCreate.mockReset().mockResolvedValue(true);
 });
 
 async function act(name: "createSesh" | "editSesh" | "cancelSesh", fd: FormData) {
@@ -165,6 +171,31 @@ describe("createSesh", () => {
     await act("createSesh", form());
 
     expect(redirect).toHaveBeenCalledWith("/seshes/mine");
+  });
+
+  /** Ticket #66. The insert policy caps a host at five OPEN seshes, but a
+   *  post-and-cancel loop never trips it. This counts posts. */
+  it("counts the post against the host, for today", async () => {
+    await act("createSesh", form());
+
+    expect(claimSeshCreate).toHaveBeenCalledWith("host-1", expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/));
+  });
+
+  it("refuses whole over the daily limit, and never writes", async () => {
+    claimSeshCreate.mockResolvedValue(false);
+
+    const result = await act("createSesh", form());
+
+    expect(result?.ok).toBe(false);
+    expect(result?.message).toMatch(/tomorrow/i);
+    expect(insert).not.toHaveBeenCalled();
+    expect(redirect).not.toHaveBeenCalled();
+  });
+
+  it("does not count a form that never gets past its own checks", async () => {
+    await act("createSesh", form({ title: "hi" }));
+
+    expect(claimSeshCreate).not.toHaveBeenCalled();
   });
 
   it("refuses a sesh in the past and says which field is wrong", async () => {

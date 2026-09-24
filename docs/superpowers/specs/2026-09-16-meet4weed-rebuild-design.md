@@ -237,6 +237,23 @@ person — can run up the Anthropic bill.
 8. **Every call logs its token usage and computed cost** to the database, and
    the admin panel shows today's and this month's spend.
 
+**Member action limits (issue #66, 2026-09-23).** These do not guard the bill.
+They stop one account flooding a host's approvals or the feed. Both count per
+member per Florida day, in Upstash, under `m4w:rsvp:member:<day>:<id>` and
+`m4w:sesh:create:member:<day>:<id>`. Code: `lib/sesh/member-limits.ts`.
+
+- **Ask to join: 30 presses a day.** The database already caps new requests at
+  20 rows a day (`M4W17`), but withdrawing and asking again reuses one row, so
+  that cap never trips on a loop. This one counts presses. It is set above 20
+  so an ordinary member hears the database's sentence first.
+- **Post a sesh: 10 a day.** The insert policy already caps a host at five
+  open seshes, but posting and cancelling in a loop never trips it. Ten is
+  twice five, so a host who fixes a mistake never meets it.
+- Over either limit, the action is refused whole — nothing is written — and
+  the banner says to try again tomorrow.
+- **These fail open.** If Upstash is unreachable, the press goes through. The
+  database caps above are still the wall; this is counting on top of them.
+
 **Measured cost (2026-09-16).** 4 live calls on `claude-sonnet-5`, effort
 `low`, a 1000×630 card image plus a 1000×750 face-with-card image, synthetic
 fixtures: 3,237 input tokens each, 157–341 output tokens, **$0.0080–$0.0099

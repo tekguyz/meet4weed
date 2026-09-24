@@ -29,7 +29,7 @@ const isClient = (src: string) => /^\s*["']use client["']/m.test(src);
 const SERVER_SECRETS =
   /\b(SUPABASE_SECRET_KEY|ANTHROPIC_API_KEY|UPSTASH_REDIS_REST_TOKEN|RESEND_API_KEY|VERIFICATION_SECRET|CRON_SECRET)\b/;
 const SERVER_MODULES =
-  /^import (?!type )[^;]*from ["']@\/lib\/(server-env|derived-keys|supabase\/admin|verification\/(image-crypto|challenge-token|limits|vision|store|submit|owner-alert|reaper)|member\/expiry-sweep|sesh\/(invite-token|invite-limits|invite-reads)|email)["']/m;
+  /^import (?!type )[^;]*from ["']@\/lib\/(server-env|derived-keys|supabase\/admin|verification\/(image-crypto|challenge-token|limits|vision|store|submit|owner-alert|reaper)|member\/expiry-sweep|sesh\/(invite-token|invite-limits|invite-reads|member-limits)|email)["']/m;
 
 describe("server secrets stay on the server", () => {
   it("no client component reads a non-public environment variable", () => {
