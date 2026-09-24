@@ -20,11 +20,13 @@ export const RESERVED_HANDLE_PREFIX = "member_";
 
 /** Mirrors profiles_handle_format. Lowercased before validation so the form
  *  accepts "Ryder" and stores "ryder" rather than rejecting it. */
+export const HANDLE_FORMAT_MESSAGE = "3–20 characters: letters, numbers and underscores only.";
+
 export const handleSchema = z
   .string()
   .trim()
   .toLowerCase()
-  .regex(/^[a-z0-9_]{3,20}$/, "3–20 characters: letters, numbers and underscores only.")
+  .regex(/^[a-z0-9_]{3,20}$/, HANDLE_FORMAT_MESSAGE)
   .refine((value) => !value.startsWith(RESERVED_HANDLE_PREFIX), {
     message: "Handles cannot start with “member_”. Pick something else.",
   });

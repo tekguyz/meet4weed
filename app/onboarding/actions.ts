@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { TERMS_VERSION } from "@/lib/legal/terms";
-import { handleChangeMessage } from "@/lib/profiles/handle-change";
+import { handleRefused } from "@/lib/profiles/handle-change";
 import { parseTags, profileInputSchema } from "@/lib/profiles/schema";
 import type { ActionState } from "@/lib/forms/action-state";
 
@@ -107,13 +107,7 @@ export async function saveProfile(
   // finished once the placeholder is gone; a retry re-sends the same handle,
   // which the function treats as no change.
   const { error: handleError } = await supabase.rpc("change_handle", { p_handle: parsed.data.handle });
-  if (handleError) {
-    return {
-      ok: false,
-      message: "Check the highlighted fields.",
-      fieldErrors: { handle: handleChangeMessage(handleError) },
-    };
-  }
+  if (handleError) return handleRefused(handleError);
 
   revalidatePath("/");
 

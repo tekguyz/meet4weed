@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { avatarLook, sameLook } from "@/lib/profiles/avatar";
-import { handleChangeMessage } from "@/lib/profiles/handle-change";
+import { handleRefused } from "@/lib/profiles/handle-change";
 import { handleSchema, parseTags, profileFieldsSchema } from "@/lib/profiles/schema";
 import type { ActionState } from "@/lib/forms/action-state";
 
@@ -89,13 +89,7 @@ export async function changeHandle(
   if (!user) return { ok: false, message: "Sign in again to continue." };
 
   const { error } = await supabase.rpc("change_handle", { p_handle: parsed.data });
-  if (error) {
-    return {
-      ok: false,
-      message: "Check the highlighted fields.",
-      fieldErrors: { handle: handleChangeMessage(error) },
-    };
-  }
+  if (error) return handleRefused(error);
 
   // The handle shows in the Frame, on Me, on sesh pages and in profile URLs.
   revalidatePath("/", "layout");
