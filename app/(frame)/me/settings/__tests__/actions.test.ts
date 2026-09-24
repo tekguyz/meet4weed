@@ -8,10 +8,12 @@ const getUser = vi.fn();
 const update = vi.fn();
 const eq = vi.fn();
 const signOut = vi.fn();
+const rpc = vi.fn();
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
     auth: { getUser, signOut },
+    rpc: (name: string, args: unknown) => rpc(name, args),
     from: () => ({
       update: (values: unknown) => {
         update(values);
@@ -50,6 +52,7 @@ beforeEach(() => {
   update.mockReset();
   eq.mockReset().mockResolvedValue({ error: null });
   signOut.mockReset().mockResolvedValue({ error: null });
+  rpc.mockReset().mockResolvedValue({ error: null });
   redirect.mockClear();
 });
 
@@ -207,5 +210,58 @@ describe("shuffleAvatar (issue #69)", () => {
     const result = await shuffleAvatar(null, current(null));
 
     expect(result).toEqual({ ok: false, message: "Could not save that. Try again." });
+  });
+});
+
+describe("changeHandle (issue #70)", () => {
+  function handleForm(handle: string) {
+    const fd = new FormData();
+    fd.set("handle", handle);
+    return fd;
+  }
+
+  it("changes the handle through change_handle, lowercased, and never by UPDATE", async () => {
+    const { changeHandle } = await import("@/app/(frame)/me/settings/actions");
+
+    const result = await changeHandle(null, handleForm("Ryder_2"));
+
+    expect(result).toEqual({ ok: true, message: "Handle changed to @ryder_2." });
+    expect(rpc).toHaveBeenCalledWith("change_handle", { p_handle: "ryder_2" });
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("refuses a bad format before asking the database", async () => {
+    const { changeHandle } = await import("@/app/(frame)/me/settings/actions");
+
+    const result = await changeHandle(null, handleForm("member_abc123def456"));
+
+    expect(result.ok).toBe(false);
+    expect(result.fieldErrors?.handle).toBeTruthy();
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["M4W30", undefined, /taken/i],
+    ["M4W31", undefined, /given up in the last 30 days/i],
+    ["M4W32", "2026-10-24T16:00:00Z", /once every 30 days.*October 24, 2026/i],
+  ])("maps %s to a plain message", async (code, details, pattern) => {
+    rpc.mockResolvedValue({ error: { code, details, message: "raw" } });
+    const { changeHandle } = await import("@/app/(frame)/me/settings/actions");
+
+    const result = await changeHandle(null, handleForm("ryder_2"));
+
+    expect(result.ok).toBe(false);
+    expect(result.fieldErrors?.handle).toMatch(pattern);
+    expect(result.fieldErrors?.handle).not.toMatch(/raw|M4W/);
+  });
+
+  it("asks a signed-out visitor to sign in", async () => {
+    getUser.mockResolvedValue({ data: { user: null } });
+    const { changeHandle } = await import("@/app/(frame)/me/settings/actions");
+
+    const result = await changeHandle(null, handleForm("ryder_2"));
+
+    expect(result).toEqual({ ok: false, message: "Sign in again to continue." });
+    expect(rpc).not.toHaveBeenCalled();
   });
 });

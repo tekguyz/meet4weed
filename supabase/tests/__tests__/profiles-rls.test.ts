@@ -280,22 +280,17 @@ describe.skipIf(!configured)("profiles row-level security", () => {
     expect(data ?? []).toHaveLength(0);
   });
 
+  // A member changes a handle only through change_handle() since issue #70;
+  // handle-change-rls.test.ts covers that path. The constraint still guards
+  // service_role's writes.
   it("rejects a handle that is not url-safe and lowercase", async () => {
-    const { error } = await alice.db
+    const { error } = await admin
       .from("profiles")
       .update({ handle: "Ryder.420" })
       .eq("id", alice.id);
 
     // 23514 — check constraint violation on profiles_handle_format.
     expect(error?.code).toBe("23514");
-  });
-
-  it("rejects a duplicate handle with the code the UI maps to plain language", async () => {
-    await alice.db.from("profiles").update({ handle: "ryder" }).eq("id", alice.id);
-
-    const { error } = await bob.db.from("profiles").update({ handle: "ryder" }).eq("id", bob.id);
-
-    expect(error?.code).toBe("23505");
   });
 
   it("lets service_role write the columns members cannot", async () => {

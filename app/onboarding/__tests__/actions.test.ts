@@ -4,10 +4,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const getUser = vi.fn();
 const update = vi.fn();
 const eq = vi.fn();
+const rpc = vi.fn();
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
     auth: { getUser },
+    rpc: (name: string, args: unknown) => rpc(name, args),
     from: () => ({
       update: (values: unknown) => {
         update(values);
@@ -103,6 +105,7 @@ describe("saveProfile", () => {
     getUser.mockReset();
     update.mockReset();
     eq.mockReset().mockResolvedValue({ error: null });
+    rpc.mockReset().mockResolvedValue({ error: null });
     redirect.mockReset();
     getUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
   });
@@ -121,11 +124,38 @@ describe("saveProfile", () => {
     await saveProfile(null, fd);
 
     expect(update.mock.calls[0][0]).toMatchObject({
-      handle: "ryder",
       display_name: "Ryder",
       strain_prefs: ["indica"],
       vibe_tags: ["vinyl", "board games"],
     });
+    expect(rpc).toHaveBeenCalledWith("change_handle", { p_handle: "ryder" });
+  });
+
+  // Issue #70. UPDATE on handle is revoked from members, so naming it would
+  // fail the whole statement with 42501 and onboarding would never finish.
+  it("never writes handle directly — it goes through change_handle", async () => {
+    const fd = new FormData();
+    fd.set("handle", "ryder");
+
+    const { saveProfile } = await import("@/app/onboarding/actions");
+    await saveProfile(null, fd);
+
+    expect(update.mock.calls[0][0]).not.toHaveProperty("handle");
+    expect(rpc).toHaveBeenCalledTimes(1);
+  });
+
+  // The handle goes last. Onboarding counts as finished once the placeholder
+  // is gone, so the fields must already be saved by then.
+  it("does not change the handle when the fields did not save", async () => {
+    eq.mockResolvedValue({ error: { code: "XX000", message: "boom" } });
+    const fd = new FormData();
+    fd.set("handle", "ryder");
+
+    const { saveProfile } = await import("@/app/onboarding/actions");
+    const result = await saveProfile(null, fd);
+
+    expect(result.ok).toBe(false);
+    expect(rpc).not.toHaveBeenCalled();
   });
 
   it("sends the member home rather than leaving them on the finished form", async () => {
@@ -138,8 +168,8 @@ describe("saveProfile", () => {
     expect(redirect).toHaveBeenCalledWith("/");
   });
 
-  it("does not redirect when the save failed", async () => {
-    eq.mockResolvedValue({ error: { code: "23505", message: "duplicate key" } });
+  it("does not redirect when the handle change was refused", async () => {
+    rpc.mockResolvedValue({ error: { code: "M4W30", message: "that handle is taken" } });
     const fd = new FormData();
     fd.set("handle", "ryder");
 
@@ -185,7 +215,7 @@ describe("saveProfile", () => {
   });
 
   it("explains a taken handle in plain language", async () => {
-    eq.mockResolvedValue({ error: { code: "23505", message: "duplicate key" } });
+    rpc.mockResolvedValue({ error: { code: "M4W30", message: "that handle is taken" } });
     const fd = new FormData();
     fd.set("handle", "ryder");
 
@@ -194,6 +224,18 @@ describe("saveProfile", () => {
 
     expect(result.ok).toBe(false);
     expect(result.fieldErrors?.handle).toMatch(/taken/i);
+  });
+
+  it("explains a locked handle in plain language", async () => {
+    rpc.mockResolvedValue({ error: { code: "M4W31", message: "given up recently" } });
+    const fd = new FormData();
+    fd.set("handle", "ryder");
+
+    const { saveProfile } = await import("@/app/onboarding/actions");
+    const result = await saveProfile(null, fd);
+
+    expect(result.ok).toBe(false);
+    expect(result.fieldErrors?.handle).toMatch(/given up/i);
   });
 
   it("does not leak a raw Postgres message on an unexpected error", async () => {

@@ -36,6 +36,7 @@ describe("frameHeader", () => {
     ["/m/ryder", "Profile", null],
     ["/me/settings", "Settings", "/me"],
     ["/me/settings/profile", "Edit profile", "/me/settings"],
+    ["/me/settings/handle", "Handle", "/me/settings"],
     ["/me/settings/theme", "Theme", "/me/settings"],
     ["/me/settings/avatar", "Avatar", "/me/settings"],
     ["/me/settings/password", "Password", "/me/settings"],

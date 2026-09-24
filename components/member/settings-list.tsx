@@ -1,14 +1,15 @@
 import { HeldRow, RowGroup, RowLink } from "@/components/ui/row-list";
 
 /**
- * /me/settings (issue #65): a grouped list, one row per job. Handle
- * and delete account join it in their own tickets.
+ * /me/settings (issue #65): a grouped list, one row per job. Delete
+ * account joins it in its own ticket.
  */
 export function SettingsList() {
   return (
     <div className="flex flex-col gap-6">
       <RowGroup label="Profile">
         <RowLink href="/me/settings/profile">Edit profile</RowLink>
+        <RowLink href="/me/settings/handle">Handle</RowLink>
       </RowGroup>
       <RowGroup label="Appearance">
         <RowLink href="/me/settings/theme">Theme</RowLink>
