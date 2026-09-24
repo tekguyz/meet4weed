@@ -161,13 +161,15 @@ export async function deleteAccount(
   _prevState: ActionState | null,
   formData: FormData,
 ): Promise<ActionState> {
+  const passwordError = (text: string): ActionState => ({
+    ok: false,
+    message: "Check the highlighted fields.",
+    fieldErrors: { password: text },
+  });
+
   const password = formData.get("password");
   if (typeof password !== "string" || password.length === 0) {
-    return {
-      ok: false,
-      message: "Check the highlighted fields.",
-      fieldErrors: { password: "Type your password to confirm." },
-    };
+    return passwordError("Type your password to confirm.");
   }
 
   const supabase = await createClient();
@@ -177,13 +179,7 @@ export async function deleteAccount(
   if (!user?.email) return { ok: false, message: "Sign in again to continue." };
 
   const check = await confirmPassword(user.email, password);
-  if (check === "wrong") {
-    return {
-      ok: false,
-      message: "Check the highlighted fields.",
-      fieldErrors: { password: "That password is not right." },
-    };
-  }
+  if (check === "wrong") return passwordError("That password is not right.");
   if (check === "rate_limited") {
     return { ok: false, message: "Too many tries. Wait a few minutes, then try again." };
   }

@@ -10,8 +10,8 @@ export default function DeleteAccountPage() {
       <section className="flex flex-col gap-3">
         <h2 className="text-lg">What goes</h2>
         <ul className="flex list-disc flex-col gap-2 pl-5 text-sm text-ink-muted">
-          <li>Seshes you host that have not started are cancelled.</li>
           <li>Your profile, your RSVPs and your bring-list items are deleted.</li>
+          <li>Seshes you host are deleted. Ones that have not started are cancelled first.</li>
           <li>Your card and face photos are deleted.</li>
         </ul>
         <p className="text-sm text-ink-muted">

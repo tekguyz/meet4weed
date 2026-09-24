@@ -51,7 +51,7 @@ export async function cancelFutureHostedSeshes(db: SupabaseClient, hostId: strin
  *  Storage lists one folder level at a time, so each submission folder is
  *  listed in turn. Read from Storage, not from the document rows, so an upload
  *  whose row was never written is caught too. */
-export async function removeMemberImages(db: SupabaseClient, memberId: string): Promise<number> {
+export async function removeMemberImages(db: SupabaseClient, memberId: string): Promise<void> {
   const bucket = db.storage.from(BUCKET);
 
   const { data: folders, error } = await bucket.list(memberId, { limit: 1000 });
@@ -65,8 +65,7 @@ export async function removeMemberImages(db: SupabaseClient, memberId: string): 
     for (const file of files ?? []) paths.push(`${prefix}/${file.name}`);
   }
 
-  if (paths.length === 0) return 0;
+  if (paths.length === 0) return;
   const { error: removeError } = await bucket.remove(paths);
   if (removeError) throw new Error("deleting the member's images failed");
-  return paths.length;
 }

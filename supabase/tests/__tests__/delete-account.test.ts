@@ -26,6 +26,17 @@ const TAMPA = { lat: 27.9506, lng: -82.4572 };
 const PROBE_COST = 0.004321;
 /** Never a real model id, so the cleanup cannot touch real spend. */
 const PROBE_MODEL = "m4w-delete-probe";
+/** One Claude call, as recordVision() is handed it. */
+const PROBE_CALL = {
+  reading: null,
+  concerns: [],
+  skippedReason: null,
+  error: "probe",
+  model: PROBE_MODEL,
+  inputTokens: 10,
+  outputTokens: 5,
+  costUsd: PROBE_COST,
+};
 
 type Member = { id: string; email: string; db: SupabaseClient };
 type Spend = { today_usd: number; month_usd: number; today_calls: number; month_calls: number };
@@ -138,24 +149,19 @@ describe.skipIf(!configured)("delete my account", () => {
     const store = createStore(service, IMAGE_SECRET);
     const begun = await store.begin({ memberId: member.id, patientId: "P000-TEST-0071", cardExpiresOn: "2030-01-01", challenge: "x" });
     if (!begun.ok) throw new Error("could not begin a verification");
-    await store.recordVision(begun.id, {
-      reading: null,
-      concerns: [],
-      skippedReason: null,
-      error: "probe",
-      model: PROBE_MODEL,
-      inputTokens: 10,
-      outputTokens: 5,
-      costUsd: PROBE_COST,
-    });
+    await store.recordVision(begun.id, PROBE_CALL);
 
     const after = await spend();
     expect(after.month_calls).toBe(before.month_calls + 1);
     expect(after.month_usd).toBeCloseTo(before.month_usd + PROBE_COST, 6);
 
-    // The ledger is service-only: a member can neither read nor write it.
-    const { data: seen } = await member.db.from("vision_spend").select("*");
-    expect(seen ?? []).toEqual([]);
+    // The ledger is service-only. Proved differentially: the same read is
+    // refused for a member and answered for service_role.
+    const asMember = await member.db.from("vision_spend").select("id").limit(1);
+    expect(asMember.error?.code).toBe("42501");
+    const asService = await service.from("vision_spend").select("id").limit(1);
+    expect(asService.error).toBeNull();
+    expect(asService.data).toHaveLength(1);
   }, 60_000);
 
   it("deletes the member, their images and their future seshes, and keeps the spend", async () => {
@@ -167,16 +173,7 @@ describe.skipIf(!configured)("delete my account", () => {
     if (!begun.ok) throw new Error("could not begin a verification");
     await store.storeImage({ memberId: leaver.id, verificationId: begun.id, kind: "card", bytes: Buffer.from("synthetic") });
     await store.storeImage({ memberId: leaver.id, verificationId: begun.id, kind: "face_with_card", bytes: Buffer.from("synthetic") });
-    await store.recordVision(begun.id, {
-      reading: null,
-      concerns: [],
-      skippedReason: null,
-      error: "probe",
-      model: PROBE_MODEL,
-      inputTokens: 10,
-      outputTokens: 5,
-      costUsd: PROBE_COST,
-    });
+    await store.recordVision(begun.id, PROBE_CALL);
 
     const before = await spend();
 

@@ -31,7 +31,7 @@ export function DeleteAccountForm() {
           </p>
         ) : null}
       </div>
-      <Button type="submit" variant="danger" disabled={pending}>
+      <Button type="submit" variant="quiet" disabled={pending}>
         {pending ? "Deleting…" : "Delete my account"}
       </Button>
       <ActionResult state={state} />
