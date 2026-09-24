@@ -2,7 +2,7 @@ import { HeldRow, RowGroup, RowLink } from "@/components/ui/row-list";
 
 /**
  * /me/settings (issue #65): a grouped list, one row per job. Delete
- * account joins it in its own ticket.
+ * account (issue #71) sits last under Account.
  */
 export function SettingsList() {
   return (
@@ -18,6 +18,7 @@ export function SettingsList() {
       <RowGroup label="Account">
         <RowLink href="/me/settings/password">Password</RowLink>
         <RowLink href="/me/settings/sessions">Sessions</RowLink>
+        <RowLink href="/me/settings/delete">Delete account</RowLink>
       </RowGroup>
       <RowGroup label="Coming soon">
         {/* Plan 05 fills this in. */}

@@ -13,6 +13,7 @@ describe("SettingsList (issue #65)", () => {
       ["Avatar", "/me/settings/avatar"],
       ["Password", "/me/settings/password"],
       ["Sessions", "/me/settings/sessions"],
+      ["Delete account", "/me/settings/delete"],
     ]) {
       expect(screen.getByRole("link", { name })).toHaveAttribute("href", href);
     }

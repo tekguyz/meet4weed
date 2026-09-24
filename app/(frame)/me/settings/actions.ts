@@ -2,6 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { deleteMemberAccount } from "@/lib/account/delete";
+import { confirmPassword } from "@/lib/auth/confirm-password";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { avatarLook, sameLook } from "@/lib/profiles/avatar";
 import { handleRefused } from "@/lib/profiles/handle-change";
@@ -142,5 +145,55 @@ export async function signOutEverywhere(_prevState: ActionState | null): Promise
   const supabase = await createClient();
   const { error } = await supabase.auth.signOut({ scope: "global" });
   if (error) return { ok: false, message: "Could not sign out everywhere. Try again." };
+  redirect("/login");
+}
+
+/**
+ * Settings → Delete account (issue #71). The member types their password, so
+ * somebody holding an unlocked phone cannot do it. Then it happens at once,
+ * with no grace period: lib/account/delete.ts cancels their future seshes,
+ * deletes their card images and deletes the auth user.
+ *
+ * The member's own session cannot delete an auth user, so the delete runs
+ * with the service client, and only for the member this session belongs to.
+ */
+export async function deleteAccount(
+  _prevState: ActionState | null,
+  formData: FormData,
+): Promise<ActionState> {
+  const passwordError = (text: string): ActionState => ({
+    ok: false,
+    message: "Check the highlighted fields.",
+    fieldErrors: { password: text },
+  });
+
+  const password = formData.get("password");
+  if (typeof password !== "string" || password.length === 0) {
+    return passwordError("Type your password to confirm.");
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user?.email) return { ok: false, message: "Sign in again to continue." };
+
+  const check = await confirmPassword(user.email, password);
+  if (check === "wrong") return passwordError("That password is not right.");
+  if (check === "rate_limited") {
+    return { ok: false, message: "Too many tries. Wait a few minutes, then try again." };
+  }
+  if (check !== "ok") return { ok: false, message: "Could not check your password. Try again." };
+
+  try {
+    await deleteMemberAccount(createAdminClient(), user.id);
+  } catch (error) {
+    console.error(`[delete-account] ${error instanceof Error ? error.message : "failed"}`);
+    return { ok: false, message: "Could not delete your account. Try again." };
+  }
+
+  // The auth user is gone, so the server may answer 404; the cookies are
+  // cleared either way.
+  await supabase.auth.signOut({ scope: "local" });
   redirect("/login");
 }
