@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { AVATAR_SEED_MAX, avatarLook, sameLook } from "@/lib/profiles/avatar";
+import { avatarLook, sameLook } from "@/lib/profiles/avatar";
 import { parseTags, profileFieldsSchema } from "@/lib/profiles/schema";
 import type { ActionState } from "@/lib/forms/action-state";
 
@@ -80,17 +80,17 @@ export async function shuffleAvatar(
   if (!user) return { ok: false, message: "Sign in again to continue." };
 
   const raw = formData.get("currentSeed");
-  const was = avatarLook(typeof raw === "string" && raw ? raw : null, user.id);
+  const currentLook = avatarLook(typeof raw === "string" && raw ? raw : null, user.id);
 
   let seed = crypto.randomUUID();
   // Bounded: each try misses with odds of 1 in 64.
-  for (let i = 0; i < 32 && sameLook(avatarLook(seed, user.id), was); i++) {
+  for (let i = 0; i < 32 && sameLook(avatarLook(seed, user.id), currentLook); i++) {
     seed = crypto.randomUUID();
   }
 
   const { error } = await supabase
     .from("profiles")
-    .update({ avatar_seed: seed.slice(0, AVATAR_SEED_MAX) })
+    .update({ avatar_seed: seed })
     .eq("id", user.id);
 
   if (error) return { ok: false, message: "Could not save that. Try again." };

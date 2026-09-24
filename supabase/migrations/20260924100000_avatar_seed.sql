@@ -10,7 +10,7 @@
 -- avatar_url stays in the schema, unused, for the v2 photo avatar.
 --
 -- The length check keeps the column a seed, not a place to store text.
--- Mirrors AVATAR_SEED_MAX in lib/profiles/avatar.ts.
+-- Shuffle writes a 36-character UUID.
 
 alter table public.profiles
   add column avatar_seed text

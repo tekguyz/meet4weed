@@ -209,6 +209,13 @@ describe.skipIf(!configured)("profiles row-level security", () => {
 
     const { data } = await admin.from("profiles").select("avatar_seed").eq("id", bob.id).single();
     expect(data!.avatar_seed).toBeNull();
+
+    // Differential: the same statement on the same row lands for service_role,
+    // so the drop above is the policy, not a broken column.
+    const { error } = await admin.from("profiles").update({ avatar_seed: "admin-set" }).eq("id", bob.id);
+    expect(error).toBeNull();
+    const { data: after } = await admin.from("profiles").select("avatar_seed").eq("id", bob.id).single();
+    expect(after!.avatar_seed).toBe("admin-set");
   });
 
   it("refuses an avatar seed longer than a label", async () => {

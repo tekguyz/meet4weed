@@ -16,6 +16,7 @@ export type AvatarLook = {
 };
 
 export const SHAPE_COUNT = 4;
+/** The component's tables are typed to these lengths, so they cannot drift. */
 export const TONE_COUNT = 4;
 export const ACCENT_COUNT = 4;
 
@@ -49,6 +50,3 @@ export function avatarInitials(handle: string, displayName: string | null): stri
   const letters = words.length > 0 ? words.slice(0, 2).map((word) => word[0]) : [handle[0] ?? ""];
   return letters.join("").toUpperCase();
 }
-
-/** Mirrors profiles_avatar_seed_length. */
-export const AVATAR_SEED_MAX = 40;

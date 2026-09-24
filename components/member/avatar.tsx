@@ -1,4 +1,4 @@
-import { avatarInitials, avatarLook } from "@/lib/profiles/avatar";
+import { ACCENT_COUNT, avatarInitials, avatarLook, TONE_COUNT } from "@/lib/profiles/avatar";
 
 type Props = {
   /** profiles.avatar_seed. Null draws from the member id. */
@@ -46,21 +46,23 @@ export function Avatar({ seed, memberId, handle, displayName, className = "size-
 }
 
 /** Shape fill, initials fill and accent dot, as full class names so Tailwind
- *  finds them. Each pair swaps with the theme through the tokens. */
+ *  finds them. Each pair swaps with the theme through the tokens, and each
+ *  initials colour is one the tokens pair for contrast in both themes. There
+ *  is no on-secondary token, so honey is only ever the accent. */
 const TONES = [
   { shape: "fill-primary", ink: "fill-on-primary", accent: "fill-secondary" },
   { shape: "fill-ink", ink: "fill-bg", accent: "fill-primary" },
   { shape: "fill-surface-2 stroke-rule", ink: "fill-ink", accent: "fill-secondary" },
-  { shape: "fill-secondary", ink: "fill-on-primary", accent: "fill-primary" },
-];
+  { shape: "fill-surface stroke-primary", ink: "fill-primary", accent: "fill-secondary" },
+] as const satisfies readonly { shape: string; ink: string; accent: string }[] & { length: typeof TONE_COUNT };
 
 /** Inside every shape and clear of the initials. */
-const ACCENTS: [number, number][] = [
+const ACCENTS = [
   [20, 6],
   [34, 20],
   [20, 34],
   [6, 20],
-];
+] as const satisfies readonly (readonly [number, number])[] & { length: typeof ACCENT_COUNT };
 
 function Shape({ index, className }: { index: number; className: string }) {
   switch (index) {
