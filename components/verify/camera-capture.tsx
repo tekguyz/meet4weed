@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { PhoneHandOff } from "@/components/verify/phone-hand-off";
 import { Button } from "@/components/ui/button";
+import { PhoneHandOff } from "@/components/verify/phone-hand-off";
 import { IMAGE_LIMITS } from "@/lib/verification/jpeg";
 import { LIVE_CHECK, liveHint } from "@/lib/verification/live-hint";
 import type { PrecheckProblem } from "@/lib/verification/prechecks";

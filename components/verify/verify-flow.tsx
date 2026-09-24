@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { issueFaceChallenge } from "@/app/(frame)/verify/actions";
 import { CameraCapture } from "@/components/verify/camera-capture";
-import { PhoneHandOff } from "@/components/verify/phone-hand-off";
 import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PhoneHandOff } from "@/components/verify/phone-hand-off";
 import { noCameraFound } from "@/lib/verification/camera";
 import { countFaces } from "@/lib/verification/face-detector";
 import { useVerifyFlow, type Shot } from "@/lib/verification/flow-store";
@@ -51,13 +51,13 @@ function Intro() {
   // Ask before any typing. When the browser cannot tell, Start stays and the
   // camera step catches a missing camera instead.
   useEffect(() => {
-    let live = true;
+    let cancelled = false;
     navigator.mediaDevices
       ?.enumerateDevices?.()
-      .then((devices) => live && setCameraless(noCameraFound(devices)))
+      .then((devices) => !cancelled && setCameraless(noCameraFound(devices)))
       .catch(() => {});
     return () => {
-      live = false;
+      cancelled = true;
     };
   }, []);
 

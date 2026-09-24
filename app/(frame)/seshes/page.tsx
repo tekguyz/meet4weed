@@ -96,7 +96,7 @@ function EmptyFeed({ message, action }: FeedEmptyState) {
   return (
     <div className="flex flex-col gap-4 rounded-card bg-surface p-4">
       <p className="text-sm text-ink-muted">{message}</p>
-      <Link href={action.href} className={buttonClass("quiet")}>
+      <Link href={action.href} className={buttonClass()}>
         {action.label}
       </Link>
     </div>
