@@ -1,3 +1,4 @@
+import { buttonClass } from "@/components/ui/button";
 import type { SeshAddress } from "@/lib/sesh/queries";
 
 /**
@@ -9,6 +10,14 @@ import type { SeshAddress } from "@/lib/sesh/queries";
  * one appears, the rule has left Postgres and moved into a screen, which is
  * the single thing this whole plan is built to prevent.
  */
+/** Google's universal Maps link: it opens the Google Maps app on a phone that
+ *  has it, and the Maps website everywhere else — one link for iPhone, Android
+ *  and a laptop, with no guessing at the platform. It takes the street
+ *  address, not the pin, because that is what a driver navigates to. */
+function mapsHref(addressLine: string): string {
+  return `https://www.google.com/maps/search/?${new URLSearchParams({ api: "1", query: addressLine })}`;
+}
+
 type Props = {
   address: SeshAddress | null;
   areaName: string | null;
@@ -28,6 +37,14 @@ export function AddressPanel({ address, areaName }: Props) {
           {address.unitNote ? <p className="text-sm text-ink">Unit or buzzer: {address.unitNote}</p> : null}
           {address.gateCode ? <p className="text-sm text-ink">Gate code: {address.gateCode}</p> : null}
           {areaName ? <p className="text-sm text-ink-muted">{areaName}</p> : null}
+          <a
+            href={mapsHref(address.addressLine!)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`${buttonClass("quiet")} mt-2`}
+          >
+            Open in Maps
+          </a>
           <p className="text-sm text-ink-muted">
             Keep this to yourself. It disappears twelve hours after the sesh starts.
           </p>

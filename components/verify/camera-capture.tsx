@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { PhoneHandOff } from "@/components/verify/phone-hand-off";
 import { Button } from "@/components/ui/button";
 import { IMAGE_LIMITS } from "@/lib/verification/jpeg";
 import { LIVE_CHECK, liveHint } from "@/lib/verification/live-hint";
@@ -37,7 +38,7 @@ export function viewfinderWidth(videoWidth: number, videoHeight: number): string
  */
 export function CameraCapture({ facing, guide, onCapture, timerSeconds, check, active = true }: Props) {
   const video = useRef<HTMLVideoElement>(null);
-  const [state, setState] = useState<"starting" | "live" | "denied" | "unsupported">("starting");
+  const [state, setState] = useState<"starting" | "live" | "denied" | "no-camera" | "unsupported">("starting");
   const [size, setSize] = useState({ width: 4, height: 3 });
   const [countdown, setCountdown] = useState<number | null>(null);
   const [hint, setHint] = useState<string | null>(null);
@@ -61,7 +62,11 @@ export function CameraCapture({ facing, guide, onCapture, timerSeconds, check, a
         setSize({ width: el.videoWidth, height: el.videoHeight });
         setState("live");
       })
-      .catch(() => setState("denied"));
+      // NotFoundError: the browser has no camera to give — a laptop, usually.
+      // That is not a permission problem, so it gets the phone hand-off.
+      .catch((error: unknown) =>
+        setState(error instanceof DOMException && error.name === "NotFoundError" ? "no-camera" : "denied"),
+      );
 
     return () => {
       cancelled = true;
@@ -106,6 +111,7 @@ export function CameraCapture({ facing, guide, onCapture, timerSeconds, check, a
   if (state === "unsupported") {
     return <p role="alert" className="text-sm text-danger">This browser cannot open the camera. Open Meet4Weed in Safari or Chrome.</p>;
   }
+  if (state === "no-camera") return <PhoneHandOff />;
   if (state === "denied") {
     return (
       <p role="alert" className="text-sm text-danger">

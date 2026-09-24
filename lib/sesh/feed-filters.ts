@@ -74,3 +74,35 @@ export function feedHref(filters: FeedFilters): string {
   const query = params.toString();
   return query ? `/seshes?${query}` : "/seshes";
 }
+
+export type FeedEmptyState = {
+  message: string;
+  action: { label: string; href: string };
+};
+
+/** What an empty feed says, and the one next step it offers. An empty screen
+ *  with no way forward reads as broken. `canHost` is false for a lapsed card,
+ *  which may browse but not host. */
+export function feedEmptyState(filters: FeedFilters, canHost: boolean): FeedEmptyState {
+  if (filters.types.length > 0 || filters.search) {
+    return {
+      message: "Nothing matches that. Try fewer chips, or a different word.",
+      action: { label: "Clear filters", href: feedHref({ ...filters, types: [], search: "", page: 1 }) },
+    };
+  }
+  if (filters.page > 1) {
+    return {
+      message: "There are no more seshes past this page.",
+      action: { label: "Back to the first page", href: feedHref({ ...filters, page: 1 }) },
+    };
+  }
+  return canHost
+    ? {
+        message: "No seshes are listed right now. Yours could be the first one people see.",
+        action: { label: "Host a sesh", href: "/seshes/new" },
+      }
+    : {
+        message: "No seshes are listed right now. Once your card is renewed, you can host one.",
+        action: { label: "Add your renewed card", href: "/verify" },
+      };
+}

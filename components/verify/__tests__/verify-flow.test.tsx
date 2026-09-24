@@ -48,6 +48,23 @@ async function reachCardStep(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("VerifyFlow", () => {
+  /** A laptop with no camera is told before typing anything, not after. */
+  it("sends a member with no camera to their phone before they start", async () => {
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: { enumerateDevices: async () => [{ kind: "audioinput" }, { kind: "audiooutput" }] },
+    });
+    try {
+      render(<VerifyFlow today="2026-09-17" />);
+
+      expect(await screen.findByText(/open this page on your phone/i)).toBeInTheDocument();
+      expect(screen.getByText(`${window.location.origin}/verify`)).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Start" })).not.toBeInTheDocument();
+    } finally {
+      Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: undefined });
+    }
+  });
+
   it("states the retention promise before the camera opens", () => {
     render(<VerifyFlow today="2026-09-17" />);
     expect(screen.getByText(RETENTION_STATEMENT)).toBeInTheDocument();

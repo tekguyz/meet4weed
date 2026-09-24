@@ -69,4 +69,35 @@ describe("AddressPanel", () => {
     expect(screen.queryByText(/null/i)).not.toBeInTheDocument();
     expect(screen.getByText(/no longer stored/i)).toBeInTheDocument();
   });
+
+  /** The button is built from the unlocked row and nothing else. A locked
+   *  panel has no address to put in a link, so it has no link. */
+  describe("Open in Maps", () => {
+    it("opens the maps app at the exact address once it has unlocked", () => {
+      render(<AddressPanel address={ADDRESS} areaName="Riverside" />);
+
+      const link = screen.getByRole("link", { name: /open in maps/i });
+      const url = new URL(link.getAttribute("href")!);
+      expect(url.origin).toBe("https://www.google.com");
+      expect(url.searchParams.get("api")).toBe("1");
+      expect(url.searchParams.get("query")).toBe("1 Test Street");
+    });
+
+    it("is never on a locked address", () => {
+      render(<AddressPanel address={null} areaName="Riverside" />);
+
+      expect(screen.queryByRole("link", { name: /open in maps/i })).not.toBeInTheDocument();
+    });
+
+    it("is not on a wiped address either", () => {
+      render(
+        <AddressPanel
+          address={{ addressLine: null, unitNote: null, gateCode: null, exactLat: null, exactLng: null }}
+          areaName="Riverside"
+        />,
+      );
+
+      expect(screen.queryByRole("link", { name: /open in maps/i })).not.toBeInTheDocument();
+    });
+  });
 });

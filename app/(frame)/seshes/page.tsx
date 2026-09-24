@@ -3,12 +3,13 @@ import { redirect } from "next/navigation";
 import { FeedControls } from "@/components/sesh/feed-controls";
 import { FeedMap } from "@/components/sesh/feed-map";
 import { WhereYouStand } from "@/components/member/where-you-stand";
+import { buttonClass } from "@/components/ui/button";
 import { amIAdmin } from "@/lib/admin/queries";
 import { floridaToday } from "@/lib/dates";
 import { frameAccess, memberAccess } from "@/lib/member/gate";
 import { standing } from "@/lib/member/standing";
 import { getMyProfile } from "@/lib/profiles/queries";
-import { feedHref, parseFeedFilters, type SearchParams } from "@/lib/sesh/feed-filters";
+import { feedEmptyState, feedHref, parseFeedFilters, type FeedEmptyState, type SearchParams } from "@/lib/sesh/feed-filters";
 import { listFeed, type SeshListItem } from "@/lib/sesh/queries";
 import { SESH_TYPE_LABELS } from "@/lib/sesh/schema";
 import { getMyVerification } from "@/lib/verification/status";
@@ -49,9 +50,7 @@ export default async function SeshesPage({ searchParams }: { searchParams: Promi
       <FeedControls filters={filters} />
 
       {seshes.length === 0 ? (
-        <p className="text-sm text-ink-muted">
-          Nothing matches yet. Try fewer chips, or a different word.
-        </p>
+        <EmptyFeed {...feedEmptyState(filters, access === "full")} />
       ) : filters.view === "map" ? (
         <FeedMap
           circles={seshes
@@ -89,6 +88,17 @@ export default async function SeshesPage({ searchParams }: { searchParams: Promi
           ) : null}
         </nav>
       ) : null}
+    </div>
+  );
+}
+
+function EmptyFeed({ message, action }: FeedEmptyState) {
+  return (
+    <div className="flex flex-col gap-4 rounded-card bg-surface p-4">
+      <p className="text-sm text-ink-muted">{message}</p>
+      <Link href={action.href} className={buttonClass("quiet")}>
+        {action.label}
+      </Link>
     </div>
   );
 }

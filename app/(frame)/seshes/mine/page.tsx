@@ -40,7 +40,11 @@ export default async function MySeshesPage() {
         <h2 className="text-xl">Hosting</h2>
         {hosting.length === 0 ? (
           <p className="text-sm text-ink-muted">
-            Nothing yet. When you host one, it shows up here with who has asked to come.
+            Nothing yet. When you host one, it shows up here with who has asked to come.{" "}
+            <Link href="/seshes/new" className="underline">
+              Host a sesh
+            </Link>{" "}
+            to start.
           </p>
         ) : (
           <ul className="flex flex-col gap-3">
