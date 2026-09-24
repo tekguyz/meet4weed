@@ -17,6 +17,7 @@ const PROFILE: Profile = {
   bio: "Indica after 8pm.",
   city: "Wilton Manors",
   avatarUrl: null,
+  avatarSeed: null,
   strainPrefs: ["indica"],
   methodPrefs: [],
   vibeTags: ["vinyl"],

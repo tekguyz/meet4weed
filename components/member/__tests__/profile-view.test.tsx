@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { HandleLink, profilePath } from "@/components/member/handle-link";
+import { Avatar } from "@/components/member/avatar";
 import { ProfileView } from "@/components/member/profile-view";
 import type { PublicProfile } from "@/lib/profiles/schema";
 
@@ -11,6 +12,7 @@ const RYDER: PublicProfile = {
   bio: "Porch sits and old records.",
   city: "Tampa",
   avatarUrl: null,
+  avatarSeed: null,
   strainPrefs: ["indica", "hybrid"],
   methodPrefs: ["flower"],
   vibeTags: ["chill", "vinyl"],
@@ -89,5 +91,18 @@ describe("HandleLink", () => {
 describe("profilePath", () => {
   it("is /m/<handle>", () => {
     expect(profilePath("ryder")).toBe("/m/ryder");
+  });
+});
+
+describe("ProfileView avatar (issue #69)", () => {
+  it("draws the member's avatar from their seed", () => {
+    const { container } = render(<ProfileView profile={{ ...RYDER, avatarSeed: "abc" }} isMe={false} />);
+    const { container: expected } = render(
+      <Avatar seed="abc" memberId={RYDER.id} handle="ryder" displayName="Ryder" className="size-16" />,
+    );
+
+    expect(container.querySelector("[data-avatar]")?.outerHTML).toBe(
+      expected.querySelector("[data-avatar]")?.outerHTML,
+    );
   });
 });

@@ -82,4 +82,18 @@ describe("Frame", () => {
 
     expect(screen.queryByRole("link", { name: "Back" })).not.toBeInTheDocument();
   });
+
+  // Issue #69.
+  it("draws the member's avatar on the Me tab, which keeps its name", () => {
+    render(
+      <Frame tabs={["seshes", "me"]} avatar={{ seed: "abc", memberId: "m-1", handle: "ryder", displayName: null }}>
+        page
+      </Frame>,
+    );
+
+    const me = within(mainNav()).getByRole("link", { name: "Me" });
+    expect(me.querySelector("[data-avatar]")).not.toBeNull();
+    const seshes = within(mainNav()).getByRole("link", { name: "Seshes" });
+    expect(seshes.querySelector("[data-avatar]")).toBeNull();
+  });
 });

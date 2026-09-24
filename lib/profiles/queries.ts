@@ -3,10 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import type { Profile, PublicProfile } from "@/lib/profiles/schema";
 
 const COLUMNS =
-  "id, handle, display_name, bio, city, avatar_url, strain_prefs, method_prefs, vibe_tags, status, card_expires_on, attested_at";
+  "id, handle, display_name, bio, city, avatar_url, avatar_seed, strain_prefs, method_prefs, vibe_tags, status, card_expires_on, attested_at";
 
 const PUBLIC_COLUMNS =
-  "id, handle, display_name, bio, city, avatar_url, strain_prefs, method_prefs, vibe_tags, status";
+  "id, handle, display_name, bio, city, avatar_url, avatar_seed, strain_prefs, method_prefs, vibe_tags, status";
 
 /** Mirrors profiles_handle_format. */
 const HANDLE_FORMAT = /^[a-z0-9_]{3,20}$/;
@@ -21,6 +21,7 @@ function toProfile(row: Row): Profile {
     bio: (row.bio as string | null) ?? null,
     city: (row.city as string | null) ?? null,
     avatarUrl: (row.avatar_url as string | null) ?? null,
+    avatarSeed: (row.avatar_seed as string | null) ?? null,
     strainPrefs: (row.strain_prefs as string[]) ?? [],
     methodPrefs: (row.method_prefs as string[]) ?? [],
     vibeTags: (row.vibe_tags as string[]) ?? [],
@@ -68,6 +69,7 @@ export async function getProfileByHandle(handle: string): Promise<PublicProfile 
     bio: (row.bio as string | null) ?? null,
     city: (row.city as string | null) ?? null,
     avatarUrl: (row.avatar_url as string | null) ?? null,
+    avatarSeed: (row.avatar_seed as string | null) ?? null,
     strainPrefs: (row.strain_prefs as string[]) ?? [],
     methodPrefs: (row.method_prefs as string[]) ?? [],
     vibeTags: (row.vibe_tags as string[]) ?? [],

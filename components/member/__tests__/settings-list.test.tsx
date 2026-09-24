@@ -9,6 +9,7 @@ describe("SettingsList (issue #65)", () => {
     for (const [name, href] of [
       ["Edit profile", "/me/settings/profile"],
       ["Theme", "/me/settings/theme"],
+      ["Avatar", "/me/settings/avatar"],
       ["Password", "/me/settings/password"],
       ["Sessions", "/me/settings/sessions"],
     ]) {

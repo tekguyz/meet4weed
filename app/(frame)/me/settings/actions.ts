@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { AVATAR_SEED_MAX, avatarLook, sameLook } from "@/lib/profiles/avatar";
 import { parseTags, profileFieldsSchema } from "@/lib/profiles/schema";
 import type { ActionState } from "@/lib/forms/action-state";
 
@@ -60,6 +61,43 @@ export async function updateProfile(
   // The same fields show on the member's public profile.
   revalidatePath("/m/[handle]", "page");
   return { ok: true, message: "Profile saved." };
+}
+
+/**
+ * Settings → Avatar (issue #69). Writes a new random seed, and only that
+ * column. The form sends the seed on screen, so the new one is picked to look
+ * different: a random seed alone gives the same mark about one time in 64.
+ * A tampered currentSeed only changes which new mark is picked.
+ */
+export async function shuffleAvatar(
+  _prevState: ActionState | null,
+  formData: FormData,
+): Promise<ActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, message: "Sign in again to continue." };
+
+  const raw = formData.get("currentSeed");
+  const was = avatarLook(typeof raw === "string" && raw ? raw : null, user.id);
+
+  let seed = crypto.randomUUID();
+  // Bounded: each try misses with odds of 1 in 64.
+  for (let i = 0; i < 32 && sameLook(avatarLook(seed, user.id), was); i++) {
+    seed = crypto.randomUUID();
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ avatar_seed: seed.slice(0, AVATAR_SEED_MAX) })
+    .eq("id", user.id);
+
+  if (error) return { ok: false, message: "Could not save that. Try again." };
+
+  // The mark shows in the Frame, on Me and on the public profile.
+  revalidatePath("/", "layout");
+  return { ok: true, message: "New avatar saved." };
 }
 
 /**
