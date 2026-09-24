@@ -65,4 +65,23 @@ describe("updateSession", () => {
 
     expect(res.status).toBe(200);
   });
+
+  // Issue #68. A person reads what they agree to before they have an account.
+  it.each(["/help", "/terms", "/privacy", "/rules"])("lets a signed-out visitor read %s", async (path) => {
+    getUser.mockResolvedValue({ data: { user: null } });
+    const { updateSession } = await import("@/lib/supabase/session");
+
+    const res = await updateSession(new NextRequest(`http://localhost:3000${path}`));
+
+    expect(res.status).toBe(200);
+  });
+
+  it("does not open a path that merely starts with a public word", async () => {
+    getUser.mockResolvedValue({ data: { user: null } });
+    const { updateSession } = await import("@/lib/supabase/session");
+
+    const res = await updateSession(new NextRequest("http://localhost:3000/helpers"));
+
+    expect(res.status).toBe(307);
+  });
 });

@@ -4,8 +4,18 @@ import { createServerClient } from "@supabase/ssr";
 /** Paths a signed-out visitor may reach. Everything else redirects to /login.
  *  /auth MUST be here: /auth/confirm opens an emailed link before a session
  *  exists. /api/cron is called by Vercel Cron, which has no session; each cron
- *  route checks CRON_SECRET itself. */
-const PUBLIC_PREFIXES = ["/login", "/auth", "/legal", "/invite", "/api/cron"];
+ *  route checks CRON_SECRET itself. Help, Terms, Privacy and Community rules
+ *  are read before a person has an account (issue #68). */
+const PUBLIC_PREFIXES = [
+  "/login",
+  "/auth",
+  "/invite",
+  "/api/cron",
+  "/help",
+  "/terms",
+  "/privacy",
+  "/rules",
+];
 
 function isPublic(pathname: string) {
   return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));

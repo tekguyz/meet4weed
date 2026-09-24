@@ -32,7 +32,6 @@ export function MeView({ handle, displayName, standing, adminLink, version }: Pr
         <RowLink href="/me/settings">Settings</RowLink>
       </RowGroup>
 
-      {/* /help, /terms, /privacy and /rules land with their own ticket (#68). */}
       <RowGroup>
         <RowLink href="/help">Help</RowLink>
         <RowLink href="/terms">Terms</RowLink>

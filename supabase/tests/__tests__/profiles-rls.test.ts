@@ -13,6 +13,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { config } from "dotenv";
+import { TERMS_VERSION } from "@/lib/legal/terms";
 
 config({ path: ".env.local", quiet: true });
 
@@ -172,6 +173,26 @@ describe.skipIf(!configured)("profiles row-level security", () => {
 
     const { data } = await bob.db.from("profiles").select("bio").eq("id", bob.id).single();
     expect(data!.bio).toBeNull();
+  });
+
+  // Issue #68. The exact statement attestation sends: both columns at once, so
+  // a missing grant on either fails the whole UPDATE with 42501.
+  it("lets a member record their own attestation and terms version together", async () => {
+    const { error } = await alice.db
+      .from("profiles")
+      .update({ attested_at: new Date().toISOString(), terms_version: TERMS_VERSION })
+      .eq("id", alice.id);
+    expect(error).toBeNull();
+
+    const { data } = await alice.db.from("profiles").select("terms_version").eq("id", alice.id).single();
+    expect(data!.terms_version).toBe(TERMS_VERSION);
+  });
+
+  it("silently drops a terms version aimed at another member's row", async () => {
+    await alice.db.from("profiles").update({ terms_version: "forged" }).eq("id", bob.id);
+
+    const { data } = await admin.from("profiles").select("terms_version").eq("id", bob.id).single();
+    expect(data!.terms_version).toBeNull();
   });
 
   it("refuses to let a member promote their own status", async () => {

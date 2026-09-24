@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { recordAttestation } from "@/app/onboarding/actions";
 import type { ActionState } from "@/lib/forms/action-state";
+import { AgreementLinks } from "@/components/legal/legal-links";
 import { Button } from "@/components/ui/button";
 
 const CLAIMS = [
@@ -34,6 +35,8 @@ export function AttestationForm() {
           </label>
         ))}
       </fieldset>
+
+      <AgreementLinks lead="Continuing means you agree to the" />
 
       <Button type="submit" disabled={pending}>
         {pending ? "Saving…" : "Continue"}

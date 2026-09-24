@@ -1,5 +1,5 @@
 import { safeNext } from "@/lib/auth/safe-next";
-import { APP_NAME, APP_TAGLINE } from "@/lib/env";
+import { APP_NAME } from "@/lib/env";
 import { LoginForm } from "./login-form";
 
 export const metadata = { title: "Sign in" };
@@ -15,7 +15,10 @@ export default async function LoginPage({
     <main className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center gap-8 px-4">
       <header className="flex flex-col gap-2">
         <h1 className="text-3xl">{APP_NAME}</h1>
-        <p className="text-sm text-ink-muted">{APP_TAGLINE}</p>
+        {/* Issue #68: a stranger who opens a shared link lands here first. */}
+        <p className="text-sm text-ink-muted">
+          A private place for Florida medical cannabis patients, 21 and over, to find seshes near them.
+        </p>
       </header>
 
       {/* Set only by app/auth/actions/email-link.ts. */}
@@ -31,8 +34,8 @@ export default async function LoginPage({
       <LoginForm next={safeNext(next)} signUp={mode === "sign-up"} />
 
       <p className="text-xs text-ink-muted">
-        {APP_NAME} is for verified Florida medical cannabis patients aged 21 and over. It is a place
-        to meet, never a place to buy or sell.
+        Every member's card is checked by a person. {APP_NAME} is a place to meet, never a place to
+        buy or sell.
       </p>
     </main>
   );

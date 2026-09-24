@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { signUpWithPassword } from "@/app/auth/actions/sign-up";
+import { AgreementLinks } from "@/components/legal/legal-links";
 import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,6 +56,7 @@ export function SignUpForm({ onBack }: { onBack: () => void }) {
       <PasswordInput label="Type the password again" name="password-again" autoComplete="new-password" required
         value={again} onChange={(e) => setAgain(e.target.value)} />
       <p className="text-xs text-ink-muted">{FAILURE_TEXT.weak_password}</p>
+      <AgreementLinks lead="Creating an account means you agree to the" />
       <Button type="submit" disabled={pending}>{pending ? "Creating…" : "Create account"}</Button>
       {message ? <p role="alert" className="text-sm text-danger">{message}</p> : null}
       <button type="button" onClick={onBack} className={LINK}>Back to sign in</button>
