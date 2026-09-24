@@ -60,7 +60,7 @@ Matches the house conventions already proven in `tekguyz-squid-ink`.
 | Card reading | **Claude vision** (`claude-sonnet-5`) | Structured output via zod schema |
 | Push | Web Push (VAPID) + service worker | PWA, no app store |
 | Email | Resend | Two paths. **Auth emails** (confirm and reset only) are sent by Supabase Auth over Resend SMTP — configured in the dashboard 2026-09-16, sender `Meet4Weed <no-reply@tekguyz.com>`, delivery confirmed; branded Warm Ink templates in `supabase/templates/`. **App emails** (the owner's review alert, the single expiry notice) are sent by the app through the Resend API with `RESEND_API_KEY` |
-| Rate limiting | Upstash Redis | Verification attempts, RSVP spam, report spam. **Shares the TEKGUYZ Website database** — the free tier allows one. Every Meet4Weed key is prefixed `m4w:` so the two apps never collide, and both apps draw on the same free-tier allowance |
+| Rate limiting | Upstash Redis | Verification attempts, RSVP spam, sesh-post spam, report spam. **Shares the TEKGUYZ Website database** — the free tier allows one. Every Meet4Weed key is prefixed `m4w:` so the two apps never collide, and both apps draw on the same free-tier allowance |
 | Errors | Sentry | The camera/vision flow fails on phones we do not own; without it those failures are invisible |
 | Analytics | Vercel Analytics | One line, free. PostHog deferred to v2 — nothing to analyse pre-launch |
 | Tests | **vitest** + Testing Library | House standard |
@@ -251,6 +251,8 @@ member per Florida day, in Upstash, under `m4w:rsvp:member:<day>:<id>` and
   twice five, so a host who fixes a mistake never meets it.
 - Over either limit, the action is refused whole — nothing is written — and
   the banner says to try again tomorrow.
+- **A press counts even when the database then refuses it** — a full sesh, a
+  removed guest. That is on purpose: the limit counts what a member sends.
 - **These fail open.** If Upstash is unreachable, the press goes through. The
   database caps above are still the wall; this is counting on top of them.
 

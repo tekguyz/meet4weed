@@ -44,18 +44,16 @@ async function callerOrNull() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  return user ? supabase : null;
+  return user ? { supabase, user } : null;
 }
 
 export async function askToJoin(_prev: ActionState | null, formData: FormData): Promise<ActionState> {
   const sesh = seshId.safeParse(formData.get("seshId"));
   if (!sesh.success) return { ok: false, message: "Could not find that sesh." };
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, message: "Sign in again to continue." };
+  const caller = await callerOrNull();
+  if (!caller) return { ok: false, message: "Sign in again to continue." };
+  const { supabase, user } = caller;
 
   // Counted before the database is asked, and refused whole: nothing is
   // written. Fails open on an Upstash outage — the database's own cap of 20
@@ -76,8 +74,9 @@ export async function withdrawRsvp(_prev: ActionState | null, formData: FormData
   const sesh = seshId.safeParse(formData.get("seshId"));
   if (!sesh.success) return { ok: false, message: "Could not find that sesh." };
 
-  const supabase = await callerOrNull();
-  if (!supabase) return { ok: false, message: "Sign in again to continue." };
+  const caller = await callerOrNull();
+  if (!caller) return { ok: false, message: "Sign in again to continue." };
+  const { supabase } = caller;
 
   const { error } = await supabase.rpc("cancel_rsvp", { p_sesh: sesh.data });
   if (error) return { ok: false, message: readable(error.code) };
@@ -95,8 +94,9 @@ export async function decideRsvp(_prev: ActionState | null, formData: FormData):
   const choice = decision.safeParse(formData.get("decision"));
   if (!rsvp.success || !choice.success) return { ok: false, message: "Could not do that." };
 
-  const supabase = await callerOrNull();
-  if (!supabase) return { ok: false, message: "Sign in again to continue." };
+  const caller = await callerOrNull();
+  if (!caller) return { ok: false, message: "Sign in again to continue." };
+  const { supabase } = caller;
 
   const { error } = await supabase.rpc("decide_rsvp", { p_rsvp: rsvp.data, p_decision: choice.data });
   if (error) return { ok: false, message: readable(error.code) };
