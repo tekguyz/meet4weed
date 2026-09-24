@@ -6,6 +6,8 @@ import { CameraCapture } from "@/components/verify/camera-capture";
 import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PhoneHandOff } from "@/components/verify/phone-hand-off";
+import { noCameraFound } from "@/lib/verification/camera";
 import { countFaces } from "@/lib/verification/face-detector";
 import { useVerifyFlow, type Shot } from "@/lib/verification/flow-store";
 import { PRECHECK_TEXT, RETENTION_STATEMENT, SUBMISSION_TEXT } from "@/lib/verification/messages";
@@ -44,6 +46,23 @@ export function VerifyFlow({ today }: { today: string }) {
 
 function Intro() {
   const go = useVerifyFlow((s) => s.go);
+  const [cameraless, setCameraless] = useState(false);
+
+  // Ask before any typing. When the browser cannot tell, Start stays and the
+  // camera step catches a missing camera instead.
+  useEffect(() => {
+    let cancelled = false;
+    navigator.mediaDevices
+      ?.enumerateDevices?.()
+      .then((devices) => !cancelled && setCameraless(noCameraFound(devices)))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (cameraless) return <PhoneHandOff />;
+
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-ink-muted">

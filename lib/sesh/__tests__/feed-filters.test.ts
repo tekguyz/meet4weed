@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   FEED_PAGE_SIZE,
+  feedEmptyState,
   feedHref,
   parseFeedFilters,
   SEARCH_MAX,
@@ -96,5 +97,37 @@ describe("feedHref", () => {
 describe("page size", () => {
   it("is the twenty the ticket asks for", () => {
     expect(FEED_PAGE_SIZE).toBe(20);
+  });
+});
+
+/** An empty feed must never read as broken: it says why it is empty and
+ *  offers one next step. */
+describe("feedEmptyState", () => {
+  const none = parse();
+
+  it("offers to clear the chips when they filtered everything out", () => {
+    const state = feedEmptyState(parse({ type: "chill", view: "map" }), true);
+    expect(state.action).toEqual({ label: "Clear filters", href: "/seshes?view=map" });
+  });
+
+  it("offers to clear a search that found nothing", () => {
+    expect(feedEmptyState(parse({ q: "karaoke" }), true).action.href).toBe("/seshes");
+  });
+
+  it("sends a member who paged past the end back to the start", () => {
+    expect(feedEmptyState(parse({ page: "4" }), true).action).toEqual({
+      label: "Back to the first page",
+      href: "/seshes",
+    });
+  });
+
+  it("asks a member who can host to host the first one", () => {
+    expect(feedEmptyState(none, true).action).toEqual({ label: "Host a sesh", href: "/seshes/new" });
+  });
+
+  /** A lapsed card may browse but not host, so "Host a sesh" would be a
+   *  dead end. Renewing is the step that opens hosting again. */
+  it("sends a member who cannot host to renew their card instead", () => {
+    expect(feedEmptyState(none, false).action).toEqual({ label: "Add your renewed card", href: "/verify" });
   });
 });

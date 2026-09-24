@@ -86,4 +86,28 @@ describe("CameraCapture", () => {
     await new Promise((resolve) => setTimeout(resolve, LIVE_CHECK.intervalMs * 3));
     expect(check).not.toHaveBeenCalled();
   });
+
+  /** A laptop with no camera: the browser says NotFoundError. That is not a
+   *  permission problem, so the member is sent to their phone instead. */
+  it("sends a member with no camera to their phone, with the link", async () => {
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: { getUserMedia: vi.fn(async () => Promise.reject(new DOMException("none", "NotFoundError"))) },
+    });
+    render(<CameraCapture facing="environment" guide="card" onCapture={() => {}} />);
+
+    expect(await screen.findByText(/open this page on your phone/i)).toBeInTheDocument();
+    expect(screen.getByText(`${window.location.origin}/verify`)).toBeInTheDocument();
+    expect(screen.queryByText(/allow camera access/i)).not.toBeInTheDocument();
+  });
+
+  it("still asks for permission when the camera was refused", async () => {
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: { getUserMedia: vi.fn(async () => Promise.reject(new DOMException("no", "NotAllowedError"))) },
+    });
+    render(<CameraCapture facing="environment" guide="card" onCapture={() => {}} />);
+
+    expect(await screen.findByText(/allow camera access/i)).toBeInTheDocument();
+  });
 });
