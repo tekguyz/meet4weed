@@ -1,5 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { Avatar } from "@/components/member/avatar";
 import { MeView } from "@/components/member/me-view";
 import type { Standing } from "@/lib/member/standing";
 
@@ -8,6 +9,8 @@ const VERIFIED: Standing = { kind: "verified", expiresOn: "2027-03-01" };
 function renderMe(props: Partial<Parameters<typeof MeView>[0]> = {}) {
   return render(
     <MeView
+      memberId="m-1"
+      avatarSeed={null}
       handle="ryder"
       displayName="Ryder"
       standing={VERIFIED}
@@ -83,5 +86,18 @@ describe("MeView (issue #65)", () => {
     renderMe({ version: "1.2.3" });
 
     expect(screen.getByText(/version 1\.2\.3/i)).toBeInTheDocument();
+  });
+});
+
+describe("MeView avatar (issue #69)", () => {
+  it("draws the member's avatar beside the handle", () => {
+    const { container } = renderMe({ memberId: "m-1", avatarSeed: "abc" });
+    const { container: expected } = render(
+      <Avatar seed="abc" memberId="m-1" handle="ryder" displayName="Ryder" className="size-16" />,
+    );
+
+    expect(container.querySelector("[data-avatar]")?.outerHTML).toBe(
+      expected.querySelector("[data-avatar]")?.outerHTML,
+    );
   });
 });

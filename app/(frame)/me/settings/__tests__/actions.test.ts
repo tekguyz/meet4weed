@@ -155,3 +155,57 @@ describe("signOutEverywhere", () => {
     expect(redirect).not.toHaveBeenCalled();
   });
 });
+
+describe("shuffleAvatar (issue #69)", () => {
+  function current(seed: string | null) {
+    const fd = new FormData();
+    if (seed !== null) fd.set("currentSeed", seed);
+    return fd;
+  }
+
+  it("writes a new seed to the member's own row, and nothing else", async () => {
+    const { shuffleAvatar } = await import("@/app/(frame)/me/settings/actions");
+
+    const result = await shuffleAvatar(null, current("old-seed"));
+
+    expect(result).toEqual({ ok: true, message: "New avatar saved." });
+    const sent = update.mock.calls[0][0] as Record<string, unknown>;
+    expect(Object.keys(sent)).toEqual(["avatar_seed"]);
+    expect(typeof sent.avatar_seed).toBe("string");
+    expect((sent.avatar_seed as string).length).toBeLessThanOrEqual(40);
+    expect(eq).toHaveBeenCalledWith("id", "user-1");
+  });
+
+  it("always changes how the avatar looks, from a seed or from the member id", async () => {
+    const { avatarLook, sameLook } = await import("@/lib/profiles/avatar");
+    const { shuffleAvatar } = await import("@/app/(frame)/me/settings/actions");
+
+    for (const seed of [null, "old-seed", "another"]) {
+      for (let i = 0; i < 20; i++) {
+        update.mockClear();
+        await shuffleAvatar(null, current(seed));
+        const next = (update.mock.calls[0][0] as { avatar_seed: string }).avatar_seed;
+        expect(sameLook(avatarLook(next, "user-1"), avatarLook(seed, "user-1"))).toBe(false);
+      }
+    }
+  });
+
+  it("asks a signed-out visitor to sign in and writes nothing", async () => {
+    getUser.mockResolvedValue({ data: { user: null } });
+    const { shuffleAvatar } = await import("@/app/(frame)/me/settings/actions");
+
+    const result = await shuffleAvatar(null, current(null));
+
+    expect(result).toEqual({ ok: false, message: "Sign in again to continue." });
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("says so when the save fails", async () => {
+    eq.mockResolvedValue({ error: { code: "42501" } });
+    const { shuffleAvatar } = await import("@/app/(frame)/me/settings/actions");
+
+    const result = await shuffleAvatar(null, current(null));
+
+    expect(result).toEqual({ ok: false, message: "Could not save that. Try again." });
+  });
+});

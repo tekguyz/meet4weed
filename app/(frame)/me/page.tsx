@@ -20,6 +20,8 @@ export default async function MePage() {
 
   return (
     <MeView
+      memberId={profile.id}
+      avatarSeed={profile.avatarSeed}
       handle={profile.handle}
       displayName={profile.displayName}
       standing={standing(profile, latest, today)}

@@ -195,6 +195,37 @@ describe.skipIf(!configured)("profiles row-level security", () => {
     expect(data!.terms_version).toBeNull();
   });
 
+  // Issue #69. Shuffle sends exactly this statement.
+  it("lets a member write their own avatar seed", async () => {
+    const { error } = await alice.db.from("profiles").update({ avatar_seed: "shuffled-1" }).eq("id", alice.id);
+    expect(error).toBeNull();
+
+    const { data } = await alice.db.from("profiles").select("avatar_seed").eq("id", alice.id).single();
+    expect(data!.avatar_seed).toBe("shuffled-1");
+  });
+
+  it("silently drops an avatar seed aimed at another member's row", async () => {
+    await alice.db.from("profiles").update({ avatar_seed: "forged" }).eq("id", bob.id);
+
+    const { data } = await admin.from("profiles").select("avatar_seed").eq("id", bob.id).single();
+    expect(data!.avatar_seed).toBeNull();
+
+    // Differential: the same statement on the same row lands for service_role,
+    // so the drop above is the policy, not a broken column.
+    const { error } = await admin.from("profiles").update({ avatar_seed: "admin-set" }).eq("id", bob.id);
+    expect(error).toBeNull();
+    const { data: after } = await admin.from("profiles").select("avatar_seed").eq("id", bob.id).single();
+    expect(after!.avatar_seed).toBe("admin-set");
+  });
+
+  it("refuses an avatar seed longer than a label", async () => {
+    const { error } = await alice.db
+      .from("profiles")
+      .update({ avatar_seed: "x".repeat(41) })
+      .eq("id", alice.id);
+    expect(error?.code).toBe("23514");
+  });
+
   it("refuses to let a member promote their own status", async () => {
     const { error } = await alice.db
       .from("profiles")

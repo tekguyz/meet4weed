@@ -1,7 +1,7 @@
 import { HeldRow, RowGroup, RowLink } from "@/components/ui/row-list";
 
 /**
- * /me/settings (issue #65): a grouped list, one row per job. Handle, avatar
+ * /me/settings (issue #65): a grouped list, one row per job. Handle
  * and delete account join it in their own tickets.
  */
 export function SettingsList() {
@@ -12,6 +12,7 @@ export function SettingsList() {
       </RowGroup>
       <RowGroup label="Appearance">
         <RowLink href="/me/settings/theme">Theme</RowLink>
+        <RowLink href="/me/settings/avatar">Avatar</RowLink>
       </RowGroup>
       <RowGroup label="Account">
         <RowLink href="/me/settings/password">Password</RowLink>

@@ -1,3 +1,4 @@
+import { Avatar } from "@/components/member/avatar";
 import type { PublicProfile } from "@/lib/profiles/schema";
 
 /**
@@ -13,9 +14,20 @@ import type { PublicProfile } from "@/lib/profiles/schema";
 export function ProfileView({ profile, isMe }: { profile: PublicProfile; isMe: boolean }) {
   return (
     <article className="flex flex-col gap-6">
-      <header className="flex min-w-0 flex-col gap-1">
-        <h1 className="truncate text-3xl">@{profile.handle}</h1>
-        {profile.displayName ? <p className="truncate text-ink-muted">{profile.displayName}</p> : null}
+      <header className="flex min-w-0 flex-col gap-3">
+        <div className="flex min-w-0 items-center gap-4">
+          <Avatar
+            seed={profile.avatarSeed}
+            memberId={profile.id}
+            handle={profile.handle}
+            displayName={profile.displayName}
+            className="size-16"
+          />
+          <div className="flex min-w-0 flex-col gap-1">
+            <h1 className="truncate text-3xl">@{profile.handle}</h1>
+            {profile.displayName ? <p className="truncate text-ink-muted">{profile.displayName}</p> : null}
+          </div>
+        </div>
         {profile.city ? <p className="text-sm text-ink-muted">{profile.city}</p> : null}
         {isMe ? (
           <p className="text-sm text-ink-muted">This is how other members see you.</p>

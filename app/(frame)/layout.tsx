@@ -25,5 +25,17 @@ export default async function FrameLayout({ children }: { children: React.ReactN
   }
 
   const { tabs } = frameAccess(memberAccess(profile, floridaToday()), await amIAdmin());
-  return <Frame tabs={tabs}>{children}</Frame>;
+  return (
+    <Frame
+      tabs={tabs}
+      avatar={{
+        seed: profile.avatarSeed,
+        memberId: profile.id,
+        handle: profile.handle,
+        displayName: profile.displayName,
+      }}
+    >
+      {children}
+    </Frame>
+  );
 }

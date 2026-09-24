@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
+import { Avatar } from "@/components/member/avatar";
 import { FOCUS_RING } from "@/components/ui/focus";
 import { APP_NAME } from "@/lib/env";
 import type { FrameTab } from "@/lib/member/gate";
@@ -18,7 +19,16 @@ import { activeTab, frameHeader, TABS } from "./frame-paths";
  * it sits in the header. Two copies would put two "Main" landmarks in front of
  * a screen reader.
  */
-export function Frame({ tabs, children }: { tabs: FrameTab[]; children: ReactNode }) {
+export function Frame({
+  tabs,
+  avatar,
+  children,
+}: {
+  tabs: FrameTab[];
+  /** The signed-in member's Avatar, drawn on the Me tab (issue #69). */
+  avatar?: Omit<ComponentProps<typeof Avatar>, "className">;
+  children: ReactNode;
+}) {
   const pathname = usePathname();
   const current = activeTab(pathname);
   const { title, back } = frameHeader(pathname);
@@ -68,7 +78,11 @@ export function Frame({ tabs, children }: { tabs: FrameTab[]; children: ReactNod
                       aria-current={here ? "page" : undefined}
                       className={`flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-control text-xs font-medium md:min-h-11 md:flex-row md:gap-2 md:px-3 md:text-sm ${here ? "text-primary" : "text-ink-muted hover:text-ink"} ${FOCUS_RING}`}
                     >
-                      <TabIcon tab={tab} />
+                      {tab === "me" && avatar ? (
+                        <Avatar {...avatar} className="size-6 md:size-5" />
+                      ) : (
+                        <TabIcon tab={tab} />
+                      )}
                       {TABS[tab].label}
                     </Link>
                   </li>

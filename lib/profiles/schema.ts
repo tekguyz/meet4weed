@@ -64,6 +64,8 @@ export type Profile = {
   bio: string | null;
   city: string | null;
   avatarUrl: string | null;
+  /** Null draws the Avatar from the member id (issue #69). */
+  avatarSeed: string | null;
   strainPrefs: string[];
   methodPrefs: string[];
   vibeTags: string[];

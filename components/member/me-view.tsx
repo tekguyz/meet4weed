@@ -1,3 +1,4 @@
+import { Avatar } from "@/components/member/avatar";
 import { profilePath } from "@/components/member/handle-link";
 import { WhereYouStand } from "@/components/member/where-you-stand";
 import { SignOutButton } from "@/components/member/sign-out-button";
@@ -5,6 +6,8 @@ import { RowGroup, RowLink } from "@/components/ui/row-list";
 import type { Standing } from "@/lib/member/standing";
 
 type Props = {
+  memberId: string;
+  avatarSeed: string | null;
   handle: string;
   displayName: string | null;
   standing: Standing;
@@ -17,12 +20,21 @@ type Props = {
  * Me (issue #65, shape brief `.impeccable/surfaces/route-me.md` §6): who I am
  * and where my card stands, then one row for everything else.
  */
-export function MeView({ handle, displayName, standing, adminLink, version }: Props) {
+export function MeView({ memberId, avatarSeed, handle, displayName, standing, adminLink, version }: Props) {
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-6">
-      <header className="flex min-w-0 flex-col gap-1">
-        <h1 className="truncate text-3xl">@{handle}</h1>
-        {displayName ? <p className="truncate text-sm text-ink-muted">{displayName}</p> : null}
+      <header className="flex min-w-0 items-center gap-4">
+        <Avatar
+          seed={avatarSeed}
+          memberId={memberId}
+          handle={handle}
+          displayName={displayName}
+          className="size-16"
+        />
+        <div className="flex min-w-0 flex-col gap-1">
+          <h1 className="truncate text-3xl">@{handle}</h1>
+          {displayName ? <p className="truncate text-sm text-ink-muted">{displayName}</p> : null}
+        </div>
       </header>
 
       <WhereYouStand standing={standing} />

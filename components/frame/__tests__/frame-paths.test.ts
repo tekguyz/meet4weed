@@ -37,6 +37,7 @@ describe("frameHeader", () => {
     ["/me/settings", "Settings", "/me"],
     ["/me/settings/profile", "Edit profile", "/me/settings"],
     ["/me/settings/theme", "Theme", "/me/settings"],
+    ["/me/settings/avatar", "Avatar", "/me/settings"],
     ["/me/settings/password", "Password", "/me/settings"],
     ["/me/settings/sessions", "Sessions", "/me/settings"],
   ])("%s is titled %s with back %s", (path, title, back) => {
