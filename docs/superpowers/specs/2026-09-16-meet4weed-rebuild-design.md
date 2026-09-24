@@ -60,7 +60,7 @@ Matches the house conventions already proven in `tekguyz-squid-ink`.
 | Card reading | **Claude vision** (`claude-sonnet-5`) | Structured output via zod schema |
 | Push | Web Push (VAPID) + service worker | PWA, no app store |
 | Email | Resend | Two paths. **Auth emails** (confirm and reset only) are sent by Supabase Auth over Resend SMTP — configured in the dashboard 2026-09-16, sender `Meet4Weed <no-reply@tekguyz.com>`, delivery confirmed; branded Warm Ink templates in `supabase/templates/`. **App emails** (the owner's review alert, the single expiry notice) are sent by the app through the Resend API with `RESEND_API_KEY` |
-| Rate limiting | Upstash Redis | Verification attempts, RSVP spam, report spam. **Shares the TEKGUYZ Website database** — the free tier allows one. Every Meet4Weed key is prefixed `m4w:` so the two apps never collide, and both apps draw on the same free-tier allowance |
+| Rate limiting | Upstash Redis | Verification attempts, RSVP spam, sesh-post spam, report spam. **Shares the TEKGUYZ Website database** — the free tier allows one. Every Meet4Weed key is prefixed `m4w:` so the two apps never collide, and both apps draw on the same free-tier allowance |
 | Errors | Sentry | The camera/vision flow fails on phones we do not own; without it those failures are invisible |
 | Analytics | Vercel Analytics | One line, free. PostHog deferred to v2 — nothing to analyse pre-launch |
 | Tests | **vitest** + Testing Library | House standard |
@@ -236,6 +236,25 @@ person — can run up the Anthropic bill.
    entirely.
 8. **Every call logs its token usage and computed cost** to the database, and
    the admin panel shows today's and this month's spend.
+
+**Member action limits (issue #66, 2026-09-23).** These do not guard the bill.
+They stop one account flooding a host's approvals or the feed. Both count per
+member per Florida day, in Upstash, under `m4w:rsvp:member:<day>:<id>` and
+`m4w:sesh:create:member:<day>:<id>`. Code: `lib/sesh/member-limits.ts`.
+
+- **Ask to join: 30 presses a day.** The database already caps new requests at
+  20 rows a day (`M4W17`), but withdrawing and asking again reuses one row, so
+  that cap never trips on a loop. This one counts presses. It is set above 20
+  so an ordinary member hears the database's sentence first.
+- **Post a sesh: 10 a day.** The insert policy already caps a host at five
+  open seshes, but posting and cancelling in a loop never trips it. Ten is
+  twice five, so a host who fixes a mistake never meets it.
+- Over either limit, the action is refused whole — nothing is written — and
+  the banner says to try again tomorrow.
+- **A press counts even when the database then refuses it** — a full sesh, a
+  removed guest. That is on purpose: the limit counts what a member sends.
+- **These fail open.** If Upstash is unreachable, the press goes through. The
+  database caps above are still the wall; this is counting on top of them.
 
 **Measured cost (2026-09-16).** 4 live calls on `claude-sonnet-5`, effort
 `low`, a 1000×630 card image plus a 1000×750 face-with-card image, synthetic

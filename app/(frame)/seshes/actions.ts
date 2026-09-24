@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { floridaWallClockToInstant } from "@/lib/dates";
+import { floridaToday, floridaWallClockToInstant } from "@/lib/dates";
 import { areaNameLookup } from "@/lib/sesh/area-name";
+import { memberLimitsFromEnv } from "@/lib/sesh/member-limits";
 import { seshInputSchema } from "@/lib/sesh/schema";
 import type { ActionState } from "@/lib/forms/action-state";
 
@@ -20,6 +21,8 @@ const CAPACITY_BELOW_APPROVED = "M4W16";
 const REFUSED =
   "Could not post that sesh. Check your card is still current, and that you do not already have five open seshes.";
 const CHECK_FIELDS = "Check the highlighted fields.";
+/** Our own limit, not the database's — see lib/sesh/member-limits.ts. */
+const TOO_MANY_POSTS = "You have posted a lot of seshes today. Try again tomorrow.";
 
 const seshId = z.uuid();
 
@@ -99,6 +102,12 @@ export async function createSesh(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, message: "Sign in again to continue." };
+
+  // Counted once the form is sound, and refused whole: nothing is written.
+  // Fails open on an Upstash outage — the five-open-seshes policy still holds.
+  if (!(await memberLimitsFromEnv().claimSeshCreate(user.id, floridaToday()))) {
+    return { ok: false, message: TOO_MANY_POSTS };
+  }
 
   // Only the columns `authenticated` holds an INSERT grant on. Naming a
   // column a host cannot write — status, area_name, or either fuzzy column —
