@@ -51,6 +51,19 @@ describe("recordAttestation", () => {
     expect(update.mock.calls[0][0]).toHaveProperty("attested_at");
   });
 
+  // Issue #68. One statement, so there is never a member who attested with no
+  // record of which terms they agreed to.
+  it("records the current terms version in the same statement as the timestamp", async () => {
+    const { TERMS_VERSION } = await import("@/lib/legal/terms");
+    const { recordAttestation } = await import("@/app/onboarding/actions");
+
+    await recordAttestation(null, allBoxes());
+
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(update.mock.calls[0][0]).toMatchObject({ terms_version: TERMS_VERSION });
+    expect(update.mock.calls[0][0]).toHaveProperty("attested_at");
+  });
+
   it("refuses when the no-sales box is unticked", async () => {
     const fd = allBoxes();
     fd.delete("noSales");

@@ -96,6 +96,15 @@ describe("sign-up", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(PASSWORDS_DIFFER);
     expect(signUpWithPassword).not.toHaveBeenCalled();
   });
+
+  // Issue #68.
+  it("links the terms, the privacy page and the community rules", () => {
+    render(<SignUpForm onBack={() => {}} />);
+
+    expect(screen.getByRole("link", { name: /^Terms/ })).toHaveAttribute("href", "/terms");
+    expect(screen.getByRole("link", { name: /^Privacy/ })).toHaveAttribute("href", "/privacy");
+    expect(screen.getByRole("link", { name: /^Community rules/ })).toHaveAttribute("href", "/rules");
+  });
 });
 
 describe("show password button", () => {

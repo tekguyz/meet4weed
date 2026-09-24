@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { LegalLink } from "@/components/legal/legal-links";
 import { SeshForm } from "@/components/sesh/sesh-form";
 import { createSesh } from "@/app/(frame)/seshes/actions";
 import { getMyProfile } from "@/lib/profiles/queries";
@@ -38,6 +39,11 @@ export default async function NewSeshPage() {
         <h1 className="text-3xl">Host a sesh</h1>
         <p className="text-sm text-ink-muted">
           You decide who comes. Nobody gets your address until you say yes to them.
+        </p>
+        {/* Spec §2: the no-sales rule is surfaced at sesh creation. */}
+        <p className="text-sm text-ink-muted">
+          No buying or selling, ever. Read the{" "}
+          <LegalLink href="/rules">community rules</LegalLink>.
         </p>
       </header>
 

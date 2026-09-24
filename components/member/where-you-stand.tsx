@@ -112,7 +112,6 @@ function Step({ href, children }: { href: string; children: ReactNode }) {
   );
 }
 
-/** /help lands with its own ticket (#68). */
 function HelpLink({ children }: { children: ReactNode }) {
   return (
     <Link href="/help" className={`text-primary underline ${FOCUS_RING}`}>

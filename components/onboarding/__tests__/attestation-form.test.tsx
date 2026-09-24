@@ -33,4 +33,13 @@ describe("AttestationForm", () => {
       expect(box).not.toBeChecked();
     }
   });
+
+  // Issue #68. The member reads what they agree to at the moment they agree.
+  it("links the terms, the privacy page and the community rules", () => {
+    render(<AttestationForm />);
+
+    expect(screen.getByRole("link", { name: /^Terms/ })).toHaveAttribute("href", "/terms");
+    expect(screen.getByRole("link", { name: /^Privacy/ })).toHaveAttribute("href", "/privacy");
+    expect(screen.getByRole("link", { name: /^Community rules/ })).toHaveAttribute("href", "/rules");
+  });
 });

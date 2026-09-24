@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { TERMS_VERSION } from "@/lib/legal/terms";
 import { parseTags, profileInputSchema } from "@/lib/profiles/schema";
 import type { ActionState } from "@/lib/forms/action-state";
 
@@ -40,9 +41,11 @@ export async function recordAttestation(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, message: "Sign in again to continue." };
 
+  // One statement, so no member is ever attested without a record of which
+  // terms they agreed to (issue #68).
   const { error } = await supabase
     .from("profiles")
-    .update({ attested_at: new Date().toISOString() })
+    .update({ attested_at: new Date().toISOString(), terms_version: TERMS_VERSION })
     .eq("id", user.id);
 
   if (error) return { ok: false, message: "Could not save that. Try again." };
