@@ -25,3 +25,6 @@ public/mediapipe/wasm/
 
 # MapLibre worker, copied from node_modules by scripts/copy-maplibre-worker.mjs
 public/maplibre/
+
+# Per-laptop Claude settings; holds the Supabase access token
+.claude/settings.local.json
