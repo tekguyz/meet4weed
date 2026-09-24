@@ -35,6 +35,7 @@ const TITLES: [RegExp, string][] = [
   [/^\/me\/settings\/avatar$/, "Avatar"],
   [/^\/me\/settings\/password$/, "Password"],
   [/^\/me\/settings\/sessions$/, "Sessions"],
+  [/^\/me\/settings\/delete$/, "Delete account"],
   [/^\/verify$/, "Verify your card"],
   [/^\/invite\/held$/, "Invite saved"],
   [PROFILE_PATH, "Profile"],

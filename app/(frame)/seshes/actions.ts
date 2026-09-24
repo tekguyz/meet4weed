@@ -6,6 +6,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { floridaToday, floridaWallClockToInstant } from "@/lib/dates";
 import { areaNameLookup } from "@/lib/sesh/area-name";
+import { setSeshCancelled } from "@/lib/sesh/cancel";
 import { memberLimitsFromEnv } from "@/lib/sesh/member-limits";
 import { seshInputSchema } from "@/lib/sesh/schema";
 import type { ActionState } from "@/lib/forms/action-state";
@@ -229,7 +230,7 @@ export async function cancelSesh(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, message: "Sign in again to continue." };
 
-  const { error } = await supabase.from("seshes").update({ status: "cancelled" }).eq("id", id.data);
+  const { error } = await setSeshCancelled(supabase, id.data);
   if (error) return { ok: false, message: "Could not cancel that. Try again." };
 
   revalidatePath("/seshes/mine");
