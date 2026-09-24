@@ -1,5 +1,5 @@
 import { safeNext } from "@/lib/auth/safe-next";
-import { APP_NAME } from "@/lib/env";
+import { APP_NAME, APP_TAGLINE } from "@/lib/env";
 import { LoginForm } from "./login-form";
 
 export const metadata = { title: "Sign in" };
@@ -16,9 +16,7 @@ export default async function LoginPage({
       <header className="flex flex-col gap-2">
         <h1 className="text-3xl">{APP_NAME}</h1>
         {/* Issue #68: a stranger who opens a shared link lands here first. */}
-        <p className="text-sm text-ink-muted">
-          A private place for Florida medical cannabis patients, 21 and over, to find seshes near them.
-        </p>
+        <p className="text-sm text-ink-muted">{APP_TAGLINE}</p>
       </header>
 
       {/* Set only by app/auth/actions/email-link.ts. */}
