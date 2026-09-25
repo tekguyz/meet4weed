@@ -5,7 +5,7 @@
 //   npm run cron:run -- expiry-sweep
 //
 // Add --https while the HTTPS dev-phone server is the one running. That flag
-// talks to https://localhost:3000 and trusts the one self-signed certificate in
+// talks to https://localhost:3443 and trusts the one self-signed certificate in
 // private/dev-cert/cert.pem for this request only. It never sets
 // NODE_TLS_REJECT_UNAUTHORIZED, so no other process loses certificate checks.
 import { readFileSync } from "node:fs";
@@ -36,7 +36,7 @@ if (!https) {
   }
   const { status, body } = await new Promise((resolve, reject) => {
     const req = httpsRequest(
-      { host: "localhost", port: 3000, path: `/api/cron/${job}`, method: "GET", headers, ca },
+      { host: "localhost", port: 3443, path: `/api/cron/${job}`, method: "GET", headers, ca },
       (res) => {
         let body = "";
         res.setEncoding("utf8");

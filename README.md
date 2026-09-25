@@ -160,13 +160,14 @@ one with `openssl req -x509 … -addext "subjectAltName=IP:<LAN IP>"`), and
 one certificate warning.
 
 While that HTTPS server is the one running, add `--https` to
-`npm run cron:run`, because the script defaults to `http://localhost:3000`:
+`npm run cron:run`, because the script defaults to `http://localhost:3000`
+and the `dev-phone` server always uses port 3443:
 
 ```bash
 npm run cron:run -- verification-reaper --https
 ```
 
-`--https` talks to `https://localhost:3000` and trusts
+`--https` talks to `https://localhost:3443` and trusts
 `private/dev-cert/cert.pem` for that one request. It does **not** set
 `NODE_TLS_REJECT_UNAUTHORIZED`. Keep that variable out of `.env.local`: every
 script and `npm test` load that file, so a value there would turn off
