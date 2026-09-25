@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FOCUS_RING } from "@/components/ui/focus";
+import { TAP_TEXT } from "@/components/ui/focus";
 import { APP_NAME } from "@/lib/env";
 
 /**
@@ -15,13 +15,13 @@ const PAGES = [
   ["/rules", "Community rules"],
 ] as const;
 
-const LINK = `inline-flex min-h-11 min-w-11 items-center justify-center text-sm text-ink-muted underline hover:text-ink ${FOCUS_RING}`;
+const LINK = `${TAP_TEXT} justify-center text-sm text-ink-muted underline hover:text-ink`;
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-8 px-4 py-10 md:max-w-2xl">
       <header>
-        <Link href="/" className={`inline-flex min-h-11 items-center text-base font-semibold text-ink ${FOCUS_RING}`}>
+        <Link href="/" className={`${TAP_TEXT} text-base font-semibold text-ink`}>
           {APP_NAME}
         </Link>
       </header>

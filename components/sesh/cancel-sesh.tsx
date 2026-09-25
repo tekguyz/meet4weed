@@ -5,6 +5,7 @@ import { cancelSesh } from "@/app/(frame)/seshes/actions";
 import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import type { ActionState } from "@/lib/forms/action-state";
+import { TAP_TEXT } from "@/components/ui/focus";
 
 /** Cancelling locks the address for every guest at once and cannot be undone,
  *  so it asks first. It is a separate form from the edit form on purpose —
@@ -18,7 +19,7 @@ export function CancelSesh({ id }: { id: string }) {
       <button
         type="button"
         onClick={() => setConfirming(true)}
-        className="min-h-11 self-start text-sm text-danger underline"
+        className={`${TAP_TEXT} self-start text-sm text-danger underline`}
       >
         Cancel this sesh
       </button>

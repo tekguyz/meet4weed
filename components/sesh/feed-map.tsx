@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { SeshMap, type Circle, type Point } from "@/components/sesh/sesh-map";
 import { Banner } from "@/components/ui/banner";
+import { FOCUS_RING } from "@/components/ui/focus";
 
 type Props = { circles: Circle[] };
 
@@ -45,7 +46,7 @@ export function FeedMap({ circles }: Props) {
           type="button"
           onClick={findMe}
           disabled={asking}
-          className="min-h-11 shrink-0 rounded-control bg-surface-2 px-3 py-2 text-sm font-semibold text-ink disabled:opacity-50"
+          className={`min-h-11 shrink-0 rounded-control bg-surface-2 px-3 py-2 text-sm font-semibold text-ink disabled:opacity-50 ${FOCUS_RING}`}
         >
           {asking ? "Asking…" : "Near me"}
         </button>

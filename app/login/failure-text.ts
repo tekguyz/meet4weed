@@ -1,4 +1,5 @@
 import type { AuthFailure } from "@/lib/auth/auth-errors";
+import { TAP_TEXT } from "@/components/ui/focus";
 
 /** What the sign-in screens say for each failure. The design pass (spec §10
  *  step 12) owns the final words. */
@@ -20,4 +21,4 @@ export const FAILURE_TEXT: Record<AuthFailure, string> = {
  *  locks the member out of an account they just made. */
 export const PASSWORDS_DIFFER = "The two passwords do not match.";
 
-export const LINK = "min-h-11 text-left text-sm text-ink-muted underline";
+export const LINK = `${TAP_TEXT} text-left text-sm text-ink-muted underline`;

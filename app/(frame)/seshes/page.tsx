@@ -13,6 +13,7 @@ import { feedEmptyState, feedHref, parseFeedFilters, type FeedEmptyState, type S
 import { listFeed, type SeshListItem } from "@/lib/sesh/queries";
 import { SESH_TYPE_LABELS } from "@/lib/sesh/schema";
 import { getMyVerification } from "@/lib/verification/status";
+import { TAP_TEXT } from "@/components/ui/focus";
 
 const WHEN = new Intl.DateTimeFormat("en-US", {
   timeZone: "America/New_York",
@@ -75,14 +76,14 @@ export default async function SeshesPage({ searchParams }: { searchParams: Promi
       {filters.view === "list" && (filters.page > 1 || hasMore) ? (
         <nav className="flex justify-between gap-3" aria-label="More seshes">
           {filters.page > 1 ? (
-            <Link href={feedHref({ ...filters, page: filters.page - 1 })} className="inline-flex min-h-11 items-center text-sm text-primary underline">
+            <Link href={feedHref({ ...filters, page: filters.page - 1 })} className={`${TAP_TEXT} text-sm text-primary underline`}>
               Previous
             </Link>
           ) : (
             <span />
           )}
           {hasMore ? (
-            <Link href={feedHref({ ...filters, page: filters.page + 1 })} className="inline-flex min-h-11 items-center text-sm text-primary underline">
+            <Link href={feedHref({ ...filters, page: filters.page + 1 })} className={`${TAP_TEXT} text-sm text-primary underline`}>
               Next
             </Link>
           ) : null}
