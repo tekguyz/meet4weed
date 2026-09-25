@@ -192,6 +192,16 @@ in" hides who.
 A member reads their own rows and marks `read_at`. Nothing else. Deleting is
 the reaper's job — a member who could delete could erase the record of a kick.
 
+## Actor
+
+The member who did the thing a notification is about — the guest who asked,
+the host who approved. Held as an id, never as a copied handle, so a member
+who changes their handle shows under the new one everywhere.
+
+An actor can be **gone**: a deleted account leaves the notification standing,
+and the feed says "A member". The **recipient** cannot be gone the same way —
+deleting an account takes that member's own notifications with it.
+
 ## Push subscription
 
 A row in `public.push_subscriptions`: one browser on one device that agreed to
