@@ -1,6 +1,10 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
 import { appendFileSync, existsSync, readFileSync } from "node:fs";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { addDays } from "@/lib/dates";
+import { TERMS_VERSION } from "@/lib/legal/terms";
+import { RESERVED_HANDLE_PREFIX } from "@/lib/profiles/schema";
 
 /** The one dev account /api/dev-login signs in. `.test` is a reserved domain,
  *  so the integration-test sweep of `@meet4weed.test` may delete it — the
@@ -98,6 +102,95 @@ async function findUserId(api: AdminClient["auth"]["admin"], email: string) {
     if (data.users.length < PAGE_SIZE) return undefined;
   }
   return undefined;
+}
+
+/** Who the dev account is after sign-in. A verified member by default;
+ *  `?as=admin` adds the admin row. Anything else is a member. */
+export type DevRole = "member" | "admin";
+
+export function devRoleFrom(param: string | null): DevRole {
+  return param === "admin" ? "admin" : "member";
+}
+
+/** `dev_` and the first eight hex digits of the account id: a real handle
+ *  that no other member already holds, since ids are unique. */
+function devHandle(userId: string): string {
+  return `dev_${userId.replace(/-/g, "").slice(0, 8)}`;
+}
+const CARD_VALID_DAYS = 365;
+
+/** The writes prepareDevAccount needs, each returning an error message or
+ *  null. The route backs it with the admin client (supabaseDevStore); tests
+ *  pass a fake. A member cannot write `status` or `card_expires_on` — the
+ *  column grants stop them — so these writes must stay service-side. */
+/** The profile columns prepareDevAccount writes. */
+export type DevProfilePatch = {
+  handle?: string;
+  attested_at?: string;
+  terms_version?: string;
+  status: "verified";
+  card_expires_on: string;
+};
+
+export type DevAccountStore = {
+  readProfile(id: string): PromiseLike<
+    { profile: { handle: string; attestedAt: string | null } | null } | { error: string }
+  >;
+  updateProfile(id: string, patch: DevProfilePatch): PromiseLike<string | null>;
+  setAdmin(id: string, on: boolean): PromiseLike<string | null>;
+};
+
+/** Walks the dev account through every gate a screen checks: onboarded, a
+ *  real handle, a card valid for a year, and an admin only when asked. Runs
+ *  on every visit, so an account left unverified, expired, suspended or
+ *  recreated by a test sweep is repaired. Keeps a handle and an attestation
+ *  it already has. */
+export async function prepareDevAccount(
+  store: DevAccountStore,
+  userId: string,
+  role: DevRole,
+  today: string,
+): Promise<DevLoginResult> {
+  const read = await store.readProfile(userId);
+  if ("error" in read) return { ok: false, error: read.error };
+  if (!read.profile) return { ok: false, error: "The dev account has no profile row" };
+
+  const patch: DevProfilePatch = { status: "verified", card_expires_on: addDays(today, CARD_VALID_DAYS) };
+  if (read.profile.handle.startsWith(RESERVED_HANDLE_PREFIX)) patch.handle = devHandle(userId);
+  if (!read.profile.attestedAt) {
+    patch.attested_at = new Date().toISOString();
+    patch.terms_version = TERMS_VERSION;
+  }
+
+  const updated = await store.updateProfile(userId, patch);
+  if (updated) return { ok: false, error: updated };
+  const admin = await store.setAdmin(userId, role === "admin");
+  return admin ? { ok: false, error: admin } : { ok: true };
+}
+
+/** DevAccountStore on the service-role client. */
+export function supabaseDevStore(db: SupabaseClient): DevAccountStore {
+  return {
+    async readProfile(id) {
+      const { data, error } = await db
+        .from("profiles")
+        .select("handle, attested_at")
+        .eq("id", id)
+        .maybeSingle();
+      if (error) return { error: error.message };
+      return { profile: data ? { handle: data.handle, attestedAt: data.attested_at } : null };
+    },
+    async updateProfile(id, patch) {
+      const { error } = await db.from("profiles").update(patch).eq("id", id);
+      return error?.message ?? null;
+    },
+    async setAdmin(id, on) {
+      const { error } = on
+        ? await db.from("admins").upsert({ user_id: id })
+        : await db.from("admins").delete().eq("user_id", id);
+      return error?.message ?? null;
+    },
+  };
 }
 
 /** Where to send the browser after sign-in: `next` when it resolves to the

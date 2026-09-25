@@ -1,6 +1,15 @@
 import path from "node:path";
 import { NextResponse } from "next/server";
-import { ensureDevPassword, safeRedirectTarget, signInDevAccount } from "@/lib/dev-login";
+import { floridaToday } from "@/lib/dates";
+import {
+  DEV_LOGIN_EMAIL,
+  devRoleFrom,
+  ensureDevPassword,
+  prepareDevAccount,
+  safeRedirectTarget,
+  signInDevAccount,
+  supabaseDevStore,
+} from "@/lib/dev-login";
 import { serverEnv } from "@/lib/server-env";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -11,8 +20,10 @@ export const runtime = "nodejs";
  *  cookie, so an agent driving the browser pane reaches signed-in pages
  *  without typing a password. A real sign-in, not a bypass: RLS applies.
  *  Creates the account first when it is missing, so it survives a
- *  delete-account test. `?next=/path` lands there instead of `/`.
- *  The proxy lets it through signed-out (lib/supabase/session.ts). */
+ *  delete-account test. Then it walks the account past every gate —
+ *  onboarded, verified for a year — so every member screen opens; `?as=admin`
+ *  also makes it an admin (issue #90). `?next=/path` lands there instead of
+ *  `/`. The proxy lets it through signed-out (lib/supabase/session.ts). */
 export async function GET(request: Request) {
   // Allowlist, not `!== "production"`: an unset or odd NODE_ENV means no route.
   if (process.env.NODE_ENV !== "development") {
@@ -23,9 +34,25 @@ export async function GET(request: Request) {
     path.join(process.cwd(), ".env.local"),
     serverEnv().DEV_LOGIN_PASSWORD,
   );
-  const result = await signInDevAccount(await createClient(), createAdminClient, password);
+  const session = await createClient();
+  const result = await signInDevAccount(session, createAdminClient, password);
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: 401 });
 
-  const next = new URL(request.url).searchParams.get("next");
-  return NextResponse.redirect(safeRedirectTarget(request.url, next));
+  const { data } = await session.auth.getUser();
+  // The writes below use the service key. Make sure they land on the dev
+  // account and nobody else.
+  if (data.user?.email !== DEV_LOGIN_EMAIL) {
+    return NextResponse.json({ error: `Signed in, but not as ${DEV_LOGIN_EMAIL}` }, { status: 500 });
+  }
+
+  const params = new URL(request.url).searchParams;
+  const prepared = await prepareDevAccount(
+    supabaseDevStore(createAdminClient()),
+    data.user.id,
+    devRoleFrom(params.get("as")),
+    floridaToday(),
+  );
+  if (!prepared.ok) return NextResponse.json({ error: prepared.error }, { status: 500 });
+
+  return NextResponse.redirect(safeRedirectTarget(request.url, params.get("next")));
 }
