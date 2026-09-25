@@ -142,9 +142,9 @@ so a change means editing both:
 | `npm run dev` | Dev server on port 3000 |
 | `npm run build` | Production build |
 | `npm run typecheck` | `tsc --noEmit` |
-| `npm test` | The same as `npm run test:unit` |
+| `npm test` | Prints an error and exits 1. Use the two below |
 | `npm run test:unit` | Every vitest suite except the database security tests |
-| `npm run test:db` | The database security tests, one file at a time |
+| `npm run test:integration` | The database security tests, one file at a time |
 | `npm run db:push` | Apply new migrations to the linked hosted project |
 | `npm run admin:grant -- <email>` | Make an existing account an admin |
 | `npm run cron:run -- verification-reaper` | Run a cron job against the local dev server (also `expiry-sweep`) |
@@ -213,11 +213,12 @@ Two commands, never one:
 
 ```bash
 npm run test:unit
-npm run test:db
+npm run test:integration
 ```
 
-`test:unit` skips `supabase/`. `test:db` runs only `supabase/`, one file at a
-time. `npm test` is `test:unit`, so it is safe too.
+`test:unit` skips `supabase/`. `test:integration` runs only `supabase/`, one
+file at a time. `npm test` prints an error and exits 1, so nobody runs both
+halves at once by habit. CI runs `npm run test:unit`.
 
 *Why two:* the database tests make real accounts on the hosted project. Run
 all at once, they sign in faster than Supabase allows, suites die in
@@ -228,7 +229,7 @@ test path contains `__tests__`. Issue #64 hit exactly that and left 10 junk
 accounts.
 
 While working, run only the test files you touched. Run `test:unit` once at the
-end, and `test:db` once when a migration changed.
+end, and `test:integration` once when a migration changed.
 
 The security tests run against the hosted project and delete what they create:
 
@@ -252,10 +253,10 @@ secret, so **CI does not run the security tests.** Run them locally before
 merging anything that touches a migration, and **check they ran** — the
 summary line hides a skip.
 
-Run them **serially**, which is what `test:db` does:
+Run them **serially**, which is what `test:integration` does:
 
 ```bash
-npm run test:db
+npm run test:integration
 ```
 
 In parallel they create members faster than Supabase Auth allows and a suite

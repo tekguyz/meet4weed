@@ -25,6 +25,9 @@ const Schema = z.object({
   VERIFY_IP_DAILY_LIMIT: z.coerce.number().int().min(1).default(10),
   // Set by Vercel at build. Not a secret: it names the build on Me's About line.
   VERCEL_GIT_COMMIT_SHA: z.string().optional(),
+  // Development only: the dev account's password for /api/dev-login. Written
+  // into .env.local by the route itself when missing.
+  DEV_LOGIN_PASSWORD: z.string().optional(),
 });
 
 export type ServerEnv = z.infer<typeof Schema>;

@@ -4,13 +4,16 @@ import { createServerClient } from "@supabase/ssr";
 /** Paths a signed-out visitor may reach. Everything else redirects to /login.
  *  /auth MUST be here: /auth/confirm opens an emailed link before a session
  *  exists. /api/cron is called by Vercel Cron, which has no session; each cron
- *  route checks CRON_SECRET itself. Help, Terms, Privacy and Community rules
+ *  route checks CRON_SECRET itself. /api/dev-login is the sign-in for agents. Help, Terms, Privacy and Community rules
  *  are read before a person has an account (issue #68). */
 const PUBLIC_PREFIXES = [
   "/login",
   "/auth",
   "/invite",
   "/api/cron",
+  // 404 outside development; in development it is how a signed-out agent
+  // signs in (app/api/dev-login/route.ts).
+  "/api/dev-login",
   "/help",
   "/terms",
   "/privacy",
