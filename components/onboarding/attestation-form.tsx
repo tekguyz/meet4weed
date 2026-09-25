@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { recordAttestation } from "@/app/onboarding/actions";
 import type { ActionState } from "@/lib/forms/action-state";
 import { AgreementLinks } from "@/components/legal/legal-links";
+import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 
 const CLAIMS = [
@@ -43,9 +44,9 @@ export function AttestationForm() {
       </Button>
 
       {state && !state.ok ? (
-        <p role="alert" className="text-sm text-danger">
+        <Banner tone="danger" urgent>
           {state.message}
-        </p>
+        </Banner>
       ) : null}
     </form>
   );

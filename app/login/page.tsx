@@ -1,3 +1,4 @@
+import { Banner } from "@/components/ui/banner";
 import { safeNext } from "@/lib/auth/safe-next";
 import { APP_NAME, APP_TAGLINE } from "@/lib/env";
 import { LoginForm } from "./login-form";
@@ -21,9 +22,9 @@ export default async function LoginPage({
 
       {/* Set only by app/auth/actions/email-link.ts. */}
       {error === "link_invalid" ? (
-        <p role="alert" className="text-sm text-danger">
+        <Banner tone="danger" urgent>
           That link is wrong, used or expired. Ask for a new one.
-        </p>
+        </Banner>
       ) : null}
 
       {/* Set by app/(frame)/seshes/invite-actions.ts when somebody with no account

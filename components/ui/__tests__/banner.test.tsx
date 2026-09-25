@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { ActionResult, Banner } from "@/components/ui/banner";
+import { ActionResult, Banner, FieldError } from "@/components/ui/banner";
 
 describe("Banner", () => {
   it("announces politely, so a screen reader does not lose its place", () => {
@@ -42,6 +42,18 @@ describe("Banner", () => {
     expect(banner).not.toHaveClass("bg-surface", "p-4");
   });
 
+  /** Issue #75: an error must reach a screen reader at once, not after it
+   *  finishes the sentence it is reading. */
+  it("interrupts when urgent, so an error is heard at once", () => {
+    render(<Banner tone="danger" urgent>That password is wrong.</Banner>);
+    const banner = screen.getByRole("alert");
+
+    expect(banner).toHaveTextContent("That password is wrong.");
+    expect(banner).toHaveClass("text-danger", "bg-surface");
+    expect(banner).not.toHaveAttribute("aria-live", "polite");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
   it("can hold more than one line", () => {
     render(
       <Banner>
@@ -74,5 +86,24 @@ describe("ActionResult", () => {
     render(<ActionResult state={null} />);
 
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+});
+
+/** A per-field error stays under its field, small, so the member sees which
+ *  box it is about. Not a card: a card under every box would bury the form. */
+describe("FieldError", () => {
+  it("interrupts with the message under its field", () => {
+    render(<FieldError message="Eight tags maximum." />);
+    const line = screen.getByRole("alert");
+
+    expect(line).toHaveTextContent("Eight tags maximum.");
+    expect(line).toHaveClass("text-xs", "text-danger");
+    expect(line).not.toHaveAttribute("style");
+  });
+
+  it("shows nothing when the field is fine", () => {
+    render(<FieldError message={undefined} />);
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });

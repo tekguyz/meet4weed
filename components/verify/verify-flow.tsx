@@ -102,7 +102,7 @@ function Details({ today }: { today: string }) {
       />
       <Input label="Card expiry date" type="date" value={expiry} onChange={(e) => setExpiry(e.target.value)} required />
       <Button type="submit">Next</Button>
-      {message ? <p role="alert" className="text-sm text-danger">{message}</p> : null}
+      {message ? <Banner tone="danger" urgent>{message}</Banner> : null}
     </form>
   );
 }
@@ -188,9 +188,9 @@ function Capture({ kind }: { kind: "card" | "face" }) {
         <div className="flex flex-col gap-4">
           <img src={pending.shot.url} alt="The photo you took" className="mx-auto max-h-[60dvh] rounded-card" />
           {pending.problems.length > 0 ? (
-            <p role="alert" className="text-sm text-danger">
+            <Banner tone="danger" urgent>
               {pending.problems.map((p) => PRECHECK_TEXT[p]).join(" ")}
-            </p>
+            </Banner>
           ) : null}
           {pending.problems.length === 0 ? (
             <Button type="button" onClick={accept}>Use it</Button>
@@ -248,7 +248,7 @@ function Review() {
       <p className="text-sm text-ink-muted">Patient ID {patientId} · expires {cardExpiresOn}</p>
       <Button type="button" onClick={send} disabled={sending}>{sending ? "Sending…" : "Send for review"}</Button>
       <Button type="button" variant="quiet" onClick={() => go("card")}>Retake photos</Button>
-      {message ? <p role="alert" className="text-sm text-danger">{message}</p> : null}
+      {message ? <Banner tone="danger" urgent>{message}</Banner> : null}
     </div>
   );
 }

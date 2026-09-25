@@ -312,6 +312,8 @@ Full-width, calm and confident.
   compete with the one sage button. Every notice card is the shared `Banner`
   (`components/ui/banner.tsx`); nested inside a card it steps up to Ember
   Raised and 12px.
+  A form-wide error is an `urgent` Banner, which is announced at once
+  (`role="alert"`) instead of waiting its turn.
 
 ### Inputs / Fields
 - **Style:** Ember Card fill, 1px Charred Rule border, control radius, 12px ×
@@ -321,6 +323,9 @@ Full-width, calm and confident.
 - **Password:** a 48px show/hide eye button inside the right edge; the
   browser's own reveal eye is hidden.
 - **Checkbox:** 20px, Sage accent, label clickable.
+- **Field error:** the shared `FieldError`, directly under its field and its
+  help line: 0.75rem Clay text, no card, announced at once. A card under every
+  box would bury the form.
 
 ### Theme toggle
 A segmented control: an Ember Raised track with 4px padding holding Dark,

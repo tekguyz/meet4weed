@@ -59,7 +59,7 @@ export function NewPasswordForm({ mode = "reset" }: Props) {
       {result && mode === "change" ? (
         <Banner tone={result.ok ? "success" : "danger"}>{result.text}</Banner>
       ) : result ? (
-        <p role="alert" className="text-sm text-danger">{result.text}</p>
+        <Banner tone="danger" urgent>{result.text}</Banner>
       ) : null}
     </form>
   );

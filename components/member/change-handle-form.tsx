@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { changeHandle } from "@/app/(frame)/me/settings/actions";
-import { ActionResult } from "@/components/ui/banner";
+import { ActionResult, FieldError } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { ActionState } from "@/lib/forms/action-state";
@@ -33,11 +33,7 @@ export function ChangeHandleForm({ handle }: { handle: string }) {
           3–20 characters. Letters, numbers and underscores. You can change it once every 30 days.
           The handle you give up stays locked for 30 days, so nobody can pose as you.
         </p>
-        {state?.fieldErrors?.handle ? (
-          <p role="alert" className="text-xs text-danger">
-            {state.fieldErrors.handle}
-          </p>
-        ) : null}
+        <FieldError message={state?.fieldErrors?.handle} />
       </div>
       <Button type="submit" disabled={pending}>
         {pending ? "Changing…" : "Change handle"}

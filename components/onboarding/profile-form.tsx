@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { saveProfile } from "@/app/onboarding/actions";
 import type { ActionState } from "@/lib/forms/action-state";
+import { Banner, FieldError } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -69,11 +70,7 @@ export function ProfileForm({ profile }: { profile: Profile }) {
         <p id="handle-help" className="text-xs text-ink-muted">
           3–20 characters. Letters, numbers and underscores. This is how people find you.
         </p>
-        {state?.fieldErrors?.handle ? (
-          <p role="alert" className="text-xs text-danger">
-            {state.fieldErrors.handle}
-          </p>
-        ) : null}
+        <FieldError message={state?.fieldErrors?.handle} />
       </div>
 
       <ProfileFields profile={profile} errors={state?.fieldErrors} />
@@ -85,9 +82,9 @@ export function ProfileForm({ profile }: { profile: Profile }) {
       {/* Failures only: saveProfile redirects home on success, so an ok state
           never reaches this component. */}
       {state && !state.ok ? (
-        <p role="alert" className="text-sm text-danger">
+        <Banner tone="danger" urgent>
           {state.message}
-        </p>
+        </Banner>
       ) : null}
     </form>
   );
@@ -150,12 +147,4 @@ export function ProfileFields({ profile, errors }: FieldsProps) {
       </div>
     </>
   );
-}
-
-function FieldError({ message }: { message?: string }) {
-  return message ? (
-    <p role="alert" className="text-xs text-danger">
-      {message}
-    </p>
-  ) : null;
 }

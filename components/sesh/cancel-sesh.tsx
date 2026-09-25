@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { cancelSesh } from "@/app/(frame)/seshes/actions";
+import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import type { ActionState } from "@/lib/forms/action-state";
 
@@ -32,9 +33,9 @@ export function CancelSesh({ id }: { id: string }) {
         straight away. There is no way to bring it back — you would post a new one.
       </p>
       {state && !state.ok ? (
-        <p role="alert" className="text-sm text-danger">
+        <Banner tone="danger" urgent nested>
           {state.message}
-        </p>
+        </Banner>
       ) : null}
       <div className="flex gap-3">
         <Button type="submit" variant="quiet" disabled={pending}>
