@@ -75,14 +75,14 @@ export default async function SeshesPage({ searchParams }: { searchParams: Promi
       {filters.view === "list" && (filters.page > 1 || hasMore) ? (
         <nav className="flex justify-between gap-3" aria-label="More seshes">
           {filters.page > 1 ? (
-            <Link href={feedHref({ ...filters, page: filters.page - 1 })} className="text-sm text-primary underline">
+            <Link href={feedHref({ ...filters, page: filters.page - 1 })} className="inline-flex min-h-11 items-center text-sm text-primary underline">
               Previous
             </Link>
           ) : (
             <span />
           )}
           {hasMore ? (
-            <Link href={feedHref({ ...filters, page: filters.page + 1 })} className="text-sm text-primary underline">
+            <Link href={feedHref({ ...filters, page: filters.page + 1 })} className="inline-flex min-h-11 items-center text-sm text-primary underline">
               Next
             </Link>
           ) : null}

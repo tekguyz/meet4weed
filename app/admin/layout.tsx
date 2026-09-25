@@ -9,10 +9,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!(await amIAdmin())) notFound();
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8">
-      <nav className="flex gap-4 text-sm text-ink-muted">
-        <Link href="/admin" className="underline">Admin</Link>
-        <Link href="/admin/verifications" className="underline">Verification queue</Link>
-        <Link href="/" className="underline">Back to app</Link>
+      <nav className="flex flex-wrap gap-x-4 text-sm text-ink-muted">
+        <Link href="/admin" className="inline-flex min-h-11 items-center underline">Admin</Link>
+        <Link href="/admin/verifications" className="inline-flex min-h-11 items-center underline">Verification queue</Link>
+        <Link href="/" className="inline-flex min-h-11 items-center underline">Back to app</Link>
       </nav>
       {children}
     </div>

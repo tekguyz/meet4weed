@@ -20,4 +20,4 @@ export const FAILURE_TEXT: Record<AuthFailure, string> = {
  *  locks the member out of an account they just made. */
 export const PASSWORDS_DIFFER = "The two passwords do not match.";
 
-export const LINK = "text-left text-sm text-ink-muted underline";
+export const LINK = "min-h-11 text-left text-sm text-ink-muted underline";

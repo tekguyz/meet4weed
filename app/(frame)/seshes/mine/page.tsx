@@ -31,7 +31,7 @@ export default async function MySeshesPage() {
     <div className="mx-auto flex w-full max-w-md flex-col gap-8 px-4 py-6">
       <header className="flex items-baseline justify-between gap-4">
         <h1 className="text-3xl">My seshes</h1>
-        <Link href="/seshes/new" className="text-sm font-semibold text-primary underline">
+        <Link href="/seshes/new" className="inline-flex min-h-11 items-center text-sm font-semibold text-primary underline">
           Host a sesh
         </Link>
       </header>
@@ -117,11 +117,11 @@ function HostingCard({ sesh, waiting }: { sesh: SeshListItem; waiting: number })
       ) : null}
 
       <div className="flex gap-4">
-        <Link href={`/seshes/${sesh.id}`} className="text-sm font-semibold text-primary underline">
+        <Link href={`/seshes/${sesh.id}`} className="inline-flex min-h-11 items-center text-sm font-semibold text-primary underline">
           {waiting > 0 && !cancelled ? "Review requests" : "Open"}
         </Link>
         {cancelled ? null : (
-          <Link href={`/seshes/${sesh.id}/edit`} className="text-sm text-ink-muted underline">
+          <Link href={`/seshes/${sesh.id}/edit`} className="inline-flex min-h-11 items-center text-sm text-ink-muted underline">
             Edit
           </Link>
         )}
@@ -144,7 +144,7 @@ function GoingCard({ sesh, status }: { sesh: SeshListItem; status: RsvpStatus })
             ? "You are going"
             : "Waiting on the host"}
       </p>
-      <Link href={`/seshes/${sesh.id}`} className="text-sm font-semibold text-primary underline">
+      <Link href={`/seshes/${sesh.id}`} className="inline-flex min-h-11 items-center self-start text-sm font-semibold text-primary underline">
         Open
       </Link>
     </article>

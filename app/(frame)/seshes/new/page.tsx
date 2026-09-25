@@ -25,7 +25,7 @@ export default async function NewSeshPage() {
             : "You can host once a person has checked your card."}
         </p>
         {access === "read_only" ? (
-          <Link href="/verify" className="text-sm font-semibold text-primary underline">
+          <Link href="/verify" className="inline-flex min-h-11 items-center self-start text-sm font-semibold text-primary underline">
             Add your renewed card
           </Link>
         ) : null}

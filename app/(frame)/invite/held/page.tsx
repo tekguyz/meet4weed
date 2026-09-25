@@ -29,7 +29,7 @@ export default function HeldInvitePage() {
         <p className="text-sm text-ink-muted">{INVITE_HELD_BODY}</p>
       </Banner>
 
-      <Link href="/verify" className={`text-sm font-semibold text-primary underline ${FOCUS_RING}`}>
+      <Link href="/verify" className={`inline-flex min-h-11 items-center self-start text-sm font-semibold text-primary underline ${FOCUS_RING}`}>
         Verify your card
       </Link>
     </div>

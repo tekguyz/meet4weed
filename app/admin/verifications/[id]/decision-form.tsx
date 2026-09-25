@@ -13,9 +13,9 @@ export function DecisionForm({ id, typedExpiry }: { id: string; typedExpiry: str
   return (
     <form action={action} className="flex flex-col gap-4 rounded-card bg-surface p-4">
       <input type="hidden" name="id" value={id} />
-      <fieldset className="flex gap-4 text-sm">
+      <fieldset className="flex flex-wrap gap-x-4 text-sm">
         {(["approve", "reject", "retake"] as const).map((d) => (
-          <label key={d} className="flex items-center gap-2">
+          <label key={d} className="flex min-h-11 items-center gap-2">
             <input type="radio" name="decision" value={d} checked={decision === d} onChange={() => setDecision(d)} />
             {d === "approve" ? "Approve" : d === "reject" ? "Reject" : "Ask for a retake"}
           </label>

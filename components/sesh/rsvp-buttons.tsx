@@ -59,7 +59,7 @@ export function DecideButtons({
             name="decision"
             value="kicked"
             disabled={pending}
-            className="rounded-control bg-surface-2 px-3 py-2 text-sm text-danger disabled:opacity-50"
+            className="min-h-11 rounded-control bg-surface-2 px-3 py-2 text-sm text-danger disabled:opacity-50"
           >
             Remove
           </button>
@@ -70,7 +70,7 @@ export function DecideButtons({
               name="decision"
               value="approved"
               disabled={pending}
-              className="rounded-control bg-primary px-3 py-2 text-sm font-semibold text-on-primary disabled:opacity-50"
+              className="min-h-11 rounded-control bg-primary px-3 py-2 text-sm font-semibold text-on-primary disabled:opacity-50"
             >
               Approve
             </button>
@@ -79,7 +79,7 @@ export function DecideButtons({
               name="decision"
               value="denied"
               disabled={pending}
-              className="rounded-control bg-surface-2 px-3 py-2 text-sm text-ink disabled:opacity-50"
+              className="min-h-11 rounded-control bg-surface-2 px-3 py-2 text-sm text-ink disabled:opacity-50"
             >
               Decline
             </button>

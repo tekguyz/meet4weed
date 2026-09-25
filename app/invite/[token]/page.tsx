@@ -88,7 +88,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
 
       {/* The way back in, the same for everyone: `/` sends a signed-out
           visitor to sign in. The page still does not know who is looking. */}
-      <Link href="/" className={`text-sm text-ink-muted underline ${FOCUS_RING}`}>
+      <Link href="/" className={`inline-flex min-h-11 items-center text-sm text-ink-muted underline ${FOCUS_RING}`}>
         Go to {APP_NAME}
       </Link>
     </main>

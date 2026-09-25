@@ -65,7 +65,7 @@ function ContributionCard({ seshId, row }: { seshId: string; row: ContributionRo
         <button
           type="submit"
           disabled={pending}
-          className="self-start text-sm text-ink-muted underline disabled:opacity-50"
+          className="min-h-11 self-start text-sm text-ink-muted underline disabled:opacity-50"
         >
           {pending ? "Removing…" : "Remove"}
         </button>
@@ -95,7 +95,7 @@ function AddForm({ seshId }: { seshId: string }) {
           required
           maxLength={CONTRIBUTION_LABEL_MAX}
           placeholder="Blue Dream, papers, snacks…"
-          className="rounded-control bg-surface-2 px-3 py-2 text-base text-ink"
+          className="min-h-11 rounded-control bg-surface-2 px-3 py-2 text-base text-ink"
         />
       </label>
 
@@ -104,7 +104,7 @@ function AddForm({ seshId }: { seshId: string }) {
         <select
           name="strainType"
           defaultValue=""
-          className="rounded-control bg-surface-2 px-3 py-2 text-base text-ink"
+          className="min-h-11 rounded-control bg-surface-2 px-3 py-2 text-base text-ink"
         >
           <option value="">Not a strain</option>
           {STRAIN_TYPES.map((value) => (

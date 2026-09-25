@@ -59,7 +59,7 @@ function CopyBox({ url }: { url: string }) {
         value={url}
         aria-label="Invite link"
         onFocus={(event) => event.currentTarget.select()}
-        className="w-full rounded-control border border-rule bg-surface px-3 py-2 text-sm text-ink"
+        className="min-h-11 w-full rounded-control border border-rule bg-surface px-3 py-2 text-sm text-ink"
       />
       <Button
         type="button"
@@ -90,7 +90,7 @@ function RevokeButton({ inviteId, seshId }: { inviteId: string; seshId: string }
       <button
         type="submit"
         disabled={pending}
-        className="self-start rounded-control bg-surface-2 px-3 py-2 text-sm text-danger disabled:opacity-50"
+        className="min-h-11 self-start rounded-control bg-surface-2 px-3 py-2 text-sm text-danger disabled:opacity-50"
       >
         {pending ? "Revoking…" : "Revoke"}
       </button>

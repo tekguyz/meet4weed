@@ -28,7 +28,7 @@ export function FeedControls({ filters }: { filters: FeedFilters }) {
               key={type}
               href={withTypeToggled(type)}
               aria-current={on ? "true" : undefined}
-              className={`shrink-0 rounded-control px-3 py-2 text-sm ${
+              className={`inline-flex min-h-11 shrink-0 items-center rounded-control px-3 py-2 text-sm ${
                 on ? "bg-primary text-on-primary" : "bg-surface-2 text-ink"
               }`}
             >
@@ -65,7 +65,7 @@ export function FeedControls({ filters }: { filters: FeedFilters }) {
         <Link
           href={feedHref({ ...filters, view: "list", page: 1 })}
           aria-current={filters.view === "list" ? "true" : undefined}
-          className={`rounded-control px-3 py-2 text-sm ${
+          className={`inline-flex min-h-11 items-center rounded-control px-3 py-2 text-sm ${
             filters.view === "list" ? "bg-primary text-on-primary" : "bg-surface-2 text-ink"
           }`}
         >
@@ -74,7 +74,7 @@ export function FeedControls({ filters }: { filters: FeedFilters }) {
         <Link
           href={feedHref({ ...filters, view: "map", page: 1 })}
           aria-current={filters.view === "map" ? "true" : undefined}
-          className={`rounded-control px-3 py-2 text-sm ${
+          className={`inline-flex min-h-11 items-center rounded-control px-3 py-2 text-sm ${
             filters.view === "map" ? "bg-primary text-on-primary" : "bg-surface-2 text-ink"
           }`}
         >

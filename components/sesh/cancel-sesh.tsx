@@ -18,7 +18,7 @@ export function CancelSesh({ id }: { id: string }) {
       <button
         type="button"
         onClick={() => setConfirming(true)}
-        className="text-sm text-danger underline"
+        className="min-h-11 self-start text-sm text-danger underline"
       >
         Cancel this sesh
       </button>

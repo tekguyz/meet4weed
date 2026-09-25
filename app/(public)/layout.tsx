@@ -15,13 +15,13 @@ const PAGES = [
   ["/rules", "Community rules"],
 ] as const;
 
-const LINK = `text-sm text-ink-muted underline hover:text-ink ${FOCUS_RING}`;
+const LINK = `inline-flex min-h-11 min-w-11 items-center justify-center text-sm text-ink-muted underline hover:text-ink ${FOCUS_RING}`;
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-8 px-4 py-10 md:max-w-2xl">
       <header>
-        <Link href="/" className={`text-base font-semibold text-ink ${FOCUS_RING}`}>
+        <Link href="/" className={`inline-flex min-h-11 items-center text-base font-semibold text-ink ${FOCUS_RING}`}>
           {APP_NAME}
         </Link>
       </header>
