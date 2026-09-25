@@ -2,6 +2,7 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 import { floridaToday } from "@/lib/dates";
 import {
+  DEV_LOGIN_EMAIL,
   devRoleFrom,
   ensureDevPassword,
   prepareDevAccount,
@@ -38,7 +39,11 @@ export async function GET(request: Request) {
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: 401 });
 
   const { data } = await session.auth.getUser();
-  if (!data.user) return NextResponse.json({ error: "Signed in, but no user came back" }, { status: 500 });
+  // The writes below use the service key. Make sure they land on the dev
+  // account and nobody else.
+  if (data.user?.email !== DEV_LOGIN_EMAIL) {
+    return NextResponse.json({ error: `Signed in, but not as ${DEV_LOGIN_EMAIL}` }, { status: 500 });
+  }
 
   const params = new URL(request.url).searchParams;
   const prepared = await prepareDevAccount(

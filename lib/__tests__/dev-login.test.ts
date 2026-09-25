@@ -159,11 +159,11 @@ describe("prepareDevAccount", () => {
 
   it("finishes a new account: onboarded, a real handle, verified for a year", async () => {
     const s = store({ handle: "member_abc123", attestedAt: null });
-    await expect(prepareDevAccount(s, "u1", "member", today)).resolves.toEqual({ ok: true });
+    await expect(prepareDevAccount(s, "d67fcaa4-5c76-42dd", "member", today)).resolves.toEqual({ ok: true });
     const [id, patch] = s.updateProfile.mock.calls[0];
-    expect(id).toBe("u1");
+    expect(id).toBe("d67fcaa4-5c76-42dd");
     expect(patch).toMatchObject({
-      handle: "dev_member",
+      handle: "dev_d67fcaa4",
       terms_version: TERMS_VERSION,
       status: "verified",
       card_expires_on: "2027-09-25",

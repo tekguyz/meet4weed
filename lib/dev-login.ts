@@ -112,18 +112,31 @@ export function devRoleFrom(param: string | null): DevRole {
   return param === "admin" ? "admin" : "member";
 }
 
-const DEV_HANDLE = "dev_member";
+/** `dev_` and the first eight hex digits of the account id: a real handle
+ *  that no other member already holds, since ids are unique. */
+function devHandle(userId: string): string {
+  return `dev_${userId.replace(/-/g, "").slice(0, 8)}`;
+}
 const CARD_VALID_DAYS = 365;
 
 /** The writes prepareDevAccount needs, each returning an error message or
  *  null. The route backs it with the admin client (supabaseDevStore); tests
  *  pass a fake. A member cannot write `status` or `card_expires_on` — the
  *  column grants stop them — so these writes must stay service-side. */
+/** The profile columns prepareDevAccount writes. */
+export type DevProfilePatch = {
+  handle?: string;
+  attested_at?: string;
+  terms_version?: string;
+  status: "verified";
+  card_expires_on: string;
+};
+
 export type DevAccountStore = {
   readProfile(id: string): PromiseLike<
     { profile: { handle: string; attestedAt: string | null } | null } | { error: string }
   >;
-  updateProfile(id: string, patch: Record<string, string>): PromiseLike<string | null>;
+  updateProfile(id: string, patch: DevProfilePatch): PromiseLike<string | null>;
   setAdmin(id: string, on: boolean): PromiseLike<string | null>;
 };
 
@@ -142,14 +155,12 @@ export async function prepareDevAccount(
   if ("error" in read) return { ok: false, error: read.error };
   if (!read.profile) return { ok: false, error: "The dev account has no profile row" };
 
-  const patch: Record<string, string> = {};
-  if (read.profile.handle.startsWith(RESERVED_HANDLE_PREFIX)) patch.handle = DEV_HANDLE;
+  const patch: DevProfilePatch = { status: "verified", card_expires_on: addDays(today, CARD_VALID_DAYS) };
+  if (read.profile.handle.startsWith(RESERVED_HANDLE_PREFIX)) patch.handle = devHandle(userId);
   if (!read.profile.attestedAt) {
     patch.attested_at = new Date().toISOString();
     patch.terms_version = TERMS_VERSION;
   }
-  patch.status = "verified";
-  patch.card_expires_on = addDays(today, CARD_VALID_DAYS);
 
   const updated = await store.updateProfile(userId, patch);
   if (updated) return { ok: false, error: updated };
