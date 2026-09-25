@@ -13,7 +13,7 @@ import { feedEmptyState, feedHref, parseFeedFilters, type FeedEmptyState, type S
 import { listFeed, type SeshListItem } from "@/lib/sesh/queries";
 import { SESH_TYPE_LABELS } from "@/lib/sesh/schema";
 import { getMyVerification } from "@/lib/verification/status";
-import { TAP_TEXT } from "@/components/ui/focus";
+import { FOCUS_RING, TAP_TEXT } from "@/components/ui/focus";
 
 const WHEN = new Intl.DateTimeFormat("en-US", {
   timeZone: "America/New_York",
@@ -108,7 +108,8 @@ function FeedCard({ sesh }: { sesh: SeshListItem }) {
   const left = Math.max(sesh.capacity - sesh.approvedCount, 0);
 
   return (
-    <article className="flex flex-col gap-1 rounded-card bg-surface p-4">
+    // The whole card opens the sesh: a card is a big, easy tap target.
+    <Link href={`/seshes/${sesh.id}`} className={`flex flex-col gap-1 rounded-card bg-surface p-4 ${FOCUS_RING}`}>
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-lg">{sesh.title}</h2>
         <span className="shrink-0 rounded-control bg-surface-2 px-2 py-1 text-xs text-ink-muted">
@@ -121,6 +122,6 @@ function FeedCard({ sesh }: { sesh: SeshListItem }) {
         {left === 0 ? "full" : `${left} spot${left === 1 ? "" : "s"} left`}
       </p>
       {sesh.description ? <p className="line-clamp-2 text-sm text-ink">{sesh.description}</p> : null}
-    </article>
+    </Link>
   );
 }
