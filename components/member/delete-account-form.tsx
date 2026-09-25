@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { deleteAccount } from "@/app/(frame)/me/settings/actions";
-import { ActionResult } from "@/components/ui/banner";
+import { ActionResult, FieldError } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { PasswordInput } from "@/components/ui/password-input";
 import type { ActionState } from "@/lib/forms/action-state";
@@ -25,11 +25,7 @@ export function DeleteAccountForm() {
         <p id="delete-password-help" className="text-xs text-ink-muted">
           So nobody holding your unlocked phone can do this.
         </p>
-        {state?.fieldErrors?.password ? (
-          <p role="alert" className="text-xs text-danger">
-            {state.fieldErrors.password}
-          </p>
-        ) : null}
+        <FieldError message={state?.fieldErrors?.password} />
       </div>
       <Button type="submit" variant="quiet" disabled={pending}>
         {pending ? "Deleting…" : "Delete my account"}

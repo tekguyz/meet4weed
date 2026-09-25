@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { SeshMap, type Point } from "@/components/sesh/sesh-map";
-import { Banner } from "@/components/ui/banner";
+import { Banner, FieldError } from "@/components/ui/banner";
 
 /** The radius the trigger writes. Shown here so the host sees exactly what
  *  the app is about to publish — they cannot reshuffle it, because it is a
@@ -43,11 +43,7 @@ export function LocationPicker({ defaultPoint = null, fieldError }: Props) {
         <p className="text-sm text-ink-muted">Tap the map to place your pin.</p>
       )}
 
-      {fieldError ? (
-        <p role="alert" className="text-sm text-danger">
-          {fieldError}
-        </p>
-      ) : null}
+      <FieldError message={fieldError} />
     </div>
   );
 }

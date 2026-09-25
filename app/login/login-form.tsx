@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { signInWithPassword } from "@/app/auth/actions/sign-in";
 import { resendConfirmationLink } from "@/app/auth/actions/sign-up";
+import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -53,7 +54,7 @@ export function LoginForm({ next, signUp = false }: { next: string; signUp?: boo
       <PasswordInput label="Password" name="password" autoComplete="current-password" required
         value={password} onChange={(e) => setPassword(e.target.value)} />
       <Button type="submit" disabled={pending}>{pending ? "Signing in…" : "Sign in"}</Button>
-      {message ? <p role="alert" className="text-sm text-danger">{message}</p> : null}
+      {message ? <Banner tone="danger" urgent>{message}</Banner> : null}
       {unconfirmed ? (
         <button type="button" onClick={onResend} disabled={pending} className={LINK}>
           Send a new confirmation link

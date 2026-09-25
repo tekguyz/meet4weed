@@ -58,7 +58,7 @@ export function SignUpForm({ onBack }: { onBack: () => void }) {
       <p className="text-xs text-ink-muted">{FAILURE_TEXT.weak_password}</p>
       <AgreementLinks lead="Creating an account means you agree to the" />
       <Button type="submit" disabled={pending}>{pending ? "Creating…" : "Create account"}</Button>
-      {message ? <p role="alert" className="text-sm text-danger">{message}</p> : null}
+      {message ? <Banner tone="danger" urgent>{message}</Banner> : null}
       <button type="button" onClick={onBack} className={LINK}>Back to sign in</button>
     </form>
   );

@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { decideVerification, type DecideState } from "./actions";
+import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -34,7 +35,7 @@ export function DecisionForm({ id, typedExpiry }: { id: string; typedExpiry: str
       </label>
       <p className="text-xs text-ink-muted">Any decision deletes both photos immediately.</p>
       <Button type="submit" disabled={pending}>{pending ? "Saving…" : "Save decision"}</Button>
-      {state ? <p role="alert" className="text-sm text-danger">{state.message}</p> : null}
+      {state ? <Banner tone="danger" urgent nested>{state.message}</Banner> : null}
     </form>
   );
 }

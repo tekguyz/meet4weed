@@ -43,7 +43,7 @@ export function RecoveryForm({ onBack }: { onBack: () => void }) {
       <Input label="Email" name="email" type="email" autoComplete="email" required
         value={email} onChange={(e) => setEmail(e.target.value)} />
       <Button type="submit" disabled={pending}>{pending ? "Sending…" : "Send reset link"}</Button>
-      {message ? <p role="alert" className="text-sm text-danger">{message}</p> : null}
+      {message ? <Banner tone="danger" urgent>{message}</Banner> : null}
       <button type="button" onClick={onBack} className={LINK}>Back to sign in</button>
     </form>
   );

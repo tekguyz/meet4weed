@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { Banner, FieldError } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -36,16 +37,6 @@ type Props = {
   pendingLabel: string;
 };
 
-function FieldError({ state, name }: { state: ActionState | null; name: string }) {
-  const message = state?.fieldErrors?.[name];
-  if (!message) return null;
-  return (
-    <p role="alert" className="text-sm text-danger">
-      {message}
-    </p>
-  );
-}
-
 export function SeshForm({ action, defaults = {}, submitLabel, pendingLabel }: Props) {
   const [state, submit, pending] = useActionState<ActionState | null, FormData>(action, null);
 
@@ -62,7 +53,7 @@ export function SeshForm({ action, defaults = {}, submitLabel, pendingLabel }: P
           placeholder="Friday wind-down"
           defaultValue={defaults.title ?? ""}
         />
-        <FieldError state={state} name="title" />
+        <FieldError message={state?.fieldErrors?.title} />
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -72,7 +63,7 @@ export function SeshForm({ action, defaults = {}, submitLabel, pendingLabel }: P
           maxLength={1000}
           defaultValue={defaults.description ?? ""}
         />
-        <FieldError state={state} name="description" />
+        <FieldError message={state?.fieldErrors?.description} />
       </div>
 
       <Select
@@ -93,7 +84,7 @@ export function SeshForm({ action, defaults = {}, submitLabel, pendingLabel }: P
           Unlisted keeps it out of the feed, the map and search. Anyone already coming still sees
           it, and you can change your mind later without dropping them.
         </p>
-        <FieldError state={state} name="visibility" />
+        <FieldError message={state?.fieldErrors?.visibility} />
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -104,7 +95,7 @@ export function SeshForm({ action, defaults = {}, submitLabel, pendingLabel }: P
           required
           defaultValue={defaults.startsAtLocal ?? ""}
         />
-        <FieldError state={state} name="startsAtLocal" />
+        <FieldError message={state?.fieldErrors?.startsAtLocal} />
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -118,7 +109,7 @@ export function SeshForm({ action, defaults = {}, submitLabel, pendingLabel }: P
           defaultValue={defaults.capacity ?? 6}
         />
         <p className="text-sm text-ink-muted">You are not one of the spots.</p>
-        <FieldError state={state} name="capacity" />
+        <FieldError message={state?.fieldErrors?.capacity} />
       </div>
 
       <fieldset className="flex flex-col gap-4 rounded-card bg-surface p-4">
@@ -135,7 +126,7 @@ export function SeshForm({ action, defaults = {}, submitLabel, pendingLabel }: P
             defaultValue={defaults.addressLine ?? ""}
           />
           <p className="text-sm text-ink-muted">Only approved guests ever read this.</p>
-          <FieldError state={state} name="addressLine" />
+          <FieldError message={state?.fieldErrors?.addressLine} />
         </div>
 
         <Input label="Unit or buzzer (optional)" name="unitNote" maxLength={60} defaultValue={defaults.unitNote ?? ""} />
@@ -153,14 +144,14 @@ export function SeshForm({ action, defaults = {}, submitLabel, pendingLabel }: P
             A neighbourhood, not a street — this one is public. Leave it blank and we will work it
             out from the circle, never from your address.
           </p>
-          <FieldError state={state} name="areaName" />
+          <FieldError message={state?.fieldErrors?.areaName} />
         </div>
       </fieldset>
 
       {state && !state.ok && !state.fieldErrors ? (
-        <p role="alert" className="text-sm text-danger">
+        <Banner tone="danger" urgent>
           {state.message}
-        </p>
+        </Banner>
       ) : null}
 
       <Button type="submit" disabled={pending}>

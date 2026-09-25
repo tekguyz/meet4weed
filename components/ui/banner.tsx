@@ -25,15 +25,17 @@ type Props = {
   tone?: Tone;
   /** Inside a card that is already Ember Card. */
   nested?: boolean;
+  /** An error the member must hear at once (issue #75): `role="alert"`
+   *  interrupts a screen reader, where `status` waits its turn. */
+  urgent?: boolean;
   className?: string;
   children: ReactNode;
 };
 
-export function Banner({ tone = "info", nested = false, className = "", children }: Props) {
+export function Banner({ tone = "info", nested = false, urgent = false, className = "", children }: Props) {
   return (
     <div
-      role="status"
-      aria-live="polite"
+      {...(urgent ? { role: "alert" } : { role: "status", "aria-live": "polite" as const })}
       className={`${nested ? NESTED_SURFACE : SURFACE} text-sm ${TONES[tone]} ${className}`}
     >
       {children}
@@ -48,5 +50,19 @@ export function ActionResult({ state, nested = false }: { state: ActionState | n
     <Banner tone={state.ok ? "success" : "danger"} nested={nested}>
       {state.message}
     </Banner>
+  );
+}
+
+/**
+ * An error about one field, under that field (issue #75). Small text, not a
+ * card: it must sit tight under the box it names, and a card under every box
+ * would bury the form. Still `role="alert"`, so it is heard at once.
+ */
+export function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return (
+    <p role="alert" className="text-xs text-danger">
+      {message}
+    </p>
   );
 }

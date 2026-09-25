@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { PhoneHandOff } from "@/components/verify/phone-hand-off";
 import { IMAGE_LIMITS } from "@/lib/verification/jpeg";
@@ -109,15 +110,15 @@ export function CameraCapture({ facing, guide, onCapture, timerSeconds, check, a
   }, [countdown]);
 
   if (state === "unsupported") {
-    return <p role="alert" className="text-sm text-danger">This browser cannot open the camera. Open Meet4Weed in Safari or Chrome.</p>;
+    return <Banner tone="danger" urgent>This browser cannot open the camera. Open Meet4Weed in Safari or Chrome.</Banner>;
   }
   if (state === "no-camera") return <PhoneHandOff />;
   if (state === "denied") {
     return (
-      <p role="alert" className="text-sm text-danger">
+      <Banner tone="danger" urgent>
         Meet4Weed needs your camera to check your card. Allow camera access for this site in your browser settings, then
         reload the page.
-      </p>
+      </Banner>
     );
   }
 
