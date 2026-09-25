@@ -130,8 +130,9 @@ reason so nobody has to rediscover it.
   there is none. It is a real sign-in: RLS applies. It returns 404 unless
   `NODE_ENV` is `development`. *Why:* an agent may not type a password into
   the browser pane. The account is a new, unverified member, so pages behind
-  verification still send it to onboarding.
-
+  verification still send it to onboarding. `lib/dev-login.ts` is the one
+  other file that reads a secret: it reads and writes `DEV_LOGIN_PASSWORD` in
+  `.env.local`, because the route writes it there before Next reloads env.
 - Email + password, confirm-email on. Email carries links only to confirm and
   to reset; both open `/auth/confirm`, which spends the token only on a button
   POST. Spec §4.5 is the contract.

@@ -1,6 +1,6 @@
 import path from "node:path";
 import { NextResponse } from "next/server";
-import { ensureDevAccount, ensureDevPassword } from "@/lib/dev-login";
+import { ensureDevPassword, safeRedirectTarget, signInDevAccount } from "@/lib/dev-login";
 import { serverEnv } from "@/lib/server-env";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -23,20 +23,9 @@ export async function GET(request: Request) {
     path.join(process.cwd(), ".env.local"),
     serverEnv().DEV_LOGIN_PASSWORD,
   );
-  const result = await ensureDevAccount(await createClient(), createAdminClient, password);
+  const result = await signInDevAccount(await createClient(), createAdminClient, password);
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: 401 });
 
-  // Same origin only, checked after parsing: `//evil.example` and
-  // `/\evil.example` both parse to a foreign host, so a prefix check is not
-  // enough. Anything off this origin falls back to `/`.
-  const url = new URL(request.url);
-  const next = url.searchParams.get("next");
-  let target = new URL("/", url.origin);
-  try {
-    const resolved = next ? new URL(next, url.origin) : null;
-    if (resolved && resolved.origin === url.origin) target = resolved;
-  } catch {
-    // Unparseable — stay on `/`.
-  }
-  return NextResponse.redirect(target);
+  const next = new URL(request.url).searchParams.get("next");
+  return NextResponse.redirect(safeRedirectTarget(request.url, next));
 }

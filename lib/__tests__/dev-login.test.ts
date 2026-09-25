@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { DEV_LOGIN_EMAIL, ensureDevAccount, ensureDevPassword } from "@/lib/dev-login";
+import { DEV_LOGIN_EMAIL, ensureDevPassword, safeRedirectTarget, signInDevAccount } from "@/lib/dev-login";
 
 function tempEnvFile(contents?: string) {
   const file = path.join(mkdtempSync(path.join(tmpdir(), "m4w-dev-login-")), ".env.local");
@@ -29,6 +29,10 @@ describe("ensureDevPassword", () => {
     expect(made.length).toBeGreaterThanOrEqual(32);
     expect(readFileSync(file, "utf8")).toBe(`A=1\nDEV_LOGIN_PASSWORD=${made}\n`);
     expect(ensureDevPassword(file, undefined)).toBe(made);
+  });
+
+  it("strips quotes the way the env loader does", () => {
+    expect(ensureDevPassword(tempEnvFile('DEV_LOGIN_PASSWORD="quoted"\n'), undefined)).toBe("quoted");
   });
 
   it("creates the file when there is none", () => {
@@ -58,17 +62,17 @@ function fakes(opts: { signIn: Result[]; create?: Result; users?: { id: string; 
 
 const bad = { error: { code: "invalid_credentials", message: "Invalid login credentials" } };
 
-describe("ensureDevAccount", () => {
+describe("signInDevAccount", () => {
   it("signs straight in when the account exists", async () => {
     const f = fakes({ signIn: [{ error: null }] });
-    await expect(ensureDevAccount(f.session, () => f.adminClient, "pw")).resolves.toEqual({ ok: true });
+    await expect(signInDevAccount(f.session, () => f.adminClient, "pw")).resolves.toEqual({ ok: true });
     expect(f.signIn).toHaveBeenCalledWith({ email: DEV_LOGIN_EMAIL, password: "pw" });
     expect(f.admin.createUser).not.toHaveBeenCalled();
   });
 
   it("creates a confirmed account when it is missing, then signs in", async () => {
     const f = fakes({ signIn: [bad, { error: null }] });
-    await expect(ensureDevAccount(f.session, () => f.adminClient, "pw")).resolves.toEqual({ ok: true });
+    await expect(signInDevAccount(f.session, () => f.adminClient, "pw")).resolves.toEqual({ ok: true });
     expect(f.admin.createUser).toHaveBeenCalledWith({
       email: DEV_LOGIN_EMAIL,
       password: "pw",
@@ -86,15 +90,37 @@ describe("ensureDevAccount", () => {
         { id: "dev-id", email: DEV_LOGIN_EMAIL },
       ],
     });
-    await expect(ensureDevAccount(f.session, () => f.adminClient, "pw")).resolves.toEqual({ ok: true });
+    await expect(signInDevAccount(f.session, () => f.adminClient, "pw")).resolves.toEqual({ ok: true });
     expect(f.admin.updateUserById).toHaveBeenCalledWith("dev-id", { password: "pw", email_confirm: true });
+  });
+
+  it("reports a rate limit as it is, without touching the admin client", async () => {
+    const f = fakes({ signIn: [{ error: { code: "over_request_rate_limit", message: "slow down" } }] });
+    const admin = vi.fn();
+    await expect(signInDevAccount(f.session, admin, "pw")).resolves.toEqual({ ok: false, error: "slow down" });
+    expect(admin).not.toHaveBeenCalled();
   });
 
   it("reports the error when sign-in still fails", async () => {
     const f = fakes({ signIn: [bad, bad] });
-    await expect(ensureDevAccount(f.session, () => f.adminClient, "pw")).resolves.toEqual({
+    await expect(signInDevAccount(f.session, () => f.adminClient, "pw")).resolves.toEqual({
       ok: false,
       error: "Invalid login credentials",
     });
+  });
+});
+
+describe("safeRedirectTarget", () => {
+  const req = "http://localhost:3000/api/dev-login";
+  it.each([
+    [null, "http://localhost:3000/"],
+    ["/me", "http://localhost:3000/me"],
+    ["/sesh/1?tab=a", "http://localhost:3000/sesh/1?tab=a"],
+    ["//evil.example", "http://localhost:3000/"],
+    ["/\\evil.example", "http://localhost:3000/"],
+    ["https://evil.example/", "http://localhost:3000/"],
+    ["http://[", "http://localhost:3000/"],
+  ])("next=%j lands on %s", (next, want) => {
+    expect(safeRedirectTarget(req, next).href).toBe(want);
   });
 });

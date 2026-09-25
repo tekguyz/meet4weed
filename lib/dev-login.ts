@@ -7,7 +7,9 @@ import { appendFileSync, existsSync, readFileSync } from "node:fs";
  *  route creates it again on the next visit. */
 export const DEV_LOGIN_EMAIL = "dev@meet4weed.test";
 
-const KEY = "DEV_LOGIN_PASSWORD";
+const PASSWORD_KEY = "DEV_LOGIN_PASSWORD";
+const PAGE_SIZE = 1000;
+const MAX_PAGES = 10;
 
 /** The dev account's password: the environment's, else the one `.env.local`
  *  already holds (written earlier, not yet reloaded), else a new random one
@@ -16,13 +18,17 @@ export function ensureDevPassword(envFile: string, fromEnv: string | undefined):
   if (fromEnv) return fromEnv;
 
   const text = existsSync(envFile) ? readFileSync(envFile, "utf8") : "";
-  const line = text.split(/\r?\n/).find((l) => l.startsWith(`${KEY}=`));
-  const held = line?.slice(KEY.length + 1).trim();
+  const line = text.split(/\r?\n/).find((l) => l.startsWith(`${PASSWORD_KEY}=`));
+  // Strip quotes as dotenv does, so this matches what the reload will load.
+  const held = line
+    ?.slice(PASSWORD_KEY.length + 1)
+    .trim()
+    .replace(/^(['"])(.*)\1$/, "$2");
   if (held) return held;
 
   const made = randomBytes(24).toString("base64url");
   const sep = text === "" || text.endsWith("\n") ? "" : "\n";
-  appendFileSync(envFile, `${sep}${KEY}=${made}\n`);
+  appendFileSync(envFile, `${sep}${PASSWORD_KEY}=${made}\n`);
   return made;
 }
 
@@ -54,7 +60,7 @@ export type DevLoginResult = { ok: true } | { ok: false; error: string };
  *  (a regenerated `.env.local`): create it, or reset its password, through
  *  the admin client, then sign in once more. The admin client is built only
  *  on that path. This is a real sign-in — RLS applies to what follows. */
-export async function ensureDevAccount(
+export async function signInDevAccount(
   session: SessionClient,
   admin: () => AdminClient,
   password: string,
@@ -62,6 +68,9 @@ export async function ensureDevAccount(
   const creds = { email: DEV_LOGIN_EMAIL, password };
   const first = await session.auth.signInWithPassword(creds);
   if (!first.error) return { ok: true };
+  // Only wrong credentials mean missing or stale. A rate limit or a network
+  // error is reported as it is.
+  if (first.error.code !== "invalid_credentials") return { ok: false, error: first.error.message };
 
   const api = admin().auth.admin;
   const created = await api.createUser({ ...creds, email_confirm: true });
@@ -81,12 +90,27 @@ export async function ensureDevAccount(
 async function findUserId(api: AdminClient["auth"]["admin"], email: string) {
   // The admin API has no lookup by email. The dev project is small; ten
   // pages is a ceiling, not an expectation.
-  for (let page = 1; page <= 10; page++) {
-    const { data, error } = await api.listUsers({ page, perPage: 1000 });
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const { data, error } = await api.listUsers({ page, perPage: PAGE_SIZE });
     if (error) return undefined;
     const hit = data.users.find((u) => u.email === email);
     if (hit) return hit.id;
-    if (data.users.length < 1000) return undefined;
+    if (data.users.length < PAGE_SIZE) return undefined;
   }
   return undefined;
+}
+
+/** Where to send the browser after sign-in: `next` when it resolves to the
+ *  request's own origin, else `/`. Checked after parsing, because
+ *  `//evil.example` and `/\evil.example` both parse to a foreign host and pass
+ *  a `startsWith("/")` check. */
+export function safeRedirectTarget(requestUrl: string, next: string | null): URL {
+  const { origin } = new URL(requestUrl);
+  try {
+    const resolved = next ? new URL(next, origin) : null;
+    if (resolved && resolved.origin === origin) return resolved;
+  } catch {
+    // Unparseable — fall through to `/`.
+  }
+  return new URL("/", origin);
 }
