@@ -6,6 +6,7 @@ import { createSesh } from "@/app/(frame)/seshes/actions";
 import { getMyProfile } from "@/lib/profiles/queries";
 import { floridaToday } from "@/lib/dates";
 import { memberAccess } from "@/lib/member/gate";
+import { TAP_TEXT } from "@/components/ui/focus";
 
 export default async function NewSeshPage() {
   const profile = await getMyProfile();
@@ -25,7 +26,7 @@ export default async function NewSeshPage() {
             : "You can host once a person has checked your card."}
         </p>
         {access === "read_only" ? (
-          <Link href="/verify" className="text-sm font-semibold text-primary underline">
+          <Link href="/verify" className={`${TAP_TEXT} self-start text-sm font-semibold text-primary underline`}>
             Add your renewed card
           </Link>
         ) : null}

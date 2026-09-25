@@ -32,7 +32,7 @@ function CheckGroup({
         {options.map((option) => (
           <label
             key={option}
-            className="cursor-pointer rounded-control bg-surface-2 px-3 py-2 text-sm capitalize text-ink has-checked:bg-primary has-checked:text-on-primary"
+            className="inline-flex min-h-11 cursor-pointer items-center rounded-control bg-surface-2 px-3 py-2 text-sm capitalize text-ink has-checked:bg-primary has-checked:text-on-primary"
           >
             <input
               type="checkbox"

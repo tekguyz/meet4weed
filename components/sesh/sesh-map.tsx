@@ -101,6 +101,9 @@ export function SeshMap({ circles, marker, onPick, centre, label }: Props) {
         style: token("--map-style"),
         center: [start.centre.lng, start.centre.lat],
         zoom: start.zoom,
+        // The full credit line, not the compact "i" button: that button is a
+        // ~24px tap target, under the 44px floor (spec §7.1).
+        attributionControl: { compact: false },
       }) as unknown as MapLike;
       map.current = instance;
       makePin.current = () => new maplibre.Marker({ color: accent }) as unknown as MarkerLike;

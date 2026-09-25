@@ -59,7 +59,7 @@ export function Frame({
 
           <Link
             href="/"
-            className={`hidden shrink-0 rounded-control text-base font-semibold text-ink md:mr-4 md:block ${FOCUS_RING}`}
+            className={`hidden shrink-0 rounded-control text-base font-semibold text-ink md:mr-4 md:inline-flex md:min-h-11 md:items-center ${FOCUS_RING}`}
           >
             {APP_NAME}
           </Link>

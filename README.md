@@ -330,7 +330,7 @@ and names no sesh. The day a reviewer approves the card, the sesh is there.
 
 ## Build status
 
-The rebuild follows one spec and eight plans. [`docs/PLANS.md`](docs/PLANS.md)
+The rebuild follows one spec and nine plans. [`docs/PLANS.md`](docs/PLANS.md)
 is the index that says where each one lives; this table is the short version.
 
 | Plan | Builds | Status |
@@ -339,7 +339,8 @@ is the index that says where each one lives; this table is the short version.
 | 02 | Password auth, card verification with owner review queue, cost caps, expiry lifecycle | **Done** |
 | 03 | Seshes, map, RSVP, address unlock | **Done** 2026-09-20 |
 | 04 | On deck and bring list, unlisted seshes, invites, retention | **Done** 2026-09-21 |
-| 05 | Notifications, web push, installable PWA | Next |
+| 04b | App foundations: the Frame, missing routes, settings, delete account, mobile fit | **Done** 2026-09-25 |
+| 05 | Notifications, web push, installable PWA | Next — unblocked |
 | 06 | Safety: report, block, kick | — |
 | 07 | Admin panel beyond the verification queue | — |
 | 08 | The design pass, every route, both themes | — |

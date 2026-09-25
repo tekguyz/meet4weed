@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Banner } from "@/components/ui/banner";
-import { FOCUS_RING } from "@/components/ui/focus";
+import { TAP_TEXT } from "@/components/ui/focus";
 import { INVITE_HELD_BODY, INVITE_HELD_TITLE } from "@/lib/sesh/invites";
 
 export const metadata = { title: INVITE_HELD_TITLE };
@@ -29,7 +29,7 @@ export default function HeldInvitePage() {
         <p className="text-sm text-ink-muted">{INVITE_HELD_BODY}</p>
       </Banner>
 
-      <Link href="/verify" className={`text-sm font-semibold text-primary underline ${FOCUS_RING}`}>
+      <Link href="/verify" className={`${TAP_TEXT} self-start text-sm font-semibold text-primary underline`}>
         Verify your card
       </Link>
     </div>
