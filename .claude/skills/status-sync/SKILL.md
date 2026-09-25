@@ -90,11 +90,12 @@ prevent.
    - **behind origin** — say "behind by N, run `git pull` first", and do NOT
      call the tree current.
 4. **Gates, only if the report claims something is done:**
-   `npm run typecheck`, `npm test`, `npm run build`. Otherwise report them as
+   `npm run typecheck`, `npm run test:unit`, `npm run build`. Otherwise report them as
    *not run this session*.
 
-   `npm test` runs the database security tests only when `SUPABASE_SECRET_KEY`
-   is set; **they skip silently without it, and CI never has it.** Report the
+   `npm test` exits 1 on purpose. The database security tests are
+   `npm run test:integration`; they run only when `SUPABASE_SECRET_KEY` is
+   set, **skip silently without it, and CI never has it.** Report the
    test count *and* whether the security file ran — the summary line alone
    hides a skip.
 5. **Deploy.** There is no Vercel project yet. Say `not deployed`. Once one

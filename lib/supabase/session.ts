@@ -11,6 +11,9 @@ const PUBLIC_PREFIXES = [
   "/auth",
   "/invite",
   "/api/cron",
+  // 404 outside development; in development it is how a signed-out agent
+  // signs in (app/api/dev-login/route.ts).
+  "/api/dev-login",
   "/help",
   "/terms",
   "/privacy",

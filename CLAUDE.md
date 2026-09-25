@@ -72,27 +72,28 @@ reason so nobody has to rediscover it.
 
 ## Tests
 
-- **Two commands: `npm run test:unit`, then `npm run test:db`.** Tests live in
-  `__tests__/` beside what they test. `test:unit` skips `supabase/`; `npm test`
-  is the same thing. *Why:* a path filter cannot keep the database tests out —
+- **Two commands: `npm run test:unit`, then `npm run test:integration`.** Tests
+  live in `__tests__/` beside what they test. `test:unit` skips `supabase/`.
+  **`npm test` prints an error and exits 1 on purpose.** CI runs
+  `npm run test:unit`. *Why:* a path filter cannot keep the database tests out —
   vitest matches each word as part of a path, and every test path contains
   `__tests__`, so `npx vitest run lib app components scripts __tests__` (the
   command written into the #59 tickets) runs them all at once. Issue #64 hit
   it. Use the scripts, not a hand-typed filter.
 - **Go light on this machine.** While working, run only the test files you
-  touched. Run `test:unit` once at the end, and `test:db` once when a
-  migration changed. Stop the dev server when the screen check is done.
+  touched. Run `test:unit` once at the end, and `test:integration` once
+  when a migration changed. Stop the dev server when the screen check is done.
 - **RLS tests are vitest integration tests**, for example
   `supabase/tests/__tests__/profiles-rls.test.ts`. They create real members
   through the admin API, exercise them through PostgREST, and delete them
   afterwards. They **skip without `SUPABASE_SECRET_KEY`**, so CI never runs
   them. Run them locally before merging anything that touches a migration, and
   report whether they ran — the summary line hides a skip.
-- **Run them serially — `npm run test:db`.** Run all at once, they create
+- **Run them serially — `npm run test:integration`.** Run all at once, they create
   members faster than Supabase Auth allows; unrelated suites then die in
   `beforeAll` with `Request rate limit reached`, which reads like a failure and
   is not one, and `afterAll` never deletes what they made. Re-run with
-  `test:db` before calling an integration red a real red. After any red, check
+  `test:integration` before calling an integration red a real red. After any red, check
   for leftover `@meet4weed.test` accounts. The README says this too; it is here
   because this file is read first.
 - **Never weaken a live security rule to prove a test fails.** Prove it
@@ -122,6 +123,16 @@ reason so nobody has to rediscover it.
 
 ## Auth
 
+- **Reach signed-in pages through `GET /api/dev-login`, never the login
+  form.** It signs in `dev@meet4weed.test` on the server and redirects to
+  `/`, or to `?next=/path` on the same origin. It creates the account when it
+  is missing, and writes a random `DEV_LOGIN_PASSWORD` into `.env.local` when
+  there is none. It is a real sign-in: RLS applies. It returns 404 unless
+  `NODE_ENV` is `development`. *Why:* an agent may not type a password into
+  the browser pane. The account is a new, unverified member, so pages behind
+  verification still send it to onboarding. `lib/dev-login.ts` is the one
+  other file that reads a secret: it reads and writes `DEV_LOGIN_PASSWORD` in
+  `.env.local`, because the route writes it there before Next reloads env.
 - Email + password, confirm-email on. Email carries links only to confirm and
   to reset; both open `/auth/confirm`, which spends the token only on a button
   POST. Spec §4.5 is the contract.
