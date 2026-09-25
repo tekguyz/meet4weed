@@ -129,8 +129,11 @@ reason so nobody has to rediscover it.
   is missing, and writes a random `DEV_LOGIN_PASSWORD` into `.env.local` when
   there is none. It is a real sign-in: RLS applies. It returns 404 unless
   `NODE_ENV` is `development`. *Why:* an agent may not type a password into
-  the browser pane. The account is a new, unverified member, so pages behind
-  verification still send it to onboarding. `lib/dev-login.ts` is the one
+  the browser pane. On every visit it walks the account past every gate —
+  onboarded, a real handle, verified with a card valid for a year — so every
+  member screen opens. `?as=admin` also makes it an admin (`?as=admin&next=/admin`);
+  a visit without it removes the admin row. Never ask the owner to unlock a
+  screen by hand (#90). `lib/dev-login.ts` is the one
   other file that reads a secret: it reads and writes `DEV_LOGIN_PASSWORD` in
   `.env.local`, because the route writes it there before Next reloads env.
 - Email + password, confirm-email on. Email carries links only to confirm and

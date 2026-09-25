@@ -3,7 +3,16 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { DEV_LOGIN_EMAIL, ensureDevPassword, safeRedirectTarget, signInDevAccount } from "@/lib/dev-login";
+import {
+  DEV_LOGIN_EMAIL,
+  devRoleFrom,
+  ensureDevPassword,
+  prepareDevAccount,
+  safeRedirectTarget,
+  signInDevAccount,
+  type DevAccountStore,
+} from "@/lib/dev-login";
+import { TERMS_VERSION } from "@/lib/legal/terms";
 
 function tempEnvFile(contents?: string) {
   const file = path.join(mkdtempSync(path.join(tmpdir(), "m4w-dev-login-")), ".env.local");
@@ -122,5 +131,72 @@ describe("safeRedirectTarget", () => {
     ["http://[", "http://localhost:3000/"],
   ])("next=%j lands on %s", (next, want) => {
     expect(safeRedirectTarget(req, next).href).toBe(want);
+  });
+});
+
+describe("devRoleFrom", () => {
+  it.each([
+    ["admin", "admin"],
+    [null, "member"],
+    ["", "member"],
+    ["ADMIN", "member"],
+    ["owner", "member"],
+  ])("as=%j is %s", (param, want) => {
+    expect(devRoleFrom(param)).toBe(want);
+  });
+});
+
+describe("prepareDevAccount", () => {
+  const today = "2026-09-25";
+
+  function store(profile: { handle: string; attestedAt: string | null } | null, errors: Partial<Record<keyof DevAccountStore, string>> = {}) {
+    return {
+      readProfile: vi.fn().mockResolvedValue(errors.readProfile ? { error: errors.readProfile } : { profile }),
+      updateProfile: vi.fn().mockResolvedValue(errors.updateProfile ?? null),
+      setAdmin: vi.fn().mockResolvedValue(errors.setAdmin ?? null),
+    };
+  }
+
+  it("finishes a new account: onboarded, a real handle, verified for a year", async () => {
+    const s = store({ handle: "member_abc123", attestedAt: null });
+    await expect(prepareDevAccount(s, "u1", "member", today)).resolves.toEqual({ ok: true });
+    const [id, patch] = s.updateProfile.mock.calls[0];
+    expect(id).toBe("u1");
+    expect(patch).toMatchObject({
+      handle: "dev_member",
+      terms_version: TERMS_VERSION,
+      status: "verified",
+      card_expires_on: "2027-09-25",
+    });
+    expect(typeof patch.attested_at).toBe("string");
+  });
+
+  it("repairs the gates but keeps a handle and attestation it already has", async () => {
+    const s = store({ handle: "dev_tester", attestedAt: "2026-09-01T00:00:00Z" });
+    await prepareDevAccount(s, "u1", "member", today);
+    expect(s.updateProfile.mock.calls[0][1]).toEqual({ status: "verified", card_expires_on: "2027-09-25" });
+  });
+
+  it("makes the account an admin only when asked, and removes it otherwise", async () => {
+    const s = store({ handle: "dev_tester", attestedAt: "x" });
+    await prepareDevAccount(s, "u1", "admin", today);
+    expect(s.setAdmin).toHaveBeenCalledWith("u1", true);
+    await prepareDevAccount(s, "u1", "member", today);
+    expect(s.setAdmin).toHaveBeenLastCalledWith("u1", false);
+  });
+
+  it("reports a missing profile without writing anything", async () => {
+    const s = store(null);
+    await expect(prepareDevAccount(s, "u1", "member", today)).resolves.toEqual({
+      ok: false,
+      error: "The dev account has no profile row",
+    });
+    expect(s.updateProfile).not.toHaveBeenCalled();
+    expect(s.setAdmin).not.toHaveBeenCalled();
+  });
+
+  it.each(["readProfile", "updateProfile", "setAdmin"] as const)("reports a %s error as it is", async (step) => {
+    const s = store({ handle: "dev_tester", attestedAt: "x" }, { [step]: "boom" });
+    await expect(prepareDevAccount(s, "u1", "admin", today)).resolves.toEqual({ ok: false, error: "boom" });
   });
 });
