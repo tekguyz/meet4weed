@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { notify } from "@/lib/notify/notify";
 import { floridaToday } from "@/lib/dates";
 import { memberLimitsFromEnv } from "@/lib/sesh/member-limits";
 import type { ActionState } from "@/lib/forms/action-state";
@@ -96,10 +98,24 @@ export async function decideRsvp(_prev: ActionState | null, formData: FormData):
 
   const caller = await callerOrNull();
   if (!caller) return { ok: false, message: "Sign in again to continue." };
-  const { supabase } = caller;
+  const { supabase, user } = caller;
 
   const { error } = await supabase.rpc("decide_rsvp", { p_rsvp: rsvp.data, p_decision: choice.data });
   if (error) return { ok: false, message: readable(error.code) };
+
+  if (choice.data === "approved") {
+    // Read back through the host's own session: a host sees every RSVP on
+    // their sesh. The sesh comes from the row, never from the form.
+    const { data: row } = await supabase.from("rsvps").select("member_id, sesh_id").eq("id", rsvp.data).single();
+    if (row) {
+      await notify(createAdminClient(), {
+        kind: "rsvp_approved",
+        seshId: row.sesh_id as string,
+        hostId: user.id,
+        guestId: row.member_id as string,
+      });
+    }
+  }
 
   const sesh = seshId.safeParse(formData.get("seshId"));
   if (sesh.success) revalidatePath(`/seshes/${sesh.data}`);
