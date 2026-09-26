@@ -21,7 +21,7 @@ export function FeedControls({ filters }: { filters: FeedFilters }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
         {SESH_TYPES.map((type) => {
           const on = filters.types.includes(type);
           return (
