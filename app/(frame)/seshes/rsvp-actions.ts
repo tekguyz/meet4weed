@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notify/notify";
+import { readMyRsvpStatus, readSeshFacts } from "@/lib/notify/sesh-facts";
 import { floridaToday } from "@/lib/dates";
 import { memberLimitsFromEnv } from "@/lib/sesh/member-limits";
 import type { ActionState } from "@/lib/forms/action-state";
@@ -67,8 +68,20 @@ export async function askToJoin(_prev: ActionState | null, formData: FormData): 
     return { ok: false, message: TOO_MANY_PRESSES };
   }
 
+  // Read through the member's own session: a sesh they can ask to join is
+  // one they can see. request_rsvp accepts asking again while already
+  // waiting, so the old status says whether the host has news.
+  const [facts, wasStatus] = await Promise.all([
+    readSeshFacts(supabase, sesh.data),
+    readMyRsvpStatus(supabase, sesh.data, user.id),
+  ]);
+
   const { error } = await supabase.rpc("request_rsvp", { p_sesh: sesh.data });
   if (error) return { ok: false, message: readable(error.code) };
+
+  if (facts && wasStatus !== "requested") {
+    await notify(createAdminClient(), { kind: "rsvp_requested", seshId: sesh.data, hostId: facts.hostId, guestId: user.id });
+  }
 
   revalidatePath(`/seshes/${sesh.data}`);
   revalidatePath("/seshes/mine");
@@ -105,23 +118,35 @@ export async function decideRsvp(_prev: ActionState | null, formData: FormData):
 
   // Read before deciding, through the host's own session: a host sees every
   // RSVP on their sesh. The guest and the sesh come from the row, never from
-  // the form, and the old status says whether an approval is news —
-  // decide_rsvp accepts re-approving somebody already approved.
+  // the form, and the old status says whether a decision is news —
+  // decide_rsvp accepts deciding the same way twice. Removing a guest tells
+  // nobody: the guest sees it on the sesh, and it is not one of the seven.
   const before =
-    choice.data === "approved"
-      ? (await supabase.from("rsvps").select("member_id, sesh_id, status").eq("id", rsvp.data).single()).data
-      : null;
+    choice.data === "kicked"
+      ? null
+      : (await supabase.from("rsvps").select("member_id, sesh_id, status").eq("id", rsvp.data).single()).data;
 
   const { error } = await supabase.rpc("decide_rsvp", { p_rsvp: rsvp.data, p_decision: choice.data });
   if (error) return { ok: false, message: readable(error.code) };
 
-  if (before && before.status !== "approved") {
-    await notify(createAdminClient(), {
-      kind: "rsvp_approved",
-      seshId: before.sesh_id as string,
-      hostId: user.id,
-      guestId: before.member_id as string,
-    });
+  if (before && before.status !== choice.data) {
+    const seshOfRsvp = before.sesh_id as string;
+    const guestId = before.member_id as string;
+    if (choice.data === "approved") {
+      await notify(createAdminClient(), { kind: "rsvp_approved", seshId: seshOfRsvp, hostId: user.id, guestId });
+    } else {
+      // A denied guest can no longer see the sesh, so its title rides in the
+      // row (#52). The host reads it here. The denial has happened either
+      // way, so an unread title still sends the notice.
+      const facts = await readSeshFacts(supabase, seshOfRsvp);
+      await notify(createAdminClient(), {
+        kind: "rsvp_denied",
+        seshId: seshOfRsvp,
+        hostId: user.id,
+        guestId,
+        seshTitle: facts?.title ?? null,
+      });
+    }
   }
 
   const sesh = seshId.safeParse(formData.get("seshId"));

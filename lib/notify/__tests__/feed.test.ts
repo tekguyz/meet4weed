@@ -52,6 +52,14 @@ describe("describeNotification", () => {
     expect(described.text).toBe("The host of Old porch said no this time.");
   });
 
+  /** Issue #54 — the host deleted their account, and the sesh went with them. */
+  it("reads a cancel whose sesh is gone from its kept title, and sends it to the feed", () => {
+    const described = describeNotification(
+      item({ type: "sesh_cancelled", seshId: null, seshTitle: null, actorHandle: null, payload: { seshTitle: "Old porch" } }),
+    );
+    expect(described).toEqual({ text: "Old porch was cancelled.", href: "/seshes" });
+  });
+
   it('says "a sesh" when no title can be found', () => {
     expect(describeNotification(item({ type: "sesh_cancelled", seshTitle: null })).text).toBe("A sesh was cancelled.");
   });

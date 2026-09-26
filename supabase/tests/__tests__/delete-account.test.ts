@@ -164,6 +164,23 @@ describe.skipIf(!configured)("delete my account", () => {
     expect(asService.data).toHaveLength(1);
   }, 60_000);
 
+  /** Issue #54. The sesh cascades away with its host, and a notice that
+   *  pointed at it would cascade too. It must still reach the guest. */
+  it("tells an approved guest that the leaving host's sesh is off", async () => {
+    const leaver = await makeMember("leaving-host");
+    const guest = await makeMember("guest");
+    const future = await sesh(leaver, hoursFromNow(48));
+    const { error } = await service.from("rsvps").insert({ sesh_id: future, member_id: guest.id, status: "approved" });
+    if (error) throw new Error(`could not approve the guest: ${error.message}`);
+
+    await deleteMemberAccount(service, leaver.id);
+
+    const { data: notices } = await guest.db.from("notifications").select("type, sesh_id, actor_id, payload");
+    expect(notices).toEqual([
+      { type: "sesh_cancelled", sesh_id: null, actor_id: null, payload: { seshTitle: "Delete probe" } },
+    ]);
+  }, 60_000);
+
   it("deletes the member, their images and their future seshes, and keeps the spend", async () => {
     const leaver = await makeMember("leaver");
     const future = await sesh(leaver, hoursFromNow(48));
