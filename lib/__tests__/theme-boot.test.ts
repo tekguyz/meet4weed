@@ -1,4 +1,7 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { oklchToHex } from "@/scripts/logo.mjs";
 import { THEME_BOOT, syncThemeColor } from "@/lib/theme-boot";
 import { EXPECTED_BG, loadThemeTokens, themeColor } from "./load-theme-tokens";
 
@@ -54,6 +57,18 @@ describe("syncThemeColor", () => {
     document.documentElement.classList.add("light");
     syncThemeColor();
     expect(themeColor()).toBe(EXPECTED_BG.light);
+  });
+
+  // The inlined maths repeats oklchToHex, which the icons use. Every oklch()
+  // colour in globals.css holds the two copies to the same answer.
+  const tokens = [
+    ...new Set(readFileSync(path.join(process.cwd(), "app/globals.css"), "utf8").match(/oklch\(\d[^)]*\)/g)),
+  ];
+  it.each(tokens)("converts %s the way the icon script does", (token) => {
+    document.documentElement.style.setProperty("--bg", token);
+    syncThemeColor();
+    document.documentElement.style.removeProperty("--bg");
+    expect(themeColor()).toBe(oklchToHex(token));
   });
 
   // The build rewrites the token: lab() for a browser that has it, and a hex

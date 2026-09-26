@@ -19,7 +19,7 @@ export function syncThemeColor() {
   const num = "(-?[\\d.]+)";
   const ok = new RegExp(`^oklch\\(\\s*${num}(%?)\\s*${num}\\s*${num}`).exec(value);
   const lab = new RegExp(`^lab\\(\\s*${num}%?\\s*${num}\\s*${num}`).exec(value);
-  let linear: number[];
+  let linear: number[] | undefined;
   if (ok) {
     const L = Number(ok[1]) / (ok[2] ? 100 : 1);
     const C = Number(ok[3]);
@@ -45,11 +45,9 @@ export function syncThemeColor() {
       -0.978795502912089 * X + 1.916254567259524 * Y + 0.03344273116131949 * Z,
       0.07195537988411677 * X - 0.2289768264158322 * Y + 1.405386058324125 * Z,
     ];
-  } else {
-    // The build's hex fallback, for a browser without lab().
-    linear = [];
   }
-  const hex = linear.length
+  // Without oklch() or lab(), the build's hex fallback passes straight through.
+  const hex = linear
     ? "#" +
       linear
         .map((x) => {
