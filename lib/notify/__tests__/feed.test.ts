@@ -43,6 +43,25 @@ describe("describeNotification", () => {
     expect(described).toEqual({ text: "Your card expires soon. Renew it to keep full access.", href: "/verify" });
   });
 
+  /** Issue #55 — the clock writes the card date, so the words say when. */
+  it("tells a member the date their card expires", () => {
+    const described = describeNotification(
+      item({ type: "card_expiry", seshId: null, seshTitle: null, actorHandle: null, payload: { about: "self", cardExpiresOn: "2026-10-03" } }),
+    );
+    expect(described).toEqual({ text: "Your card expires Oct 3. Renew it to keep full access.", href: "/verify" });
+  });
+
+  /** Spec §4.3 — the host hears before the auto-drop, not after it. */
+  it("tells a host which guest's card lapses before their sesh, and sends them to it", () => {
+    const described = describeNotification(
+      item({ type: "card_expiry", actorHandle: "ryder", payload: { about: "guest", cardExpiresOn: "2026-10-03" } }),
+    );
+    expect(described).toEqual({
+      text: "@ryder's card expires Oct 3, before Porch sesh. They lose the address unless they renew.",
+      href: `/seshes/${SESH}`,
+    });
+  });
+
   it('calls a deleted actor "A member"', () => {
     expect(describeNotification(item({ actorHandle: null })).text).toBe("A member approved you for Porch sesh.");
   });
