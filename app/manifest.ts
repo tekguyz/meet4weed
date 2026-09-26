@@ -20,10 +20,12 @@ export default function manifest(): MetadataRoute.Manifest {
     name: APP_NAME,
     short_name: APP_NAME,
     description: APP_TAGLINE,
+    // Names the app for the browser, so a later start_url change is not a
+    // second install.
+    id: "/",
     start_url: "/",
     display: "standalone",
     background_color: dark.bg,
-    theme_color: dark.bg,
     icons: [
       { src: "/icon.svg", sizes: "any", type: "image/svg+xml" },
       { src: "/icon-192.png", sizes: "192x192", type: "image/png" },

@@ -15,23 +15,52 @@
 
 const CACHE = "m4w-shell-v1";
 const OFFLINE = "/offline";
+// Keep in step with app/manifest.ts; app/__tests__/manifest.test.ts checks it.
 const ICONS = ["/icon.svg", "/favicon.ico", "/apple-icon.png", "/icon-192.png", "/icon-512.png", "/icon-maskable-512.png"];
 
 // A build asset the offline page names: its styles, scripts and fonts. Stops
 // at a quote, space, backslash or bracket, so an escaped URL inside the page's
 // inline data is read too.
 const ASSET = /\/_next\/static\/[^"'\s\\)]+\.(?:js|css|woff2?)/g;
-const SHELL_PATH = /^\/(?:_next\/static\/|icon|favicon\.ico$|apple-icon)/;
+const isShell = (pathname) => pathname.startsWith("/_next/static/") || ICONS.includes(pathname);
+
+// A font a stylesheet names, as a path relative to that stylesheet.
+const FONT = /url\(\s*["']?([^"')]+\.woff2?)/g;
+
+// Stores one shell file, and the fonts it names if it is a stylesheet. Each
+// file is best-effort: one missing icon must not stop the worker installing,
+// because web push needs a worker whether or not the offline page is complete.
+async function keep(cache, path) {
+  try {
+    const res = await fetch(path, { cache: "reload" });
+    if (!res.ok) return;
+    if (path.endsWith(".css")) {
+      const base = new URL(path, self.location.origin);
+      const fonts = [...(await res.clone().text()).matchAll(FONT)].map((m) => new URL(m[1], base).pathname);
+      await Promise.all(fonts.filter(isShell).map((font) => keep(cache, font)));
+    }
+    await cache.put(path, res);
+  } catch {
+    // No signal, or the file is gone. The rest of the shell still installs.
+  }
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
-      const page = await fetch(OFFLINE, { cache: "reload" });
-      if (!page.ok) throw new Error(`${OFFLINE} answered ${page.status}`);
-      const assets = [...new Set((await page.clone().text()).match(ASSET) || [])];
       const cache = await caches.open(CACHE);
-      await cache.put(OFFLINE, page);
-      await cache.addAll([...assets, ...ICONS]);
+      let assets = [];
+      try {
+        const page = await fetch(OFFLINE, { cache: "reload" });
+        if (page.ok) {
+          assets = [...new Set((await page.clone().text()).match(ASSET) || [])];
+          await cache.put(OFFLINE, page);
+        }
+      } catch {
+        // Installs anyway, for push. With no cached page, no signal shows the
+        // browser's own offline screen, which holds no data either.
+      }
+      await Promise.all([...assets, ...ICONS].map((path) => keep(cache, path)));
       await self.skipWaiting();
     })(),
   );
@@ -57,7 +86,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (SHELL_PATH.test(url.pathname)) {
+  if (isShell(url.pathname)) {
     event.respondWith(
       fetch(request).catch(async () => (await caches.match(request, { ignoreSearch: true })) || Response.error()),
     );

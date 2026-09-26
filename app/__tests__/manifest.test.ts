@@ -35,6 +35,14 @@ describe("the web app manifest (#51)", () => {
     ]);
   });
 
+  // public/sw.js is a plain script and cannot import the manifest, so the
+  // icon list is written twice. This keeps the two in step.
+  it("names only icons the service worker also caches", () => {
+    const sw = readFileSync(path.join(root, "public/sw.js"), "utf8");
+    const cached = JSON.parse(sw.match(/const ICONS = (\[[^\]]*\]);/)![1]) as string[];
+    for (const { src } of m.icons ?? []) expect(cached).toContain(src);
+  });
+
   it("points only at icons that exist", () => {
     for (const { src } of m.icons ?? []) {
       const file = src.slice(1);

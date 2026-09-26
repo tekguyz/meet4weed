@@ -31,9 +31,12 @@ const OFFLINE_HTML = `<!DOCTYPE html><html><head>
 </head><body><a href="/seshes/abc">not a shell asset</a>
 <script>self.__next_f.push([1,"/_next/static/chunks/lazy.js"])</script></body></html>`;
 
+/** next/font names a face only here when it is not preloaded. */
+const STYLESHEET = `@font-face{font-family:x;src:url(../media/inner.woff2) format("woff2")}`;
+
 type Listener = (event: Record<string, unknown>) => void;
 
-function worker({ online = true } = {}) {
+function worker({ online = true, missing = [] as string[] } = {}) {
   const listeners: Record<string, Listener> = {};
   const stores = new Map<string, Map<string, Response>>();
   const key = (r: Request | string) => new URL(typeof r === "string" ? r : r.url, ORIGIN).pathname;
@@ -60,7 +63,10 @@ function worker({ online = true } = {}) {
   const net = vi.fn(async (req: Request | string) => {
     if (!online) throw new TypeError("Failed to fetch");
     const p = key(req);
-    return new Response(p === "/offline" ? OFFLINE_HTML : `live ${p}`, { status: 200 });
+    if (missing.includes(p)) return new Response("gone", { status: 404 });
+    if (p === "/offline") return new Response(OFFLINE_HTML);
+    if (p.endsWith(".css")) return new Response(STYLESHEET);
+    return new Response(`live ${p}`);
   });
 
   const self = {
@@ -114,6 +120,7 @@ describe("the service worker (ADR 0001: app shell only)", () => {
         "/_next/static/media/nunito.woff2",
         "/_next/static/chunks/main.js",
         "/_next/static/chunks/lazy.js",
+        "/_next/static/media/inner.woff2",
         "/icon.svg",
         "/icon-192.png",
       ]),
@@ -149,7 +156,15 @@ describe("the service worker (ADR 0001: app shell only)", () => {
     w.setOnline(false);
     const res = await w.request("/_next/static/css/app.css", "cors");
     expect(res).toBeDefined();
-    expect(await res!.text()).toBe("asset");
+    expect(await res!.text()).toBe(STYLESHEET);
+  });
+
+  // Web push needs the worker whether or not the offline page is complete.
+  it("still installs when a shell file is missing", async () => {
+    const partial = worker({ missing: ["/icon-512.png", "/offline"] });
+    await partial.install();
+    expect(partial.cached()).toContain("/icon-192.png");
+    expect(partial.cached()).not.toContain("/icon-512.png");
   });
 
   it("leaves writes and other origins to the browser", async () => {
