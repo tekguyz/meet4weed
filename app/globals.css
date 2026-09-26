@@ -71,8 +71,14 @@
   --danger: oklch(52.60% 0.1547 33.86);           /* #B23F26 */
 }
 
+/* On html as well as body: Android paints its nav bar from the root element,
+   and an overscroll shows the root, not the body. */
+html,
 body {
   background: var(--color-bg);
+}
+
+body {
   color: var(--color-ink);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;

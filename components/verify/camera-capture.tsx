@@ -170,7 +170,7 @@ export function CameraCapture({ facing, guide, onCapture, timerSeconds, check, a
           </span>
         ) : null}
       </button>
-      <Button type="button" className="sticky bottom-4" onClick={shutter} disabled={state !== "live" || countdown !== null}>
+      <Button type="button" className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] md:bottom-4" onClick={shutter} disabled={state !== "live" || countdown !== null}>
         {state !== "live" ? "Opening camera…" : timerSeconds ? `Take photo in ${timerSeconds} seconds` : "Take photo"}
       </Button>
     </div>
