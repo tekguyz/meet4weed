@@ -10,13 +10,13 @@ export interface BrandColours {
 
 export const MARK_RADIUS: number;
 export const MASKABLE_SCALE: number;
+export const APPLE_SCALE: number;
 
 export function markSvg(options: {
   colours: Pick<BrandColours, "primary" | "secondary">;
   field?: string;
   scale?: number;
   lightColours?: Pick<BrandColours, "primary" | "secondary">;
-  size?: number;
 }): string;
 
 export function oklchToHex(value: string): string;

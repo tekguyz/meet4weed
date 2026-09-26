@@ -11,7 +11,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import sharp from "sharp";
-import { icoFromPngs, MASKABLE_SCALE, markSvg, readBrandColours, woffToSfnt } from "./logo.mjs";
+import { APPLE_SCALE, icoFromPngs, MASKABLE_SCALE, markSvg, readBrandColours, woffToSfnt } from "./logo.mjs";
 
 const root = path.resolve(import.meta.dirname, "..");
 const out = (p) => path.join(root, p);
@@ -32,7 +32,7 @@ writeFileSync(out("public/icon-512.png"), await png(flat, 512));
 // Opaque on the dark field.
 const opaque = markSvg({ colours: dark, field: dark.bg, scale: MASKABLE_SCALE });
 writeFileSync(out("public/icon-maskable-512.png"), await png(opaque, 512));
-writeFileSync(out("app/apple-icon.png"), await png(markSvg({ colours: dark, field: dark.bg, scale: 0.8 }), 180));
+writeFileSync(out("app/apple-icon.png"), await png(markSvg({ colours: dark, field: dark.bg, scale: APPLE_SCALE }), 180));
 
 // Link preview, 1200 x 630: the mark, the Nunito wordmark and the tagline.
 const fontDir = mkdtempSync(path.join(tmpdir(), "m4w-font-"));
@@ -42,12 +42,14 @@ const font = (w) => {
   writeFileSync(file, woffToSfnt(woff));
   return file;
 };
+// The text goes into Pango markup, so &, < and > must be escaped.
+const escapeMarkup = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 // Each Nunito file names its own family by weight, e.g. "Nunito ExtraBold".
 const FAMILY = { 600: "Nunito SemiBold", 800: "Nunito ExtraBold" };
 const text = (t, w, px, colour, width) =>
   sharp({
     text: {
-      text: `<span foreground="${colour}">${t}</span>`,
+      text: `<span foreground="${colour}">${escapeMarkup(t)}</span>`,
       font: `${FAMILY[w]} ${px}px`,
       fontfile: font(w),
       rgba: true,
@@ -58,7 +60,9 @@ const text = (t, w, px, colour, width) =>
     .png()
     .toBuffer();
 // The tagline is read from lib/env.ts so the preview never drifts from it.
-const tagline = /APP_TAGLINE =\s*"([^"]+)"/.exec(readFileSync(out("lib/env.ts"), "utf8"))[1];
+const taglineMatch = /APP_TAGLINE =\s*"([^"]+)"/.exec(readFileSync(out("lib/env.ts"), "utf8"));
+if (!taglineMatch) throw new Error("No APP_TAGLINE string in lib/env.ts");
+const tagline = taglineMatch[1];
 const [word, tag, mark] = await Promise.all([
   text("meet4weed", 800, 108, dark.ink),
   text(tagline, 600, 32, dark.inkMuted, 560),

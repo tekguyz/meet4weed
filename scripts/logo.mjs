@@ -13,6 +13,9 @@ export const MARK_RADIUS = 29;
  *  centred circle of 40% of the icon, so the mark is shrunk to sit inside it. */
 export const MASKABLE_SCALE = 0.72;
 
+/** iOS rounds the Apple icon's corners only a little, so the mark can be larger. */
+export const APPLE_SCALE = 0.8;
+
 const RING = 24;
 const DOT = 5;
 const LEAF_SCALE = 1.15;
@@ -32,18 +35,18 @@ const LEAFLET = "M0 0C5 -6 5 -14 0 -20C-5 -14 -5 -6 0 0Z";
 
 const round = (n) => Math.round(n * 100) / 100;
 
-function shapes(p, s) {
+function shapes(primaryAttr, secondaryAttr) {
   const dots = [0, 1, 2, 3, 4, 5].map((i) => {
     const a = ((-90 + i * 60) * Math.PI) / 180;
-    return `<circle cx="${round(32 + RING * Math.cos(a))}" cy="${round(32 + RING * Math.sin(a))}" r="${DOT}"${s}/>`;
+    return `<circle cx="${round(32 + RING * Math.cos(a))}" cy="${round(32 + RING * Math.sin(a))}" r="${DOT}"${secondaryAttr}/>`;
   });
   const [lx, ly] = LEAF_AT;
   const leaflets = LEAFLETS.map(
     ([deg, len]) =>
-      `<path d="${LEAFLET}" transform="translate(${lx} ${ly}) rotate(${deg}) scale(${round(len * LEAF_SCALE)})"${p}/>`,
+      `<path d="${LEAFLET}" transform="translate(${lx} ${ly}) rotate(${deg}) scale(${round(len * LEAF_SCALE)})"${primaryAttr}/>`,
   );
   const w = round(2.6 * LEAF_SCALE);
-  const stem = `<rect x="${round(lx - w / 2)}" y="${ly - 1}" width="${w}" height="${round(6.5 * LEAF_SCALE)}" rx="${round(w / 2)}"${p}/>`;
+  const stem = `<rect x="${round(lx - w / 2)}" y="${ly - 1}" width="${w}" height="${round(6.5 * LEAF_SCALE)}" rx="${round(w / 2)}"${primaryAttr}/>`;
   return [...dots, ...leaflets, stem].join("");
 }
 
@@ -54,21 +57,20 @@ function shapes(p, s) {
  * - `scale`: shrink the mark about the centre, e.g. into a maskable safe zone.
  * - `lightColours`: switch to these on a light browser tab (SVG favicons only).
  */
-export function markSvg({ colours, field, scale = 1, lightColours, size }) {
-  const dims = size ? ` width="${size}" height="${size}"` : "";
+export function markSvg({ colours, field, scale = 1, lightColours }) {
   let style = "";
-  let p = ` fill="${colours.primary}"`;
-  let s = ` fill="${colours.secondary}"`;
+  let primaryAttr = ` fill="${colours.primary}"`;
+  let secondaryAttr = ` fill="${colours.secondary}"`;
   if (lightColours) {
     style =
       `<style>.p{fill:${colours.primary}}.s{fill:${colours.secondary}}` +
       `@media (prefers-color-scheme: light){.p{fill:${lightColours.primary}}.s{fill:${lightColours.secondary}}}</style>`;
-    p = ` class="p"`;
-    s = ` class="s"`;
+    primaryAttr = ` class="p"`;
+    secondaryAttr = ` class="s"`;
   }
   const bg = field ? `<rect width="64" height="64" fill="${field}"/>` : "";
-  const body = scale === 1 ? shapes(p, s) : `<g transform="translate(32 32) scale(${scale}) translate(-32 -32)">${shapes(p, s)}</g>`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"${dims}>${style}${bg}${body}</svg>`;
+  const body = scale === 1 ? shapes(primaryAttr, secondaryAttr) : `<g transform="translate(32 32) scale(${scale}) translate(-32 -32)">${shapes(primaryAttr, secondaryAttr)}</g>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">${style}${bg}${body}</svg>`;
 }
 
 /** "oklch(L% C H)" to "#rrggbb", through OKLab and linear sRGB. */
