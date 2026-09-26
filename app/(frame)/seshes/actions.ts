@@ -4,6 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { editIsNewsToGuests } from "@/lib/notify/events";
+import { notify } from "@/lib/notify/notify";
+import { approvedGuestIds, readSeshFacts, readTravelFacts, type SeshFacts } from "@/lib/notify/sesh-facts";
 import { floridaToday, floridaWallClockToInstant } from "@/lib/dates";
 import { areaNameLookup } from "@/lib/sesh/area-name";
 import { setSeshCancelled } from "@/lib/sesh/cancel";
@@ -26,6 +30,14 @@ const CHECK_FIELDS = "Check the highlighted fields.";
 const TOO_MANY_POSTS = "You have posted a lot of seshes today. Try again tomorrow.";
 
 const seshId = z.uuid();
+
+/** Whether a change the caller just made is news worth telling the guests.
+ *  An update RLS filters out succeeds with no rows and no error, so the host
+ *  is checked here before anybody is told anything. A cancelled sesh is
+ *  already final. */
+function hostChangedOpenSesh(before: SeshFacts | null, userId: string): before is SeshFacts {
+  return before !== null && before.hostId === userId && before.status === "open";
+}
 
 function optional(value: FormDataEntryValue | null): string | undefined {
   const text = typeof value === "string" ? value.trim() : "";
@@ -170,6 +182,10 @@ export async function editSesh(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, message: "Sign in again to continue." };
 
+  // Read before the write, so the guests are told only when the time or the
+  // door actually moved.
+  const before = await readTravelFacts(supabase, id.data);
+
   // `status` is deliberately absent. Cancelling is its own act with its own
   // consequences — it locks the address at once — so it never rides along in
   // an ordinary edit.
@@ -210,6 +226,16 @@ export async function editSesh(
   if (error?.code === INSUFFICIENT_PRIVILEGE) return { ok: false, message: REFUSED };
   if (error) return { ok: false, message: "Could not save that. Try again." };
 
+  if (hostChangedOpenSesh(before, user.id)) {
+    const [after, guestIds] = await Promise.all([
+      readTravelFacts(supabase, id.data),
+      approvedGuestIds(supabase, id.data),
+    ]);
+    if (after && editIsNewsToGuests(before, after)) {
+      await notify(createAdminClient(), { kind: "sesh_edited", seshId: id.data, hostId: user.id, guestIds });
+    }
+  }
+
   revalidatePath("/seshes/mine");
   redirect("/seshes/mine");
 }
@@ -230,8 +256,22 @@ export async function cancelSesh(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, message: "Sign in again to continue." };
 
+  // Read before the write: only a cancel that changed something is news.
+  const before = await readSeshFacts(supabase, id.data);
+
   const { error } = await setSeshCancelled(supabase, id.data);
   if (error) return { ok: false, message: "Could not cancel that. Try again." };
+
+  if (hostChangedOpenSesh(before, user.id)) {
+    await notify(createAdminClient(), {
+      kind: "sesh_cancelled",
+      seshId: id.data,
+      hostId: user.id,
+      guestIds: await approvedGuestIds(supabase, id.data),
+      seshTitle: before.title,
+      hostLeaving: false,
+    });
+  }
 
   revalidatePath("/seshes/mine");
   redirect("/seshes/mine");

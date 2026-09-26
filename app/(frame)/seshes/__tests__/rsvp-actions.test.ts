@@ -32,12 +32,17 @@ const notify = vi.fn();
 vi.mock("@/lib/notify/notify", () => ({ notify }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => "admin-client" }));
 
+const readSeshFacts = vi.fn();
+const readMyRsvpStatus = vi.fn();
+vi.mock("@/lib/notify/sesh-facts", () => ({ readSeshFacts, readMyRsvpStatus }));
+
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 
 const SESH = "11111111-1111-4111-8111-111111111111";
 const RSVP = "22222222-2222-4222-8222-222222222222";
 const GUEST = "33333333-3333-4333-8333-333333333333";
+const HOST = "55555555-5555-4555-8555-555555555555";
 
 function form(fields: Record<string, string>): FormData {
   const fd = new FormData();
@@ -63,6 +68,8 @@ beforeEach(() => {
   select.mockReset().mockResolvedValue({ data: { approved_count: 4 } });
   claimRsvp.mockReset().mockResolvedValue(true);
   notify.mockReset().mockResolvedValue(undefined);
+  readSeshFacts.mockReset().mockResolvedValue({ hostId: HOST, title: "Porch hang", status: "open" });
+  readMyRsvpStatus.mockReset().mockResolvedValue(null);
 });
 
 describe("askToJoin", () => {
@@ -145,6 +152,57 @@ describe("askToJoin", () => {
 
     expect(result.message).toMatch(/card|renew/i);
     expect(result.message).not.toMatch(NO_POSTGRES_CODES);
+  });
+
+  /** Issue #54 — a host learns somebody wants in, while they still care. */
+  describe("telling the host", () => {
+    it("writes one notice to the host, done by the member who asked", async () => {
+      await act("askToJoin", form({ seshId: SESH }));
+
+      expect(notify).toHaveBeenCalledTimes(1);
+      expect(notify).toHaveBeenCalledWith("admin-client", {
+        kind: "rsvp_requested",
+        seshId: SESH,
+        hostId: HOST,
+        guestId: "member-1",
+      });
+    });
+
+    it("writes nothing when the database refused the request", async () => {
+      refuse("M4W14");
+
+      await act("askToJoin", form({ seshId: SESH }));
+
+      expect(notify).not.toHaveBeenCalled();
+    });
+
+    /** request_rsvp accepts asking again while already waiting: it only
+     *  re-stamps the row. One wait is one notice. */
+    it("writes nothing when the member was already waiting", async () => {
+      readMyRsvpStatus.mockResolvedValue("requested");
+
+      const result = await act("askToJoin", form({ seshId: SESH }));
+
+      expect(result.ok).toBe(true);
+      expect(notify).not.toHaveBeenCalled();
+    });
+
+    it("tells the host again when a member who withdrew asks again", async () => {
+      readMyRsvpStatus.mockResolvedValue("cancelled");
+
+      await act("askToJoin", form({ seshId: SESH }));
+
+      expect(notify).toHaveBeenCalledTimes(1);
+    });
+
+    it("still says it worked when the sesh cannot be read back", async () => {
+      readSeshFacts.mockResolvedValue(null);
+
+      const result = await act("askToJoin", form({ seshId: SESH }));
+
+      expect(result.ok).toBe(true);
+      expect(notify).not.toHaveBeenCalled();
+    });
   });
 
   it("says a closed sesh is closed without explaining which way", async () => {
@@ -259,8 +317,40 @@ describe("decideRsvp", () => {
       expect(notify).not.toHaveBeenCalled();
     });
 
-    it("writes nothing when the host declines", async () => {
+    /** Issue #54 — a guest stops waiting and can look elsewhere. */
+    it("tells the guest when the host declines, keeping the sesh's title", async () => {
       await act("decideRsvp", form({ rsvpId: RSVP, decision: "denied", seshId: SESH }));
+
+      expect(notify).toHaveBeenCalledTimes(1);
+      expect(notify).toHaveBeenCalledWith("admin-client", {
+        kind: "rsvp_denied",
+        seshId: SESH,
+        hostId: "member-1",
+        guestId: GUEST,
+        seshTitle: "Porch hang",
+      });
+    });
+
+    /** The denial has happened. A guest left waiting is worse than a row
+     *  that says "a sesh". */
+    it("still tells the guest when the title cannot be read", async () => {
+      readSeshFacts.mockResolvedValue(null);
+
+      await act("decideRsvp", form({ rsvpId: RSVP, decision: "denied", seshId: SESH }));
+
+      expect(notify).toHaveBeenCalledWith("admin-client", expect.objectContaining({ kind: "rsvp_denied", seshTitle: null }));
+    });
+
+    it("writes nothing when the guest was already declined", async () => {
+      select.mockResolvedValue({ data: { member_id: GUEST, sesh_id: SESH, status: "denied" }, error: null });
+
+      await act("decideRsvp", form({ rsvpId: RSVP, decision: "denied", seshId: SESH }));
+
+      expect(notify).not.toHaveBeenCalled();
+    });
+
+    it("writes nothing when the host removes a guest", async () => {
+      await act("decideRsvp", form({ rsvpId: RSVP, decision: "kicked", seshId: SESH }));
 
       expect(notify).not.toHaveBeenCalled();
     });

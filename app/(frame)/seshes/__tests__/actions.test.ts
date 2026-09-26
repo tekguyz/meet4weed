@@ -55,6 +55,15 @@ vi.mock("@/lib/sesh/member-limits", () => ({
   memberLimitsFromEnv: () => ({ claimSeshCreate }),
 }));
 
+const notify = vi.fn();
+vi.mock("@/lib/notify/notify", () => ({ notify }));
+vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => "admin-client" }));
+
+const readSeshFacts = vi.fn();
+const readTravelFacts = vi.fn();
+const approvedGuestIds = vi.fn();
+vi.mock("@/lib/notify/sesh-facts", () => ({ readSeshFacts, readTravelFacts, approvedGuestIds }));
+
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 const redirect = vi.fn();
@@ -67,6 +76,18 @@ function wallClock(daysAhead: number): string {
 }
 
 const EXACT = { lat: 27.9506, lng: -82.4572 };
+
+/** What the helpers read about the sesh a host is editing. */
+const TRAVEL = {
+  hostId: "host-1",
+  title: "Porch hang",
+  status: "open",
+  startsAt: "2026-10-01T23:00:00+00:00",
+  addressLine: "1 Test Street",
+  unitNote: "Apt 4",
+  gateCode: "1234",
+  materiallyChangedAt: null,
+};
 
 function form(overrides: Record<string, string> = {}): FormData {
   const fd = new FormData();
@@ -99,6 +120,10 @@ beforeEach(() => {
   selectOne.mockReset().mockResolvedValue({ data: { approved_count: 4 } });
   insertResult = { data: { id: "sesh-1", fuzzy_lat: 27.95312, fuzzy_lng: -82.45411 }, error: null };
   claimSeshCreate.mockReset().mockResolvedValue(true);
+  notify.mockReset().mockResolvedValue(undefined);
+  readSeshFacts.mockReset().mockResolvedValue({ hostId: "host-1", title: "Porch hang", status: "open" });
+  readTravelFacts.mockReset().mockResolvedValue({ ...TRAVEL });
+  approvedGuestIds.mockReset().mockResolvedValue(["guest-1", "guest-2"]);
 });
 
 async function act(name: "createSesh" | "editSesh" | "cancelSesh", fd: FormData) {
@@ -381,6 +406,80 @@ describe("editSesh", () => {
 
     expect((update.mock.calls[0][0] as Record<string, unknown>).visibility).toBe("listed");
   });
+
+  /** Issue #54 — a guest does not arrive at the old time or the old address
+   *  the app itself gave them. */
+  describe("telling the guests", () => {
+    function afterTheEdit(change: Record<string, unknown>) {
+      readTravelFacts.mockReset().mockResolvedValueOnce({ ...TRAVEL }).mockResolvedValueOnce({ ...TRAVEL, ...change });
+    }
+
+    it("writes one event for every approved guest when the start moves", async () => {
+      afterTheEdit({ startsAt: "2026-10-02T01:00:00+00:00" });
+
+      await act("editSesh", editForm());
+
+      expect(notify).toHaveBeenCalledTimes(1);
+      expect(notify).toHaveBeenCalledWith("admin-client", {
+        kind: "sesh_edited",
+        seshId: "11111111-1111-4111-8111-111111111111",
+        hostId: "host-1",
+        guestIds: ["guest-1", "guest-2"],
+      });
+    });
+
+    it("tells them when the address changes", async () => {
+      afterTheEdit({ addressLine: "2 Test Street" });
+
+      await act("editSesh", editForm());
+
+      expect(notify).toHaveBeenCalledTimes(1);
+    });
+
+    /** A busy feed gets ignored, and that kills the notices that matter. */
+    it("writes nothing when the edit changed neither when nor where", async () => {
+      afterTheEdit({ title: "Porch hang, now with snacks" });
+
+      await act("editSesh", editForm());
+
+      expect(notify).not.toHaveBeenCalled();
+    });
+
+    it("writes nothing when the database refused the edit", async () => {
+      afterTheEdit({ startsAt: "2026-10-02T01:00:00+00:00" });
+      updateResult = { error: { code: "42501", message: "denied" } };
+
+      await act("editSesh", editForm());
+
+      expect(notify).not.toHaveBeenCalled();
+    });
+
+    /** An update RLS filters out succeeds with no rows and no error, so the
+     *  action checks the host itself before telling anybody anything. */
+    it("writes nothing for somebody who is not the host", async () => {
+      readTravelFacts.mockReset().mockResolvedValueOnce({ ...TRAVEL, hostId: "someone-else" }).mockResolvedValueOnce({
+        ...TRAVEL,
+        hostId: "someone-else",
+        startsAt: "2026-10-02T01:00:00+00:00",
+      });
+
+      await act("editSesh", editForm());
+
+      expect(notify).not.toHaveBeenCalled();
+    });
+
+    it("writes nothing about a sesh that is already cancelled", async () => {
+      readTravelFacts.mockReset().mockResolvedValueOnce({ ...TRAVEL, status: "cancelled" }).mockResolvedValueOnce({
+        ...TRAVEL,
+        status: "cancelled",
+        startsAt: "2026-10-02T01:00:00+00:00",
+      });
+
+      await act("editSesh", editForm());
+
+      expect(notify).not.toHaveBeenCalled();
+    });
+  });
 });
 
 describe("cancelSesh", () => {
@@ -411,5 +510,47 @@ describe("cancelSesh", () => {
 
     expect(result?.ok).toBe(false);
     expect(update).not.toHaveBeenCalled();
+  });
+
+  /** Issue #54 — six people do not drive to a house where nothing is
+   *  happening. */
+  describe("telling the guests", () => {
+    it("writes one event for every approved guest, keeping the title", async () => {
+      await act("cancelSesh", cancelForm());
+
+      expect(notify).toHaveBeenCalledTimes(1);
+      expect(notify).toHaveBeenCalledWith("admin-client", {
+        kind: "sesh_cancelled",
+        seshId: "11111111-1111-4111-8111-111111111111",
+        hostId: "host-1",
+        guestIds: ["guest-1", "guest-2"],
+        seshTitle: "Porch hang",
+        hostLeaving: false,
+      });
+    });
+
+    it("writes nothing when the sesh was already cancelled", async () => {
+      readSeshFacts.mockResolvedValue({ hostId: "host-1", title: "Porch hang", status: "cancelled" });
+
+      await act("cancelSesh", cancelForm());
+
+      expect(notify).not.toHaveBeenCalled();
+    });
+
+    it("writes nothing for somebody who is not the host", async () => {
+      readSeshFacts.mockResolvedValue({ hostId: "someone-else", title: "Porch hang", status: "open" });
+
+      await act("cancelSesh", cancelForm());
+
+      expect(notify).not.toHaveBeenCalled();
+    });
+
+    it("writes nothing when the database refused the cancel", async () => {
+      updateResult = { error: { code: "42501", message: "denied" } };
+
+      await act("cancelSesh", cancelForm());
+
+      expect(notify).not.toHaveBeenCalled();
+    });
   });
 });

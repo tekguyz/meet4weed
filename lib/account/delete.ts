@@ -1,5 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { notify } from "@/lib/notify/notify";
+import { approvedGuestIds } from "@/lib/notify/sesh-facts";
 import { setSeshCancelled } from "@/lib/sesh/cancel";
 import { BUCKET } from "@/lib/verification/store";
 
@@ -34,15 +36,26 @@ export async function deleteMemberAccount(db: SupabaseClient, memberId: string):
 export async function cancelFutureHostedSeshes(db: SupabaseClient, hostId: string, now: Date = new Date()): Promise<number> {
   const { data, error } = await db
     .from("seshes")
-    .select("id")
+    .select("id, title")
     .eq("host_id", hostId)
     .eq("status", "open")
     .gt("starts_at", now.toISOString());
   if (error) throw new Error(`listing hosted seshes failed: ${error.code}`);
 
-  for (const { id } of data ?? []) {
+  for (const { id, title } of data ?? []) {
     const { error: cancelError } = await setSeshCancelled(db, id as string);
     if (cancelError) throw new Error(`cancelling a sesh failed: ${cancelError.code}`);
+
+    // The guest list is read now, while the RSVPs still exist: they cascade
+    // away with the host in step 3.
+    await notify(db, {
+      kind: "sesh_cancelled",
+      seshId: id as string,
+      hostId,
+      guestIds: await approvedGuestIds(db, id as string),
+      seshTitle: title as string,
+      hostLeaving: true,
+    });
   }
   return data?.length ?? 0;
 }
