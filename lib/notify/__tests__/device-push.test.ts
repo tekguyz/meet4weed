@@ -83,13 +83,22 @@ describe("push on this device", () => {
     expect(saved).not.toHaveBeenCalled();
   });
 
-  it("says off, and drops the subscription, when the server could not save it", async () => {
+  it("says it failed, and drops the subscription, when the server could not save it", async () => {
     const { made } = fakeBrowser();
     saved.mockResolvedValueOnce({ ok: false });
     const { turnPushOn } = await load();
 
-    expect(await turnPushOn()).toBe("off");
+    expect(await turnPushOn()).toBe("failed");
     expect(made.unsubscribe).toHaveBeenCalled();
+  });
+
+  it("says it failed, never off, when subscribing throws", async () => {
+    const { pushManager } = fakeBrowser();
+    pushManager.subscribe.mockRejectedValueOnce(new Error("AbortError"));
+    const { turnPushOn } = await load();
+
+    expect(await turnPushOn()).toBe("failed");
+    expect(saved).not.toHaveBeenCalled();
   });
 
   it("turns off this device only: unsubscribes, then forgets it on the server", async () => {

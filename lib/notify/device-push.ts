@@ -38,11 +38,19 @@ function canPush(): boolean {
   return Boolean(PUBLIC_KEY) && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
 }
 
-/** What this device can do before anything is asked. */
-/** One sentence, used by the offer card and by Settings. */
-export const IOS_INSTALL_HINT =
-  "On iPhone, add Meet4Weed to your Home Screen first: tap Share, then Add to Home Screen. Open it from there to turn notifications on.";
+/** The words both screens share, so they never drift apart. */
+export const PUSH_WORDS = {
+  iosInstall:
+    "On iPhone, notifications work only in the Home Screen app. In Safari, tap Share, then Add to Home Screen, and open Meet4Weed from there.",
+  // An installed app has no browser settings the member can see, so the
+  // steps name the phone's own screen first.
+  blocked:
+    "Notifications are blocked for Meet4Weed on this phone. To allow them, long-press the Meet4Weed icon, tap App info, then Notifications. In a browser tab, use the site's settings instead.",
+  failed: "Could not turn on notifications. Check your connection and try again.",
+  turningOn: "Turning on…",
+} as const;
 
+/** What this device can do before anything is asked. */
 export function pushSupport(): "supported" | "ios-install" | "unsupported" {
   if (canPush()) return "supported";
   if (PUBLIC_KEY && isAppleMobile() && !isInstalled()) return "ios-install";
@@ -88,16 +96,28 @@ function sameKey(a: ArrayBuffer | null | undefined, b: Uint8Array): boolean {
   return bytes.length === b.length && bytes.every((v, i) => v === b[i]);
 }
 
+/** What pressing Turn on can end in. "failed" means the member said yes
+ *  but something between here and the server did not work; the screen must
+ *  say so, never quietly show "off". */
+export type TurnOnResult = PushState | "failed";
+
 /** Asks the browser — call it only from a button press. */
-export async function turnPushOn(): Promise<PushState> {
+export async function turnPushOn(): Promise<TurnOnResult> {
   const support = pushSupport();
   if (support !== "supported") return support;
   const permission = await Notification.requestPermission();
   if (permission === "denied") return "blocked";
   if (permission !== "granted") return "off";
+  try {
+    return await subscribeAndSave();
+  } catch {
+    return "failed";
+  }
+}
 
+async function subscribeAndSave(): Promise<TurnOnResult> {
   const reg = await registration();
-  if (!reg) return "off";
+  if (!reg) return "failed";
   const key = keyBytes(PUBLIC_KEY!);
   let subscription = await reg.pushManager.getSubscription();
   // Made under an older key pair, it can never be pushed to again.
@@ -109,9 +129,9 @@ export async function turnPushOn(): Promise<PushState> {
 
   const { ok } = await saveThisDevice(subscription.toJSON());
   if (ok) return "on";
-  // Not saved means no push would ever arrive. Say "off", truthfully.
+  // Not saved means no push would ever arrive. Drop it and say so.
   await subscription.unsubscribe().catch(() => {});
-  return "off";
+  return "failed";
 }
 
 /** Stops push on this device only. The browser side goes first, so pushes
