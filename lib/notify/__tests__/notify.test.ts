@@ -31,14 +31,6 @@ describe("notify", () => {
     ]);
   });
 
-  it("does not touch the database when the event produces no rows", async () => {
-    const { db, from } = fakeDb();
-
-    await notify(db, { ...approved, guestId: HOST });
-
-    expect(from).not.toHaveBeenCalled();
-  });
-
   /** The thing the notification is about already happened. A failed write
    *  must not turn a done approval into an error the host sees. */
   it("logs a failed write by code and does not throw", async () => {

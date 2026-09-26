@@ -13,6 +13,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { config } from "dotenv";
+import { NOTIFICATION_TYPES } from "@/lib/notify/events";
 
 config({ path: ".env.local", quiet: true });
 
@@ -74,6 +75,16 @@ describe.skipIf(!configured)("notifications RLS", () => {
     for (const id of made) await admin.auth.admin.deleteUser(id);
   }, 60_000);
 
+  it("takes every type the code knows, and no other", async () => {
+    for (const type of NOTIFICATION_TYPES) {
+      const { error } = await admin.from("notifications").insert({ recipient_id: alice.id, type });
+      expect(error, type).toBeNull();
+    }
+
+    const { error } = await admin.from("notifications").insert({ recipient_id: alice.id, type: "sesh_sold" });
+    expect(error?.code).toBe("22P02");
+  });
+
   it("shows a member their own rows and nobody else's", async () => {
     const mine = await noticeFor(alice);
     const theirs = await noticeFor(bob);
@@ -130,7 +141,16 @@ describe.skipIf(!configured)("notifications RLS", () => {
   });
 
   it("refuses a member's UPDATE of any column but read_at, and lets service_role make it", async () => {
-    for (const change of [{ type: "rsvp_approved" }, { recipient_id: bob.id }, { payload: { forged: true } }]) {
+    const changes = [
+      { id: crypto.randomUUID() },
+      { recipient_id: bob.id },
+      { type: "rsvp_approved" },
+      { sesh_id: null },
+      { actor_id: bob.id },
+      { payload: { forged: true } },
+      { created_at: new Date(0).toISOString() },
+    ];
+    for (const change of changes) {
       const id = await noticeFor(alice);
 
       const { error } = await alice.db.from("notifications").update(change).eq("id", id);

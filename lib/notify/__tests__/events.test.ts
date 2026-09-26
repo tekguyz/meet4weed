@@ -10,8 +10,9 @@ const SESH = "11111111-1111-4111-8111-111111111111";
 const HOST = "22222222-2222-4222-8222-222222222222";
 const GUEST = "33333333-3333-4333-8333-333333333333";
 
+// notifications-rls.test.ts proves the database enum takes these same seven.
 describe("the notification types", () => {
-  it("are exactly the seven spec §5 fixes, matching the database enum", () => {
+  it("are exactly the seven spec §5 fixes", () => {
     expect([...NOTIFICATION_TYPES].sort()).toEqual(
       [
         "card_expiry",
@@ -45,9 +46,5 @@ describe("a host approves an RSVP", () => {
     const [row] = notificationsFor(event);
 
     expect(row.payload).toEqual({});
-  });
-
-  it("never tells a member about their own action", () => {
-    expect(notificationsFor({ ...event, guestId: HOST })).toEqual([]);
   });
 });

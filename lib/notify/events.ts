@@ -38,12 +38,8 @@ export type NotificationRow = {
 export type NotifyEvent = { kind: "rsvp_approved"; seshId: string; hostId: string; guestId: string };
 
 export function notificationsFor(event: NotifyEvent): NotificationRow[] {
-  const rows: NotificationRow[] = [];
   switch (event.kind) {
     case "rsvp_approved":
-      rows.push({ recipient_id: event.guestId, type: "rsvp_approved", sesh_id: event.seshId, actor_id: event.hostId, payload: {} });
-      break;
+      return [{ recipient_id: event.guestId, type: "rsvp_approved", sesh_id: event.seshId, actor_id: event.hostId, payload: {} }];
   }
-  // Nobody is told about a thing they did themselves.
-  return rows.filter((row) => row.recipient_id !== row.actor_id);
 }

@@ -225,7 +225,7 @@ describe("decideRsvp", () => {
   /** Issue #50 — the first notification, end to end. */
   describe("telling the guest", () => {
     beforeEach(() => {
-      select.mockResolvedValue({ data: { member_id: GUEST, sesh_id: SESH }, error: null });
+      select.mockResolvedValue({ data: { member_id: GUEST, sesh_id: SESH, status: "requested" }, error: null });
     });
 
     it("writes exactly one notice when the host approves, addressed to the guest", async () => {
@@ -246,6 +246,23 @@ describe("decideRsvp", () => {
       await act("decideRsvp", form({ rsvpId: RSVP, decision: "approved", seshId: OTHER }));
 
       expect(notify).toHaveBeenCalledWith("admin-client", expect.objectContaining({ seshId: SESH }));
+    });
+
+    /** decide_rsvp accepts re-approving somebody already approved: a
+     *  double-submit, or a stale second tab. That is not news to the guest. */
+    it("writes nothing when the guest was already approved", async () => {
+      select.mockResolvedValue({ data: { member_id: GUEST, sesh_id: SESH, status: "approved" }, error: null });
+
+      const result = await act("decideRsvp", form({ rsvpId: RSVP, decision: "approved", seshId: SESH }));
+
+      expect(result.ok).toBe(true);
+      expect(notify).not.toHaveBeenCalled();
+    });
+
+    it("writes nothing when the host declines", async () => {
+      await act("decideRsvp", form({ rsvpId: RSVP, decision: "denied", seshId: SESH }));
+
+      expect(notify).not.toHaveBeenCalled();
     });
 
     it("writes nothing when the database refused the approval", async () => {

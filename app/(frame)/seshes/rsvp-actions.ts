@@ -13,9 +13,12 @@ import type { ActionState } from "@/lib/forms/action-state";
  * Asking to come, withdrawing, and the host deciding.
  *
  * Every rule lives in Postgres — see supabase/migrations/…_rsvps.sql. The
- * only job here is to turn a SQLSTATE into a sentence. A raw `M4W14` on
+ * main job here is to turn a SQLSTATE into a sentence. A raw `M4W14` on
  * screen is a bug, not an error message, so the fallback is deliberately a
  * plain apology rather than anything the database said.
+ *
+ * The other job is telling people: once the database has accepted a change,
+ * the action writes the notification it earns (lib/notify).
  */
 
 const seshId = z.uuid();
@@ -100,21 +103,25 @@ export async function decideRsvp(_prev: ActionState | null, formData: FormData):
   if (!caller) return { ok: false, message: "Sign in again to continue." };
   const { supabase, user } = caller;
 
+  // Read before deciding, through the host's own session: a host sees every
+  // RSVP on their sesh. The guest and the sesh come from the row, never from
+  // the form, and the old status says whether an approval is news —
+  // decide_rsvp accepts re-approving somebody already approved.
+  const before =
+    choice.data === "approved"
+      ? (await supabase.from("rsvps").select("member_id, sesh_id, status").eq("id", rsvp.data).single()).data
+      : null;
+
   const { error } = await supabase.rpc("decide_rsvp", { p_rsvp: rsvp.data, p_decision: choice.data });
   if (error) return { ok: false, message: readable(error.code) };
 
-  if (choice.data === "approved") {
-    // Read back through the host's own session: a host sees every RSVP on
-    // their sesh. The sesh comes from the row, never from the form.
-    const { data: row } = await supabase.from("rsvps").select("member_id, sesh_id").eq("id", rsvp.data).single();
-    if (row) {
-      await notify(createAdminClient(), {
-        kind: "rsvp_approved",
-        seshId: row.sesh_id as string,
-        hostId: user.id,
-        guestId: row.member_id as string,
-      });
-    }
+  if (before && before.status !== "approved") {
+    await notify(createAdminClient(), {
+      kind: "rsvp_approved",
+      seshId: before.sesh_id as string,
+      hostId: user.id,
+      guestId: before.member_id as string,
+    });
   }
 
   const sesh = seshId.safeParse(formData.get("seshId"));
