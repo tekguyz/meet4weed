@@ -1,24 +1,24 @@
 "use client";
 
 import { useEffect } from "react";
-import { markSeen } from "@/app/(frame)/notifications/actions";
-import { SEEN_EVENT } from "@/components/frame/bell";
+import { markSeenThrough } from "@/app/(frame)/notifications/actions";
+import { NOTIFICATIONS_SEEN_EVENT } from "@/lib/notify/feed";
 
 /**
- * Marks the rows the page showed as read, once the page is on screen. It is a
+ * Marks the feed read up to the newest row the page showed, once the page is
+ * on screen. Older unread rows past the page's limit are cleared too, so the
+ * count can always reach zero; a row that landed after the render is not. It is a
  * client effect and not a write during render, so a prefetch of the page never
  * marks anything. The page keeps showing them as new until the next visit, so
  * the member can still see what was new.
  */
-export function MarkSeen({ ids }: { ids: string[] }) {
-  const key = ids.join(",");
-
+export function MarkSeen({ through }: { through: string | null }) {
   useEffect(() => {
-    if (key === "") return;
-    markSeen(key.split(","))
-      .then(() => window.dispatchEvent(new Event(SEEN_EVENT)))
+    if (through === null) return;
+    markSeenThrough(through)
+      .then(() => window.dispatchEvent(new Event(NOTIFICATIONS_SEEN_EVENT)))
       .catch(() => {});
-  }, [key]);
+  }, [through]);
 
   return null;
 }

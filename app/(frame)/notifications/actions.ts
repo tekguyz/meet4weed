@@ -5,23 +5,25 @@ import { createClient } from "@/lib/supabase/server";
 import { myUnreadCount } from "@/lib/notify/queries";
 
 /**
- * The bell and the feed. A member may set read_at on their own rows and
- * nothing else — the column grant and the update policy say so, not this file.
+ * The bell and the notification feed. Neither action checks who is calling:
+ * RLS is the whole rule. A caller only ever counts, or marks, their own rows —
+ * the select and update policies say so, and the column grant allows read_at
+ * and nothing else. A signed-out caller matches no rows.
  */
 
-const ids = z.array(z.uuid()).max(100);
+const timestamp = z.string().refine((value) => !Number.isNaN(Date.parse(value)));
 
-/** Marks the rows the member was shown as read. Only those: a row that landed
- *  after the page rendered stays unread, because nobody has seen it. */
-export async function markSeen(seen: string[]): Promise<void> {
-  const parsed = ids.safeParse(seen);
-  if (!parsed.success || parsed.data.length === 0) return;
+/** Marks every unread row up to the newest one the page showed. A row that
+ *  landed after the render stays unread, because nobody has seen it. */
+export async function markSeenThrough(newestShown: string): Promise<void> {
+  const parsed = timestamp.safeParse(newestShown);
+  if (!parsed.success) return;
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("notifications")
     .update({ read_at: new Date().toISOString() })
-    .in("id", parsed.data)
+    .lte("created_at", parsed.data)
     .is("read_at", null);
   if (error) console.error(`[notifications] mark seen failed: ${error.code}`);
 }

@@ -341,7 +341,8 @@ with a back arrow on anything under a tab, and a bottom tab bar in Ember Card â€
 Seshes, My seshes, New, Me â€” each tab a line icon over a caption, 56px tall.
 The current tab is Sage with `aria-current="page"`; the rest are Dusk Ink.
 From `md` up the bar goes away and the same tabs sit in the header after the
-wordmark. A 44px slot at the header's right edge is held for Plan 05's bell.
+wordmark. The bell (#52) sits in a 44px slot at the header's right edge; the slot stays
+empty for a member with no notification feed, so the title never moves.
 Both bars pad by the safe-area insets. `frameAccess()` in `lib/member/gate.ts`
 decides which tabs show; the Frame decides nothing. The structure comes from
 the shape brief in `.impeccable/surfaces/route-me.md`.

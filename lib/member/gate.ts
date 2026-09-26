@@ -27,7 +27,7 @@ export function memberAccess(profile: Card, today: string): MemberAccess {
 }
 
 /** The screen twin of private.can_browse(): verified or expired. It opens the
- *  feed of seshes and the notification feed; an expired member reads both. */
+ *  sesh feed and the notification feed; an expired member reads both. */
 export function canBrowse(access: MemberAccess): boolean {
   return access === "full" || access === "read_only";
 }

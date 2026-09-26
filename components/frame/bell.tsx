@@ -2,23 +2,23 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { unreadCount } from "@/app/(frame)/notifications/actions";
 import { FOCUS_RING } from "@/components/ui/focus";
-
-/** Fired by the feed once it has marked its rows read. */
-export const SEEN_EVENT = "m4w:notifications-seen";
+import { NOTIFICATIONS_SEEN_EVENT } from "@/lib/notify/feed";
 
 /**
  * The bell and its unread count (issue #52). Push is best-effort (spec §8), so
  * the feed is the only guaranteed channel, and without a count nobody opens it.
  *
- * It starts from the number the layout read, then re-reads on every navigation
- * and whenever the feed says it marked rows read.
+ * It starts from the number the layout read, then re-reads on every later
+ * navigation and whenever the notification feed says it marked rows read.
  */
 export function Bell({ initial }: { initial: number }) {
   const pathname = usePathname();
   const [count, setCount] = useState(initial);
+  // The layout has just read the count; asking again on mount is a wasted trip.
+  const mounted = useRef(false);
 
   useEffect(() => {
     let live = true;
@@ -29,11 +29,12 @@ export function Bell({ initial }: { initial: number }) {
         })
         .catch(() => {});
     };
-    refresh();
-    window.addEventListener(SEEN_EVENT, refresh);
+    if (mounted.current) refresh();
+    mounted.current = true;
+    window.addEventListener(NOTIFICATIONS_SEEN_EVENT, refresh);
     return () => {
       live = false;
-      window.removeEventListener(SEEN_EVENT, refresh);
+      window.removeEventListener(NOTIFICATIONS_SEEN_EVENT, refresh);
     };
   }, [pathname]);
 

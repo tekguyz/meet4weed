@@ -48,7 +48,7 @@ export function FeedList({ items }: { items: FeedItem[] }) {
                 className={`mt-1.5 size-2 shrink-0 rounded-full ${unread ? "bg-secondary" : "bg-transparent"}`}
               />
               <span className="flex min-w-0 flex-col gap-0.5">
-                <span className={`break-words text-sm ${unread ? "font-semibold text-ink" : "text-ink"}`}>
+                <span className={`break-words text-sm text-ink ${unread ? "font-semibold" : ""}`}>
                   {unread ? <span className="sr-only">New: </span> : null}
                   {text}
                 </span>
