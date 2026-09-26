@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { APP_NAME, APP_TAGLINE } from "@/lib/env";
+import { APP_NAME, APP_TAGLINE, APP_URL } from "@/lib/env";
 import { THEME_BOOT } from "@/lib/theme-boot";
 import { fontClasses } from "./fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  // Makes the link-preview image (app/opengraph-image.png) an absolute URL.
+  metadataBase: new URL(APP_URL),
   title: APP_NAME,
   description: APP_TAGLINE,
 };

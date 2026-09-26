@@ -133,7 +133,15 @@ describe("createSesh", () => {
   });
 
   it("reads the start time as Florida time rather than the server's zone", async () => {
-    await act("createSesh", form({ startsAtLocal: "2026-09-25T20:00" }));
+    // Pin "now" before the start time. A fixed date alone expires: this test
+    // went red on 2026-09-26, when 2026-09-25 became the past.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-09-01T12:00:00Z"));
+    try {
+      await act("createSesh", form({ startsAtLocal: "2026-09-25T20:00" }));
+    } finally {
+      vi.useRealTimers();
+    }
 
     expect((insert.mock.calls[0][0] as Record<string, unknown>).starts_at).toBe("2026-09-26T00:00:00.000Z");
   });

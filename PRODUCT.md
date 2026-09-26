@@ -100,8 +100,8 @@ Product truths. Each one is load-bearing; do not design around them.
 - **Voice:** plain, calm and honest. Name the reason when something fails,
   and always offer the next step (spec §8). Never hype, never wink at
   cannabis culture.
-- **Logo direction:** "The Grin" — a round face whose eyes are two
-  half-closed leaves, with a Fraunces wordmark (spec §7). Not drawn yet.
+- **Logo:** "The Sesh Circle" — six friends in a ring around a leaf, with a
+  Nunito ExtraBold wordmark (spec §7, #49). Source: `scripts/logo.mjs`.
 
 ## Evidence on Hand
 

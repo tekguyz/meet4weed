@@ -148,6 +148,9 @@ reason so nobody has to rediscover it.
   breaks a theme. Dark is the default. Spec §7.
   The one exception is email templates in `supabase/templates/`, which cannot
   read CSS variables and use sRGB hex copied from the tokens.
+  The icons are the other: `npm run icons` renders them from
+  `scripts/logo.mjs` and reads their colours from `globals.css`, so re-run it
+  after changing a token. Never hand-edit a file it writes.
 
 ## Next.js 16
 
