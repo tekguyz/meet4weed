@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { syncThemeColor } from "@/lib/theme-boot";
 
 type Theme = "dark" | "light" | "system";
 
@@ -10,6 +11,7 @@ function apply(theme: Theme) {
     theme === "light" ||
     (theme === "system" && window.matchMedia("(prefers-color-scheme: light)").matches);
   root.classList.toggle("light", wantsLight);
+  syncThemeColor();
 }
 
 export function ThemeToggle() {

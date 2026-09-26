@@ -201,8 +201,9 @@ No `oklch()`, hex or `rgb()` inline in a component. One inline colour breaks a
 theme. The one exception `CLAUDE.md` allows is email templates in
 `supabase/templates/`, which copy sRGB hex from the tokens. The map's
 `--map-accent` is sRGB because MapLibre cannot read oklch, but it still lives
-in `globals.css`. **Known breach:** the `theme-color` meta tag in
-`app/layout.tsx` writes `#14120E` inline and does not swap with the theme.
+in `globals.css`. The `theme-color` meta holds no colour of its own:
+`syncThemeColor()` in `lib/theme-boot.ts` reads the live `--bg` token and
+writes it as hex, on boot and on every theme switch.
 
 **The One Voice Rule.** Sage marks the single next action on a screen. Two sage
 buttons side by side means one of them should be quiet.

@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
   title: APP_NAME,
   description: APP_TAGLINE,
+  // The page runs under the iPhone status bar, the way it runs under Android's
+  // with viewport-fit=cover. The Frame's header pads by the safe-area inset.
+  appleWebApp: { statusBarStyle: "black-translucent" },
 };
 
 // "cover" lets the page run under a notch and a home bar, so env(safe-area-inset-*)
@@ -20,7 +23,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" suppressHydrationWarning className={fontClasses}>
       <head>
-        <meta name="theme-color" content="#14120E" />
+        {/* Also writes the theme-color meta, from the live --bg token. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
       </head>
       <body>
