@@ -14,8 +14,10 @@ export const config = {
     // MapLibre's worker (public/maplibre/). The worker must come back as
     // JavaScript; a redirect to /login would hand the browser HTML instead and
     // the map would silently draw no tiles.
+    // The service worker and the manifest (#51) are the same: a browser asks
+    // for both signed out, and a redirect would hand it the /login page.
     // Auth cookies rotate on the request that needs them, so the matcher
     // stays broad.
-    "/((?!_next/static|_next/image|favicon.ico|mediapipe/|maplibre/|.*\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|mediapipe/|maplibre/|sw.js$|manifest.webmanifest$|.*\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
   ],
 };

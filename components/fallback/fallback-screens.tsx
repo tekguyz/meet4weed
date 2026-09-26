@@ -66,6 +66,24 @@ export function ErrorScreen({ onRetry, framed }: Placement & { onRetry: () => vo
   );
 }
 
+/** No signal (#51). The service worker shows this in place of any page it
+ *  cannot fetch. It holds no member data on purpose: ADR 0001. A plain link,
+ *  not a client navigation, so "try again" is a real request the worker
+ *  sends to the network. */
+export function OfflineScreen() {
+  return (
+    <Screen title="You are offline">
+      <p className="text-sm text-ink-muted">
+        {APP_NAME} needs a signal to show seshes. Nothing is saved on this device, so there is nothing to
+        show until you are back online.
+      </p>
+      <a href="/" className={`${buttonClass()} ${FOCUS_RING}`}>
+        Try again
+      </a>
+    </Screen>
+  );
+}
+
 /** A calm stand-in while a page loads: the shape of a heading and two cards.
  *  Not a Banner — nothing has happened yet to give feedback about. */
 export function LoadingScreen({ framed }: Placement) {

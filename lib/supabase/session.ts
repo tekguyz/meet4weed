@@ -5,7 +5,8 @@ import { createServerClient } from "@supabase/ssr";
  *  /auth MUST be here: /auth/confirm opens an emailed link before a session
  *  exists. /api/cron is called by Vercel Cron, which has no session; each cron
  *  route checks CRON_SECRET itself. Help, Terms, Privacy and Community rules
- *  are read before a person has an account (issue #68). */
+ *  are read before a person has an account (issue #68). The offline page
+ *  holds nothing from the database (#51). */
 const PUBLIC_PREFIXES = [
   "/login",
   "/auth",
@@ -18,6 +19,9 @@ const PUBLIC_PREFIXES = [
   "/terms",
   "/privacy",
   "/rules",
+  // The service worker caches it at install, and a visitor on /login installs
+  // the worker too. Gated, it would cache the sign-in page instead (#51).
+  "/offline",
 ];
 
 function isPublic(pathname: string) {
