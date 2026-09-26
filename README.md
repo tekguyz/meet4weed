@@ -38,6 +38,8 @@ for cannabis, no dispensary ordering. That constraint is load-bearing.
 | Face check on the phone | MediaPipe BlazeFace |
 | Rate limits | Upstash Redis (shared; keys prefixed `m4w:`) |
 | App email | Resend API |
+| Web push | `web-push` with the project's own VAPID keys, no push vendor. Push text names nobody ([ADR 0002](docs/adr/0002-discreet-push-text.md)) |
+| Installable app | Web manifest + a service worker that caches the app shell only ([ADR 0001](docs/adr/0001-app-shell-caching-only.md)) |
 | Hosting | Vercel — live at [meet4weed.vercel.app](https://meet4weed.vercel.app); `vercel.json` holds the cron schedule |
 
 Auth email goes through Resend SMTP from `Meet4Weed <no-reply@tekguyz.com>`,
@@ -54,7 +56,7 @@ three optional limits are left unset, so their defaults apply. Supabase
 **Authentication → URL Configuration** must list that origin, or emailed links
 point at localhost.
 
-**Decided, not installed:** Claude vision for card reading, Mapbox, web push,
+**Decided, not installed:** Claude vision for card reading, Mapbox,
 Sentry — see the spec.
 
 ---
@@ -341,8 +343,8 @@ is the index that says where each one lives; this table is the short version.
 | 03 | Seshes, map, RSVP, address unlock | **Done** 2026-09-20 |
 | 04 | On deck and bring list, unlisted seshes, invites, retention | **Done** 2026-09-21 |
 | 04b | App foundations: the Frame, missing routes, settings, delete account, mobile fit | **Done** 2026-09-25 |
-| 05 | Notifications, web push, installable PWA | Next — unblocked |
-| 06 | Safety: report, block, kick | — |
+| 05 | Notifications, web push, installable PWA | **Done** 2026-09-26 |
+| 06 | Safety: report, block, kick | Next — unblocked |
 | 07 | Admin panel beyond the verification queue | — |
 | 08 | The design pass, every route, both themes | — |
 
