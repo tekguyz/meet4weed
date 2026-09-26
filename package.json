@@ -15,6 +15,7 @@
     "test:integration": "vitest run supabase/tests --no-file-parallelism",
     "test:watch": "vitest",
     "db:push": "supabase db push --linked",
+    "icons": "node scripts/make-icons.mjs",
     "fixtures:vision": "node scripts/make-vision-fixtures.mjs",
     "test:vision-live": "vitest run lib/verification/__tests__/vision.live.test.ts",
     "admin:grant": "node --env-file=.env.local scripts/grant-admin.mjs",
@@ -36,6 +37,7 @@
     "zustand": "5.0.15"
   },
   "devDependencies": {
+    "@fontsource/nunito": "5.3.0",
     "@tailwindcss/postcss": "4.3.3",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.3",

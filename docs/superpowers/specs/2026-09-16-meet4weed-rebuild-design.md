@@ -404,10 +404,17 @@ These are starting values, expressed in **OKLCH** as Tailwind v4 theme tokens.
 Light mode is derived from the same token names on day one — retrofitting it
 later is a rewrite. **Dark is the default.**
 
-**Logo direction: "The Grin."** A simple round face whose eyes are two
-half-closed leaves — reads as both a smile and a plant, works at favicon size,
-and does not announce cannabis to someone glancing at a phone. Paired with a
-Fraunces wordmark.
+**Logo: "The Sesh Circle."** Six friends seen from above, in a ring of honey
+dots around a sage leaf. It says "people getting together" before it says
+"plant", and its round shape suits circle and squircle icon crops. Paired with
+a **Nunito ExtraBold** wordmark, used only in the logo lockup and the link
+preview — Fraunces stays the heading face. The mark's source is
+`scripts/logo.mjs`; `npm run icons` renders every icon from it in the token
+colours.
+
+*Amended 2026-09-26 (#49):* this replaces "The Grin" (a round face with
+half-closed leaf eyes, with a Fraunces wordmark). The owner reopened the
+direction and picked the Sesh Circle from seven drawn options side by side.
 
 **Rejected and why:** the prototype's cold neon-green-on-black terminal look
 (reads as a tool, tiring at night); Razer-style hot green (same); Material You

@@ -214,6 +214,9 @@ grey. The warmth is the identity.
 
 **Display Font:** Fraunces (with Georgia, serif), weights 600 and 700 loaded.
 **Body Font:** Inter (with system-ui, sans-serif), weights 400–700 loaded.
+**Wordmark Font:** Nunito ExtraBold, in the logo lockup and the link preview
+only. It is baked into those images, so the app loads no Nunito and headings
+stay Fraunces (spec §7, #49).
 
 **Character:** A soft, slightly old-fashioned serif for headings gives warmth
 and a human voice; a neutral, highly legible sans carries every label, field
@@ -374,6 +377,7 @@ the theme from an effect.
 - **Don't** use Fraunces for anything but headings.
 - **Don't** use Honey as a button fill.
 - **Don't** use cannabis imagery or leaf icons as decoration. The logo's
-  leaf-eyes are the one exception, and they are meant to read as a smile first.
+  centre leaf is the one exception, and the ring of friends around it is meant
+  to read first.
 - **Don't** propose a new look here. The beauty pass is Plan 08, and it keeps
   Warm Ink.
