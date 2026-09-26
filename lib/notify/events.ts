@@ -1,3 +1,5 @@
+import { daysBetween, floridaToday } from "@/lib/dates";
+
 /**
  * A Notification is one thing that happened, addressed to one member (see
  * CONTEXT.md). This file decides which rows a domain event produces — event
@@ -32,10 +34,15 @@ export type NotificationRow = {
   sesh_id: string | null;
   actor_id: string | null;
   payload: Record<string, unknown>;
+  /** Clock-driven rows only. The cron job may run twice; the unique index on
+   *  (recipient_id, type, dedup_key) makes the second run write nothing.
+   *  Action rows leave it unset, and a null never collides. */
+  dedup_key?: string;
 };
 
-/** The action-driven types. The clock-driven two, sesh_reminder and
- *  card_expiry, land with the scheduler (#55).
+/** Five action-driven events, then three from the daily cron job (#55):
+ *  sesh_reminder, and card_expiry in two forms — to the member on the ladder,
+ *  and to a host whose approved guest's card lapses before the sesh.
  *
  *  There is deliberately no contribution notification. A busy feed gets
  *  ignored, and that kills the notices that matter (#54). */
@@ -53,7 +60,10 @@ export type NotifyEvent =
       /** The host is deleting their account (#71). The sesh cascades away a
        *  moment later, and a row pointing at it would cascade with it. */
       hostLeaving: boolean;
-    };
+    }
+  | { kind: "sesh_reminder"; seshId: string; hostId: string; startsAt: string; guestIds: readonly string[] }
+  | { kind: "card_expiry"; memberId: string; cardExpiresOn: string; rung: CardExpiryRung }
+  | { kind: "guest_card_expiry"; seshId: string; hostId: string; guestId: string; cardExpiresOn: string };
 
 export function notificationsFor(event: NotifyEvent): NotificationRow[] {
   switch (event.kind) {
@@ -91,7 +101,65 @@ export function notificationsFor(event: NotifyEvent): NotificationRow[] {
         actor_id: event.hostLeaving ? null : event.hostId,
         payload: { seshTitle: event.seshTitle },
       }));
+    case "sesh_reminder": {
+      // Keyed to the start time as well as the sesh, so a sesh moved to
+      // another day earns a fresh reminder. Names nobody: see ADR 0002.
+      const dedupKey = `${event.seshId}@${new Date(event.startsAt).toISOString()}`;
+      return guestsOf(event).map((guest) => ({
+        recipient_id: guest,
+        type: "sesh_reminder",
+        sesh_id: event.seshId,
+        actor_id: null,
+        payload: {},
+        dedup_key: dedupKey,
+      }));
+    }
+    case "card_expiry":
+      return [
+        {
+          recipient_id: event.memberId,
+          type: "card_expiry",
+          sesh_id: null,
+          actor_id: null,
+          payload: { about: "self", cardExpiresOn: event.cardExpiresOn },
+          dedup_key: `self:${event.cardExpiresOn}:${event.rung}`,
+        },
+      ];
+    case "guest_card_expiry":
+      // One notice per guest per sesh per card. A renewal moves the card
+      // date, so a guest who renews and lapses again is news again.
+      return [
+        {
+          recipient_id: event.hostId,
+          type: "card_expiry",
+          sesh_id: event.seshId,
+          actor_id: event.guestId,
+          payload: { about: "guest", cardExpiresOn: event.cardExpiresOn },
+          dedup_key: `${event.seshId}:${event.guestId}:${event.cardExpiresOn}`,
+        },
+      ];
   }
+}
+
+/** Spec §4.3: push at 7 days and at 1 day. The expiry date itself belongs to
+ *  the one email (Plan 02), so it is not a rung. */
+export type CardExpiryRung = 7 | 1;
+
+/** Which rung a card is on today, or null when it is on none. A range, not an
+ *  exact day, so a missed cron run catches up the next day instead of
+ *  skipping the rung; the dedup_key stops the catch-up repeating. */
+export function cardExpiryRung(today: string, cardExpiresOn: string): CardExpiryRung | null {
+  const days = daysBetween(today, cardExpiresOn);
+  if (days === 1) return 1;
+  if (days >= 2 && days <= 7) return 7;
+  return null;
+}
+
+/** Whether a guest's card runs out before the sesh's day. A card is valid
+ *  through the whole of its expiry date in Florida, so a sesh late that
+ *  evening is still fine. */
+export function guestCardLapsesBefore(cardExpiresOn: string, startsAt: string): boolean {
+  return cardExpiresOn < floridaToday(new Date(startsAt));
 }
 
 /** One row per guest, never a rollup. A guest listed twice is still one

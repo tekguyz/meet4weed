@@ -8,6 +8,8 @@ import type { NotificationType } from "@/lib/notify/events";
  * database — so every type is tested without one.
  */
 
+const SHORT_DATE = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+
 /** Fired in the browser once the notification feed has marked its rows read,
  *  so the bell re-reads its count. */
 export const NOTIFICATIONS_SEEN_EVENT = "m4w:notifications-seen";
@@ -49,7 +51,19 @@ export function describeNotification(item: FeedItem): { text: string; href: stri
       return { text: `${seshOpening} was cancelled.`, href: seshHref };
     case "sesh_reminder":
       return { text: `${seshOpening} starts soon.`, href: seshHref };
-    case "card_expiry":
-      return { text: "Your card expires soon. Renew it to keep full access.", href: "/verify" };
+    case "card_expiry": {
+      const cardDate = typeof item.payload.cardExpiresOn === "string" ? SHORT_DATE.format(new Date(`${item.payload.cardExpiresOn}T00:00:00Z`)) : null;
+      // The host's form (#55): a guest's card lapses before the sesh, and
+      // the guest loses their spot unless they renew. Spec §4.3.
+      if (item.payload.about === "guest") {
+        const when = cardDate ? ` ${cardDate},` : "";
+        return {
+          text: `${actor}'s card expires${when} before ${seshMidSentence}. They lose the address unless they renew.`,
+          href: seshHref,
+        };
+      }
+      const when = cardDate ? ` ${cardDate}` : " soon";
+      return { text: `Your card expires${when}. Renew it to keep full access.`, href: "/verify" };
+    }
   }
 }

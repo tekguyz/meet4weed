@@ -17,3 +17,28 @@ export async function notify(db: SupabaseClient, event: NotifyEvent): Promise<vo
   const { error } = await db.from("notifications").insert(rows);
   if (error) console.error(`[notify] ${event.kind} not recorded: ${error.code}`);
 }
+
+/** The unique index the clock-driven rows collide on (#55). */
+const ONCE = "recipient_id,type,dedup_key";
+
+/**
+ * Writes clock-driven rows at most once each, and returns how many were new.
+ * The cron job may run twice; each row carries a dedup_key, and the unique
+ * index turns a repeat into ON CONFLICT DO NOTHING. Code that checks first
+ * races. The database does not.
+ *
+ * Unlike notify(), a failed write throws. Nothing a member did is waiting on
+ * it, and a cron run that quietly reports 0 would read exactly like a clean
+ * second run.
+ */
+export async function notifyOnce(db: SupabaseClient, events: readonly NotifyEvent[]): Promise<number> {
+  const rows = events.flatMap(notificationsFor);
+  if (rows.length === 0) return 0;
+
+  const { data, error } = await db
+    .from("notifications")
+    .upsert(rows, { onConflict: ONCE, ignoreDuplicates: true })
+    .select("id");
+  if (error) throw new Error(`clock notifications not recorded: ${error.code}`);
+  return data?.length ?? 0;
+}

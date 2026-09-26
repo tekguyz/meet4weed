@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { isAuthorizedCron } from "@/lib/cron-auth";
 import { floridaToday } from "@/lib/dates";
 import { expiryMailerFromEnv, runExpirySweep } from "@/lib/member/expiry-sweep";
+import { reapOldNotifications, runClockNotices } from "@/lib/notify/clock";
 import { serverEnv } from "@/lib/server-env";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -29,5 +30,16 @@ export async function GET(request: NextRequest) {
   const { data: wiped, error } = await db.rpc("sesh_address_reaper");
   if (error) throw new Error(`sesh_address_reaper failed: ${error.code}`);
 
-  return NextResponse.json({ ...sweep, addressesWiped: Number(wiped ?? 0) });
+  // The two clock-driven notification types and the 90-day reaper (#55).
+  // They ride here for the same reason: vercel.json already registers two
+  // jobs, and the route is not renamed, because a rename touches vercel.json
+  // and scripts/run-cron.mjs for no change in behaviour.
+  // lib/notify/clock.ts says what "a 24-hour reminder" means on a daily job.
+  //
+  // After the sweep, so a card flipped to expired today is off the ladder.
+  const now = new Date();
+  const notices = await runClockNotices(db, now);
+  const notificationsReaped = await reapOldNotifications(db, now);
+
+  return NextResponse.json({ ...sweep, addressesWiped: Number(wiped ?? 0), ...notices, notificationsReaped });
 }
