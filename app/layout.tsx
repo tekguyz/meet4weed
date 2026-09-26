@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { APP_NAME, APP_TAGLINE, APP_URL } from "@/lib/env";
 import { THEME_BOOT } from "@/lib/theme-boot";
+import { ServiceWorker } from "@/components/service-worker";
 import { fontClasses } from "./fonts";
 import "./globals.css";
 
@@ -22,7 +23,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <meta name="theme-color" content="#14120E" />
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <ServiceWorker />
+      </body>
     </html>
   );
 }
