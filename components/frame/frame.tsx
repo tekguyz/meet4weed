@@ -7,6 +7,7 @@ import { Avatar } from "@/components/member/avatar";
 import { FOCUS_RING } from "@/components/ui/focus";
 import { APP_NAME } from "@/lib/env";
 import type { FrameTab } from "@/lib/member/gate";
+import { Bell } from "./bell";
 import { activeTab, frameHeader, TABS } from "./frame-paths";
 
 /**
@@ -22,11 +23,15 @@ import { activeTab, frameHeader, TABS } from "./frame-paths";
 export function Frame({
   tabs,
   avatar,
+  unread = null,
   children,
 }: {
   tabs: FrameTab[];
   /** The signed-in member's Avatar, drawn on the Me tab (issue #69). */
   avatar?: Omit<ComponentProps<typeof Avatar>, "className">;
+  /** The bell's starting count. Null hides the bell: only a member who can
+   *  browse (verified or expired) has a feed to open. */
+  unread?: number | null;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -91,9 +96,10 @@ export function Frame({
             </ul>
           </nav>
 
-          {/* Plan 05's bell. The space is held now so the title does not jump
-              when it arrives. */}
-          <div className="size-11 shrink-0" data-slot="bell" />
+          {/* The slot stays when the bell is hidden, so the title never jumps. */}
+          <div className="size-11 shrink-0" data-slot="bell">
+            {unread === null ? null : <Bell initial={unread} />}
+          </div>
         </div>
       </header>
 

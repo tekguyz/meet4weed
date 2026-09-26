@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import { Frame } from "@/components/frame/frame";
 import { amIAdmin } from "@/lib/admin/queries";
 import { floridaToday } from "@/lib/dates";
-import { frameAccess, memberAccess } from "@/lib/member/gate";
+import { canBrowse, frameAccess, memberAccess } from "@/lib/member/gate";
+import { myUnreadCount } from "@/lib/notify/queries";
 import { getMyProfile } from "@/lib/profiles/queries";
 import { RESERVED_HANDLE_PREFIX } from "@/lib/profiles/schema";
 
@@ -24,10 +25,15 @@ export default async function FrameLayout({ children }: { children: React.ReactN
     redirect("/onboarding");
   }
 
-  const { tabs } = frameAccess(memberAccess(profile, floridaToday()), await amIAdmin());
+  const access = memberAccess(profile, floridaToday());
+  // The bell shows for every member who can browse: verified or expired. An
+  // expired member reads their feed too. Nobody else has a feed to open.
+  const [isAdmin, unread] = await Promise.all([amIAdmin(), canBrowse(access) ? myUnreadCount() : null]);
+  const { tabs } = frameAccess(access, isAdmin);
   return (
     <Frame
       tabs={tabs}
+      unread={unread}
       avatar={{
         seed: profile.avatarSeed,
         memberId: profile.id,

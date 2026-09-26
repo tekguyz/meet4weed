@@ -14,6 +14,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { config } from "dotenv";
 import { NOTIFICATION_TYPES } from "@/lib/notify/events";
+import { FEED_COLUMNS } from "@/lib/notify/queries";
 
 config({ path: ".env.local", quiet: true });
 
@@ -95,6 +96,25 @@ describe.skipIf(!configured)("notifications RLS", () => {
     const ids = (data ?? []).map((r) => r.id);
     expect(ids).toContain(mine);
     expect(ids).not.toContain(theirs);
+  });
+
+  // Issue #52: read-only means read-only, not shut out.
+  it("lets an expired member read their own feed, through the feed's own query", async () => {
+    const id = await noticeFor(alice, bob);
+    const { error: expireError } = await admin.from("profiles").update({ status: "expired" }).eq("id", alice.id);
+    expect(expireError).toBeNull();
+
+    const { data, error } = await alice.db
+      .from("notifications")
+      .select(FEED_COLUMNS)
+      .order("created_at", { ascending: false });
+
+    expect(error).toBeNull();
+    const rows = (data ?? []) as unknown as { id: string; actor: { handle: string } | null }[];
+    expect(rows.map((r) => r.id)).toContain(id);
+    // The actor's handle is looked up live, through alice's own profiles policy.
+    const { data: bobRow } = await admin.from("profiles").select("handle").eq("id", bob.id).single();
+    expect(rows.find((r) => r.id === id)?.actor?.handle).toBe(bobRow?.handle);
   });
 
   it("refuses a member's INSERT, even one addressed to themselves, and lets service_role make it", async () => {
