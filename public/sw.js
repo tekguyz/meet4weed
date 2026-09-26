@@ -8,6 +8,10 @@
 // Writes are not queued (spec §8). app/__tests__/service-worker.test.ts holds
 // this line.
 //
+// It also shows web push (#56). What a push says names no member and no sesh
+// (docs/adr/0002-discreet-push-text.md); the server writes the words, and
+// this file falls back to the same plain ones.
+//
 // The one thing stored is the offline page and the CSS, JS, fonts and icons it
 // needs, and only at install. Nothing is written to the cache afterwards.
 // While online, every request goes to the network exactly as it would with no
@@ -91,4 +95,48 @@ self.addEventListener("fetch", (event) => {
       fetch(request).catch(async () => (await caches.match(request, { ignoreSearch: true })) || Response.error()),
     );
   }
+});
+
+// Web push (#56). The server sends { title, body, url, tag } from
+// lib/notify/push-text.ts. Anything unreadable shows the plain words.
+const PLAIN = { title: "Meet4Weed", body: "You have an update.", url: "/notifications", tag: "m4w-update" };
+
+// Only a path inside this app: a tap must never open somewhere else. "//x"
+// and "/\x" are other hosts to a browser.
+const inApp = (url) => (typeof url === "string" && /^\/(?![/\\])/.test(url) ? url : PLAIN.url);
+
+self.addEventListener("push", (event) => {
+  let sent = {};
+  try {
+    sent = (event.data && event.data.json()) || {};
+  } catch {
+    // Not JSON. The plain words still go out.
+  }
+  const title = typeof sent.title === "string" ? sent.title : PLAIN.title;
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: typeof sent.body === "string" ? sent.body : PLAIN.body,
+      tag: typeof sent.tag === "string" ? sent.tag : PLAIN.tag,
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+      data: { url: inApp(sent.url) },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = inApp(event.notification.data && event.notification.data.url);
+  event.waitUntil(
+    (async () => {
+      const open = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      const win = open.find((client) => new URL(client.url).origin === self.location.origin);
+      if (win) {
+        await win.focus();
+        await win.navigate(url);
+        return;
+      }
+      await self.clients.openWindow(url);
+    })(),
+  );
 });

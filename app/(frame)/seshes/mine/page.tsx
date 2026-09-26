@@ -10,6 +10,7 @@ import {
 } from "@/lib/sesh/queries";
 import { SESH_TYPE_LABELS } from "@/lib/sesh/schema";
 import { TAP_TEXT } from "@/components/ui/focus";
+import { PushOffer } from "@/components/notify/push-offer";
 
 /** Florida time, because that is the time the host typed. */
 const WHEN = new Intl.DateTimeFormat("en-US", {
@@ -36,6 +37,10 @@ export default async function MySeshesPage() {
           Host a sesh
         </Link>
       </header>
+
+      {/* Hosting or asking to come earns a notification, so this is where
+          push is first offered (#56). Never on first load. */}
+      {hosting.length > 0 || going.length > 0 ? <PushOffer /> : null}
 
       <section className="flex flex-col gap-3">
         <h2 className="text-xl">Hosting</h2>

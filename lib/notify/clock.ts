@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { addDays, floridaToday } from "@/lib/dates";
 import { cardExpiryRung, guestCardLapsesBefore, type NotifyEvent } from "@/lib/notify/events";
 import { notifyOnce } from "@/lib/notify/notify";
+import type { PushSender } from "@/lib/notify/push";
 
 /**
  * The two clock-driven types (#55), run by the daily cron job with the admin
@@ -30,16 +31,17 @@ function one(value: unknown): Row {
 export async function runClockNotices(
   db: SupabaseClient,
   now: Date,
+  sender?: PushSender | null,
 ): Promise<{ reminders: number; cardNotices: number; hostNotices: number }> {
   return {
-    reminders: await remindGuests(db, now),
-    cardNotices: await warnCardHolders(db, floridaToday(now)),
-    hostNotices: await warnHosts(db, now),
+    reminders: await remindGuests(db, now, sender),
+    cardNotices: await warnCardHolders(db, floridaToday(now), sender),
+    hostNotices: await warnHosts(db, now, sender),
   };
 }
 
 /** Every approved guest of an open sesh that starts in the next 24 hours. */
-async function remindGuests(db: SupabaseClient, now: Date): Promise<number> {
+async function remindGuests(db: SupabaseClient, now: Date, sender?: PushSender | null): Promise<number> {
   const rows = await approvedRsvpsAhead(db, now, new Date(now.getTime() + DAY_MS), "");
 
   const bySesh = new Map<string, { hostId: string; startsAt: string; guestIds: string[] }>();
@@ -51,11 +53,11 @@ async function remindGuests(db: SupabaseClient, now: Date): Promise<number> {
   }
 
   const events: NotifyEvent[] = [...bySesh].map(([seshId, sesh]) => ({ kind: "sesh_reminder", seshId, ...sesh }));
-  return notifyOnce(db, events);
+  return notifyOnce(db, events, sender);
 }
 
 /** Verified members whose card is on a rung of the ladder today. */
-async function warnCardHolders(db: SupabaseClient, today: string): Promise<number> {
+async function warnCardHolders(db: SupabaseClient, today: string, sender?: PushSender | null): Promise<number> {
   const { data, error } = await db
     .from("profiles")
     .select("id, card_expires_on")
@@ -70,7 +72,7 @@ async function warnCardHolders(db: SupabaseClient, today: string): Promise<numbe
     const rung = cardExpiryRung(today, cardExpiresOn);
     if (rung) events.push({ kind: "card_expiry", memberId: row.id as string, cardExpiresOn, rung });
   }
-  return notifyOnce(db, events);
+  return notifyOnce(db, events, sender);
 }
 
 /**
@@ -82,7 +84,7 @@ async function warnCardHolders(db: SupabaseClient, today: string): Promise<numbe
  *
  * PostgREST cannot compare two columns, so the date test runs here.
  */
-async function warnHosts(db: SupabaseClient, now: Date): Promise<number> {
+async function warnHosts(db: SupabaseClient, now: Date, sender?: PushSender | null): Promise<number> {
   const rows = await approvedRsvpsAhead(db, now, null, ", guest:profiles!inner(card_expires_on)");
 
   const events: NotifyEvent[] = [];
@@ -98,7 +100,7 @@ async function warnHosts(db: SupabaseClient, now: Date): Promise<number> {
       cardExpiresOn,
     });
   }
-  return notifyOnce(db, events);
+  return notifyOnce(db, events, sender);
 }
 
 const PAGE = 1000;

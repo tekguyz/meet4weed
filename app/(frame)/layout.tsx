@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { Frame } from "@/components/frame/frame";
+import { PushSync } from "@/components/notify/push-sync";
 import { amIAdmin } from "@/lib/admin/queries";
 import { floridaToday } from "@/lib/dates";
 import { canBrowse, frameAccess, memberAccess } from "@/lib/member/gate";
@@ -41,6 +42,7 @@ export default async function FrameLayout({ children }: { children: React.ReactN
         displayName: profile.displayName,
       }}
     >
+      <PushSync />
       {children}
     </Frame>
   );
