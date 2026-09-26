@@ -40,7 +40,9 @@ export default async function MySeshesPage() {
 
       {/* Hosting or asking to come earns a notification, so this is where
           push is first offered (#56). Never on first load. */}
-      {hosting.length > 0 || going.length > 0 ? <PushOffer /> : null}
+      {hosting.length > 0 || going.some((g) => g.status === "requested" || g.status === "approved") ? (
+        <PushOffer />
+      ) : null}
 
       <section className="flex flex-col gap-3">
         <h2 className="text-xl">Hosting</h2>

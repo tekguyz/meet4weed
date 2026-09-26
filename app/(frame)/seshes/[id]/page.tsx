@@ -110,7 +110,7 @@ export default async function SeshPage({ params }: { params: Promise<{ id: strin
 
       {/* The host, or a member who just asked to come, has earned a
           notification: the moment to offer push (#56). */}
-      {iAmHost || mine ? <PushOffer /> : null}
+      {iAmHost || mine?.status === "requested" || mine?.status === "approved" ? <PushOffer /> : null}
     </div>
   );
 }

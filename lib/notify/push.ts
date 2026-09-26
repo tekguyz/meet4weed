@@ -42,7 +42,10 @@ export function webPushFromEnv(): PushSender | null {
 const DEVICES_PER_MEMBER = 10;
 /** Keeps the member_id list inside a sane URL length. */
 const CHUNK = 100;
-const OPTIONS = { TTL: 86_400, urgency: "normal", timeout: 5_000 } as const;
+/** The member's action waits on these sends (all devices at once), so a
+ *  slow push service gets 3 seconds, then is dropped. Awaited rather than
+ *  run after the response, because a serverless function may stop then. */
+const OPTIONS = { TTL: 86_400, urgency: "normal", timeout: 3_000 } as const;
 
 type Row = Pick<NotificationRow, "recipient_id" | "type">;
 type Sub = { id: string; member_id: string; endpoint: string; p256dh: string; auth: string };
@@ -64,8 +67,8 @@ export async function pushNotices(
   try {
     // Undefined means "the real one". Read inside the try, so even a broken
     // environment cannot turn a written notice into an error.
-    const send = sender === undefined ? webPushFromEnv() : sender;
-    if (!send) return;
+    const active = sender === undefined ? webPushFromEnv() : sender;
+    if (!active) return;
     const byMember = new Map<string, Row[]>();
     for (const row of rows) byMember.set(row.recipient_id, [...(byMember.get(row.recipient_id) ?? []), row]);
 
@@ -87,7 +90,7 @@ export async function pushNotices(
         const count = perMember.get(s.member_id) ?? 0;
         if (count >= DEVICES_PER_MEMBER) continue;
         perMember.set(s.member_id, count + 1);
-        sends.push(sendOne(db, send, s, messageFor(byMember.get(s.member_id) ?? [])));
+        sends.push(sendOne(db, active, s, messageFor(byMember.get(s.member_id) ?? [])));
       }
       await Promise.all(sends);
     }

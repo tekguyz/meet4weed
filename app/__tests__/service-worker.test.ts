@@ -247,7 +247,16 @@ describe("the service worker's push (#56, ADR 0002)", () => {
     expect(w.self.clients.openWindow).not.toHaveBeenCalled();
   });
 
-  it("never follows a tap off the app", async () => {
+  it("opens a new window when the open one cannot be taken to the screen", async () => {
+    const win = { url: `${ORIGIN}/seshes`, focus: vi.fn(async () => win), navigate: vi.fn(async () => Promise.reject(new TypeError("not controlled"))) };
+    w.windows.push(win);
+
+    await w.fire("notificationclick", click("/notifications").event);
+
+    expect(w.self.clients.openWindow).toHaveBeenCalledWith("/notifications");
+  });
+
+    it("never follows a tap off the app", async () => {
     for (const url of ["https://evil.example/x", "//evil.example", "/\\evil.example", "javascript:alert(1)", 42]) {
       w.self.clients.openWindow.mockClear();
       await w.fire("notificationclick", click(url).event);

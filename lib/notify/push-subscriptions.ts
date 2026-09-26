@@ -21,6 +21,10 @@ export type DeviceSubscription = z.infer<typeof DeviceSubscription>;
  * Saves this device for this member. A device already saved moves to the
  * member now signed in on it: whoever holds the phone gets its pushes, and
  * the member who signed out stops getting them there.
+ *
+ * So whoever presents an endpoint takes it. An endpoint is an unguessable URL
+ * only the browser holds; a stranger who somehow had one could only point
+ * their own discreet "You have an update" at that phone. Accepted.
  */
 export async function saveDevice(
   admin: SupabaseClient,

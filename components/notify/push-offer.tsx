@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
-import { pushSupport, readPushState, turnPushOn } from "@/lib/notify/device-push";
+import { IOS_INSTALL_HINT, pushSupport, readPushState, turnPushOn } from "@/lib/notify/device-push";
 
 const DISMISSED = "m4w:push-offer-dismissed";
 
@@ -75,10 +75,7 @@ export function PushOffer() {
         sesh. The bell always has the details.
       </p>
       {shown === "ios" ? (
-        <p className="text-sm text-ink-muted">
-          On iPhone, add Meet4Weed to your Home Screen first: tap Share, then Add to Home Screen. Open
-          it from there and turn this on.
-        </p>
+        <p className="text-sm text-ink-muted">{IOS_INSTALL_HINT}</p>
       ) : null}
       {blocked ? (
         <Banner tone="warning" nested urgent>
@@ -87,7 +84,9 @@ export function PushOffer() {
       ) : null}
       <div className="flex gap-3">
         {shown === "offer" && !blocked ? (
-          <Button type="button" onClick={turnOn} disabled={busy}>
+          // Quiet, not Sage: the page's own action keeps the one primary
+          // button (DESIGN.md).
+          <Button type="button" variant="quiet" onClick={turnOn} disabled={busy}>
             {busy ? "Turning on…" : "Turn on"}
           </Button>
         ) : null}

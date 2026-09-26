@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const device = vi.hoisted(() => ({
+  IOS_INSTALL_HINT: "On iPhone, add Meet4Weed to your Home Screen first.",
   pushSupport: vi.fn(() => "supported" as const),
   readPushState: vi.fn(async () => "off" as const),
   turnPushOn: vi.fn(async () => "on" as const),

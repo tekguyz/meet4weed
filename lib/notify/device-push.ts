@@ -39,6 +39,10 @@ function canPush(): boolean {
 }
 
 /** What this device can do before anything is asked. */
+/** One sentence, used by the offer card and by Settings. */
+export const IOS_INSTALL_HINT =
+  "On iPhone, add Meet4Weed to your Home Screen first: tap Share, then Add to Home Screen. Open it from there to turn notifications on.";
+
 export function pushSupport(): "supported" | "ios-install" | "unsupported" {
   if (canPush()) return "supported";
   if (PUBLIC_KEY && isAppleMobile() && !isInstalled()) return "ios-install";
@@ -47,8 +51,13 @@ export function pushSupport(): "supported" | "ios-install" | "unsupported" {
 
 /** The worker registers after load; give it a moment, then give up. */
 async function registration(): Promise<ServiceWorkerRegistration | null> {
-  const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 10_000));
-  return Promise.race([navigator.serviceWorker.ready, timeout]);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<null>((resolve) => (timer = setTimeout(() => resolve(null), 10_000)));
+  try {
+    return await Promise.race([navigator.serviceWorker.ready, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 async function currentSubscription(): Promise<PushSubscription | null> {
@@ -73,6 +82,12 @@ function keyBytes(base64url: string): Uint8Array<ArrayBuffer> {
   return bytes;
 }
 
+function sameKey(a: ArrayBuffer | null | undefined, b: Uint8Array): boolean {
+  if (!a) return true; // Browsers that do not report it: trust the subscription.
+  const bytes = new Uint8Array(a);
+  return bytes.length === b.length && bytes.every((v, i) => v === b[i]);
+}
+
 /** Asks the browser — call it only from a button press. */
 export async function turnPushOn(): Promise<PushState> {
   const support = pushSupport();
@@ -83,9 +98,14 @@ export async function turnPushOn(): Promise<PushState> {
 
   const reg = await registration();
   if (!reg) return "off";
-  const subscription =
-    (await reg.pushManager.getSubscription()) ??
-    (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(PUBLIC_KEY!) }));
+  const key = keyBytes(PUBLIC_KEY!);
+  let subscription = await reg.pushManager.getSubscription();
+  // Made under an older key pair, it can never be pushed to again.
+  if (subscription && !sameKey(subscription.options.applicationServerKey, key)) {
+    await subscription.unsubscribe().catch(() => {});
+    subscription = null;
+  }
+  subscription ??= await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
 
   const { ok } = await saveThisDevice(subscription.toJSON());
   if (ok) return "on";
