@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { expiryBanner, frameAccess, memberAccess } from "@/lib/member/gate";
+import { canBrowse, expiryBanner, frameAccess, memberAccess } from "@/lib/member/gate";
 
 const TODAY = "2026-09-17";
 
@@ -37,6 +37,19 @@ describe("expiryBanner", () => {
 
   it("is not shown to an expired member, who sees the read-only notice instead", () => {
     expect(expiryBanner({ status: "expired", cardExpiresOn: "2026-09-10" }, TODAY)).toBeNull();
+  });
+});
+
+// Issue #52: the bell and the notification feed open for exactly these.
+describe("canBrowse", () => {
+  it.each([
+    ["full", true],
+    ["read_only", true],
+    ["pending", false],
+    ["unverified", false],
+    ["suspended", false],
+  ] as const)("%s → %s", (access, expected) => {
+    expect(canBrowse(access)).toBe(expected);
   });
 });
 

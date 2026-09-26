@@ -26,6 +26,12 @@ export function memberAccess(profile: Card, today: string): MemberAccess {
   }
 }
 
+/** The screen twin of private.can_browse(): verified or expired. It opens the
+ *  feed of seshes and the notification feed; an expired member reads both. */
+export function canBrowse(access: MemberAccess): boolean {
+  return access === "full" || access === "read_only";
+}
+
 /** The Frame's tabs, in the order they always appear. */
 export type FrameTab = "seshes" | "mine" | "new" | "me";
 
@@ -44,11 +50,11 @@ export type FrameAccess = {
  * shut is not invited into an empty screen. RLS is still what refuses them.
  */
 export function frameAccess(access: MemberAccess, isAdmin: boolean): FrameAccess {
-  const canBrowse = access === "full" || access === "read_only";
-  const tabs: FrameTab[] = canBrowse ? ["seshes", "mine"] : [];
+  const browse = canBrowse(access);
+  const tabs: FrameTab[] = browse ? ["seshes", "mine"] : [];
   if (access === "full") tabs.push("new");
   tabs.push("me");
-  return { tabs, home: canBrowse ? "/seshes" : "standing", adminLink: isAdmin };
+  return { tabs, home: browse ? "/seshes" : "standing", adminLink: isAdmin };
 }
 
 export const EXPIRY_BANNER_DAYS = 30;
