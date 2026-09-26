@@ -28,11 +28,16 @@ vi.mock("@/lib/sesh/member-limits", () => ({
   memberLimitsFromEnv: () => ({ claimRsvp }),
 }));
 
+const notify = vi.fn();
+vi.mock("@/lib/notify/notify", () => ({ notify }));
+vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => "admin-client" }));
+
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 
 const SESH = "11111111-1111-4111-8111-111111111111";
 const RSVP = "22222222-2222-4222-8222-222222222222";
+const GUEST = "33333333-3333-4333-8333-333333333333";
 
 function form(fields: Record<string, string>): FormData {
   const fd = new FormData();
@@ -57,6 +62,7 @@ beforeEach(() => {
   rpc.mockReset().mockResolvedValue({ error: null });
   select.mockReset().mockResolvedValue({ data: { approved_count: 4 } });
   claimRsvp.mockReset().mockResolvedValue(true);
+  notify.mockReset().mockResolvedValue(undefined);
 });
 
 describe("askToJoin", () => {
@@ -214,5 +220,66 @@ describe("decideRsvp", () => {
 
     expect(result.ok).toBe(false);
     expect(result.message).not.toMatch(NO_POSTGRES_CODES);
+  });
+
+  /** Issue #50 — the first notification, end to end. */
+  describe("telling the guest", () => {
+    beforeEach(() => {
+      select.mockResolvedValue({ data: { member_id: GUEST, sesh_id: SESH, status: "requested" }, error: null });
+    });
+
+    it("writes exactly one notice when the host approves, addressed to the guest", async () => {
+      await act("decideRsvp", form({ rsvpId: RSVP, decision: "approved", seshId: SESH }));
+
+      expect(notify).toHaveBeenCalledTimes(1);
+      expect(notify).toHaveBeenCalledWith("admin-client", {
+        kind: "rsvp_approved",
+        seshId: SESH,
+        hostId: "member-1",
+        guestId: GUEST,
+      });
+    });
+
+    it("takes the sesh from the RSVP row, not from the form", async () => {
+      const OTHER = "44444444-4444-4444-8444-444444444444";
+
+      await act("decideRsvp", form({ rsvpId: RSVP, decision: "approved", seshId: OTHER }));
+
+      expect(notify).toHaveBeenCalledWith("admin-client", expect.objectContaining({ seshId: SESH }));
+    });
+
+    /** decide_rsvp accepts re-approving somebody already approved: a
+     *  double-submit, or a stale second tab. That is not news to the guest. */
+    it("writes nothing when the guest was already approved", async () => {
+      select.mockResolvedValue({ data: { member_id: GUEST, sesh_id: SESH, status: "approved" }, error: null });
+
+      const result = await act("decideRsvp", form({ rsvpId: RSVP, decision: "approved", seshId: SESH }));
+
+      expect(result.ok).toBe(true);
+      expect(notify).not.toHaveBeenCalled();
+    });
+
+    it("writes nothing when the host declines", async () => {
+      await act("decideRsvp", form({ rsvpId: RSVP, decision: "denied", seshId: SESH }));
+
+      expect(notify).not.toHaveBeenCalled();
+    });
+
+    it("writes nothing when the database refused the approval", async () => {
+      refuse("M4W14");
+
+      await act("decideRsvp", form({ rsvpId: RSVP, decision: "approved", seshId: SESH }));
+
+      expect(notify).not.toHaveBeenCalled();
+    });
+
+    it("still says approved when the RSVP row cannot be read back", async () => {
+      select.mockResolvedValue({ data: null, error: { code: "PGRST116" } });
+
+      const result = await act("decideRsvp", form({ rsvpId: RSVP, decision: "approved", seshId: SESH }));
+
+      expect(result.ok).toBe(true);
+      expect(notify).not.toHaveBeenCalled();
+    });
   });
 });
