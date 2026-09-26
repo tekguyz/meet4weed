@@ -112,6 +112,16 @@ html:has([data-frame]) {
   }
 }
 
+/* A row that scrolls sideways, like the sesh-type chips. The chip cut off at
+   the edge shows there is more; the browser's own scrollbar only adds a grey
+   line under it. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Respect the OS setting for people who never touch the toggle. */
 @media (prefers-reduced-motion: reduce) {
   *,

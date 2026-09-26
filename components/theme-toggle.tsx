@@ -41,7 +41,7 @@ export function ThemeToggle() {
     <div
       role="group"
       aria-label="Colour theme"
-      className="inline-flex gap-1 rounded-control bg-surface-2 p-1"
+      className="flex gap-1 rounded-control bg-surface-2 p-1"
     >
       {options.map((option) => (
         <button
@@ -51,8 +51,8 @@ export function ThemeToggle() {
           onClick={() => choose(option)}
           className={
             theme === option
-              ? "min-h-11 rounded-control bg-primary px-4 py-1.5 text-sm font-semibold capitalize text-on-primary"
-              : "min-h-11 rounded-control px-4 py-1.5 text-sm capitalize text-ink-muted hover:text-ink"
+              ? "min-h-11 flex-1 rounded-control bg-primary px-4 py-1.5 text-sm font-semibold capitalize text-on-primary"
+              : "min-h-11 flex-1 rounded-control px-4 py-1.5 text-sm capitalize text-ink-muted hover:text-ink"
           }
         >
           {option}
