@@ -33,6 +33,7 @@
     "react-dom": "19.2.8",
     "resend": "6.28.1",
     "server-only": "0.0.1",
+    "web-push": "3.6.7",
     "zod": "4.5.4",
     "zustand": "5.0.15"
   },
@@ -45,6 +46,7 @@
     "@types/node": "26.4.0",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.5",
+    "@types/web-push": "3.6.4",
     "@vitejs/plugin-react": "6.1.1",
     "dotenv": "17.2.3",
     "jsdom": "30.0.1",

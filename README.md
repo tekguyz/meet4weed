@@ -90,9 +90,10 @@ comes from:
 | `CRON_SECRET` | 32 random bytes, hex — generate it; Vercel Cron sends it |
 | `OWNER_ALERT_EMAIL` | Who gets the "card waiting for review" email |
 | `VISION_DAILY_CEILING` | Optional, default 50 Claude checks per day |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | Web push keys — `npx web-push generate-vapid-keys`. Without both, push is off and the feed still works |
 | `DEV_LAN_HOST` | Optional, dev only — this computer's LAN IP for phone testing |
 
-**Only the two `NEXT_PUBLIC_` values may ever reach the browser.** Every other
+**Only the `NEXT_PUBLIC_` values may ever reach the browser.** Every other
 key is server-only: the Supabase secret key bypasses every security rule, and
 the Anthropic key spends money. `.env.local` is git-ignored.
 

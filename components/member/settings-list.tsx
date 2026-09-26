@@ -10,10 +10,12 @@ export function SettingsList() {
       <RowGroup label="Profile">
         <RowLink href="/me/settings/profile">Edit profile</RowLink>
         <RowLink href="/me/settings/handle">Handle</RowLink>
-      </RowGroup>
-      <RowGroup label="Appearance">
-        <RowLink href="/me/settings/theme">Theme</RowLink>
         <RowLink href="/me/settings/avatar">Avatar</RowLink>
+      </RowGroup>
+      {/* Both are saved per device, not per account. */}
+      <RowGroup label="This device">
+        <RowLink href="/me/settings/theme">Theme</RowLink>
+        <RowLink href="/me/settings/notifications">Notifications</RowLink>
       </RowGroup>
       <RowGroup label="Account">
         <RowLink href="/me/settings/password">Password</RowLink>
@@ -21,8 +23,6 @@ export function SettingsList() {
         <RowLink href="/me/settings/delete">Delete account</RowLink>
       </RowGroup>
       <RowGroup label="Coming soon">
-        {/* Plan 05 fills this in. */}
-        <HeldRow>Notifications</HeldRow>
         {/* Plan 06 fills this in. */}
         <HeldRow>Blocked members</HeldRow>
       </RowGroup>

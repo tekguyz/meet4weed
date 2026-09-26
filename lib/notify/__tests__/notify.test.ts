@@ -1,6 +1,12 @@
 /** @vitest-environment node */
 import { describe, expect, it, vi } from "vitest";
 import { notify, notifyOnce } from "@/lib/notify/notify";
+import { pushNotices } from "@/lib/notify/push";
+
+// Push has its own tests (push.test.ts). Here: that it follows the write.
+vi.mock("@/lib/notify/push", () => ({ pushNotices: vi.fn(async () => {}) }));
+const pushed = vi.mocked(pushNotices);
+const sender = { sendNotification: vi.fn() };
 
 const SESH = "11111111-1111-4111-8111-111111111111";
 const HOST = "22222222-2222-4222-8222-222222222222";
@@ -42,6 +48,29 @@ describe("notify", () => {
     expect(log).toHaveBeenCalledWith(expect.stringContaining("42501"));
     log.mockRestore();
   });
+
+  it("pushes the written rows, after the write, with the sender it was given", async () => {
+    pushed.mockClear();
+    const { db } = fakeDb();
+
+    await notify(db, approved, sender);
+
+    expect(pushed).toHaveBeenCalledWith(db, sender, [
+      { recipient_id: GUEST, type: "rsvp_approved", sesh_id: SESH, actor_id: HOST, payload: {} },
+    ]);
+  });
+
+  /** Push never stands in for the row: a notice not in the feed is not sent. */
+  it("pushes nothing when the write failed", async () => {
+    pushed.mockClear();
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { db } = fakeDb({ code: "42501" });
+
+    await notify(db, approved, sender);
+
+    expect(pushed).not.toHaveBeenCalled();
+    log.mockRestore();
+  });
 });
 
 describe("notifyOnce", () => {
@@ -50,7 +79,7 @@ describe("notifyOnce", () => {
     const from = vi.fn(() => ({
       upsert: (rows: unknown, options: unknown) => {
         calls.push({ rows, options });
-        return { select: async () => ({ data: error ? null : Array.from({ length: written }, (_, i) => ({ id: `n${i}` })), error }) };
+        return { select: async () => ({ data: error ? null : Array.from({ length: written }, () => ({ recipient_id: GUEST, type: "sesh_reminder" })), error }) };
       },
     }));
     return { db: { from } as never, calls };
@@ -66,6 +95,19 @@ describe("notifyOnce", () => {
 
     expect(calls).toHaveLength(1);
     expect(calls[0].options).toEqual({ onConflict: "recipient_id,type,dedup_key", ignoreDuplicates: true });
+  });
+
+  it("pushes only the rows that were new, so a second run pushes nothing", async () => {
+    pushed.mockClear();
+    const { db } = fakeUpsertDb(0);
+
+    await notifyOnce(db, [reminder], sender);
+
+    expect(pushed).toHaveBeenCalledWith(db, sender, []);
+
+    pushed.mockClear();
+    await notifyOnce(fakeUpsertDb(1).db, [reminder], sender);
+    expect(pushed.mock.calls[0][2]).toEqual([{ recipient_id: GUEST, type: "sesh_reminder" }]);
   });
 
   it("writes nothing for no events", async () => {

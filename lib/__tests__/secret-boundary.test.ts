@@ -27,9 +27,9 @@ const read = (f: string) => readFileSync(f, "utf8");
 const isClient = (src: string) => /^\s*["']use client["']/m.test(src);
 
 const SERVER_SECRETS =
-  /\b(SUPABASE_SECRET_KEY|ANTHROPIC_API_KEY|UPSTASH_REDIS_REST_TOKEN|RESEND_API_KEY|VERIFICATION_SECRET|CRON_SECRET|DEV_LOGIN_PASSWORD)\b/;
+  /\b(SUPABASE_SECRET_KEY|ANTHROPIC_API_KEY|UPSTASH_REDIS_REST_TOKEN|RESEND_API_KEY|VERIFICATION_SECRET|CRON_SECRET|DEV_LOGIN_PASSWORD|VAPID_PRIVATE_KEY)\b/;
 const SERVER_MODULES =
-  /^import (?!type )[^;]*from ["']@\/lib\/(server-env|derived-keys|supabase\/admin|verification\/(image-crypto|challenge-token|limits|vision|store|submit|owner-alert|reaper)|member\/expiry-sweep|sesh\/(invite-token|invite-limits|invite-reads|member-limits)|email)["']/m;
+  /^import (?!type )[^;]*from ["']@\/lib\/(server-env|derived-keys|supabase\/admin|verification\/(image-crypto|challenge-token|limits|vision|store|submit|owner-alert|reaper)|member\/expiry-sweep|notify\/(push|push-subscriptions|notify|clock)|sesh\/(invite-token|invite-limits|invite-reads|member-limits)|email)["']/m;
 
 describe("server secrets stay on the server", () => {
   it("no client component reads a non-public environment variable", () => {

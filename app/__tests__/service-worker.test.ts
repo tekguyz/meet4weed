@@ -69,11 +69,13 @@ function worker({ online = true, missing = [] as string[] } = {}) {
     return new Response(`live ${p}`);
   });
 
+  const windows: { url: string; focus: ReturnType<typeof vi.fn>; navigate: ReturnType<typeof vi.fn> }[] = [];
   const self = {
     location: new URL(ORIGIN),
     addEventListener: (type: string, fn: Listener) => (listeners[type] = fn),
     skipWaiting: vi.fn(),
-    clients: { claim: vi.fn() },
+    registration: { showNotification: vi.fn(async () => {}) },
+    clients: { claim: vi.fn(), matchAll: vi.fn(async () => windows), openWindow: vi.fn(async () => null) },
   };
   const caches = {
     open: async (name: string) => cacheFor(name),
@@ -101,8 +103,15 @@ function worker({ online = true, missing = [] as string[] } = {}) {
     return answer;
   }
 
+  /** Fires an event that uses waitUntil, and waits for it. */
+  async function fire(type: string, event: Record<string, unknown>) {
+    let done: Promise<unknown> = Promise.resolve();
+    listeners[type]({ ...event, waitUntil: (p: Promise<unknown>) => (done = p) });
+    await done;
+  }
+
   const cached = () => [...stores.values()].flatMap((s) => [...s.keys()]);
-  return { install, request, cached, put, net, stores, listeners, setOnline: (v: boolean) => (online = v) };
+  return { install, request, cached, put, net, stores, listeners, fire, self, windows, setOnline: (v: boolean) => (online = v) };
 }
 
 describe("the service worker (ADR 0001: app shell only)", () => {
@@ -181,5 +190,77 @@ describe("the service worker (ADR 0001: app shell only)", () => {
     await done;
     expect(w.cached()).not.toContain("/seshes/abc");
     expect(w.stores.size).toBe(1);
+  });
+});
+
+describe("the service worker's push (#56, ADR 0002)", () => {
+  let w: ReturnType<typeof worker>;
+  beforeEach(() => {
+    w = worker();
+  });
+
+  const pushOf = (value: unknown) => ({
+    data: { json: () => (typeof value === "string" ? JSON.parse(value) : value) },
+  });
+
+  it("shows the words the server sent, and remembers where a tap goes", async () => {
+    await w.fire("push", pushOf({ title: "Meet4Weed", body: "You have an update.", url: "/notifications", tag: "m4w-update" }));
+
+    expect(w.self.registration.showNotification).toHaveBeenCalledWith(
+      "Meet4Weed",
+      expect.objectContaining({ body: "You have an update.", tag: "m4w-update", data: { url: "/notifications" } }),
+    );
+  });
+
+  it("shows the plain words when a push carries nothing it can read", async () => {
+    await w.fire("push", { data: null });
+    await w.fire("push", pushOf("not json {"));
+
+    for (const [title, options] of w.self.registration.showNotification.mock.calls as unknown as [string, { body: string }][]) {
+      expect(title).toBe("Meet4Weed");
+      expect(options.body).toBe("You have an update.");
+    }
+    expect(w.self.registration.showNotification).toHaveBeenCalledTimes(2);
+  });
+
+  function click(url: unknown) {
+    const close = vi.fn();
+    return { close, event: { notification: { close, data: { url } } } };
+  }
+
+  it("opens the screen on tap in a new window when the app is closed", async () => {
+    const { close, event } = click("/notifications");
+    await w.fire("notificationclick", event);
+
+    expect(close).toHaveBeenCalled();
+    expect(w.self.clients.openWindow).toHaveBeenCalledWith("/notifications");
+  });
+
+  it("brings an open window forward and takes it to the screen", async () => {
+    const win = { url: `${ORIGIN}/seshes`, focus: vi.fn(async () => win), navigate: vi.fn(async () => win) };
+    w.windows.push(win);
+
+    await w.fire("notificationclick", click("/notifications").event);
+
+    expect(win.focus).toHaveBeenCalled();
+    expect(win.navigate).toHaveBeenCalledWith("/notifications");
+    expect(w.self.clients.openWindow).not.toHaveBeenCalled();
+  });
+
+  it("opens a new window when the open one cannot be taken to the screen", async () => {
+    const win = { url: `${ORIGIN}/seshes`, focus: vi.fn(async () => win), navigate: vi.fn(async () => Promise.reject(new TypeError("not controlled"))) };
+    w.windows.push(win);
+
+    await w.fire("notificationclick", click("/notifications").event);
+
+    expect(w.self.clients.openWindow).toHaveBeenCalledWith("/notifications");
+  });
+
+    it("never follows a tap off the app", async () => {
+    for (const url of ["https://evil.example/x", "//evil.example", "/\\evil.example", "javascript:alert(1)", 42]) {
+      w.self.clients.openWindow.mockClear();
+      await w.fire("notificationclick", click(url).event);
+      expect(w.self.clients.openWindow).toHaveBeenCalledWith("/notifications");
+    }
   });
 });

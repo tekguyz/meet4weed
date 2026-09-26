@@ -23,6 +23,10 @@ const Schema = z.object({
   VISION_DAILY_CEILING: z.coerce.number().int().min(0).default(50),
   VERIFY_MEMBER_DAILY_LIMIT: z.coerce.number().int().min(1).default(3),
   VERIFY_IP_DAILY_LIMIT: z.coerce.number().int().min(1).default(10),
+  // Web push (#56). Optional: without both, push is off and the feed still
+  // works. The public half also reaches the browser; the private half never.
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().min(1).optional(),
+  VAPID_PRIVATE_KEY: z.string().min(1).optional(),
   // Set by Vercel at build. Not a secret: it names the build on Me's About line.
   VERCEL_GIT_COMMIT_SHA: z.string().optional(),
   // Development only: the dev account's password for /api/dev-login. Written

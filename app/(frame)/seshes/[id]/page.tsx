@@ -4,6 +4,7 @@ import { ChangedBanner } from "@/components/sesh/changed-banner";
 import { InvitePanel } from "@/components/sesh/invite-panel";
 import { HandleLink } from "@/components/member/handle-link";
 import { OnDeck } from "@/components/sesh/on-deck";
+import { PushOffer } from "@/components/notify/push-offer";
 import { AskToJoin, DecideButtons, WithdrawRsvp } from "@/components/sesh/rsvp-buttons";
 import { Banner } from "@/components/ui/banner";
 import { floridaToday } from "@/lib/dates";
@@ -106,6 +107,10 @@ export default async function SeshPage({ params }: { params: Promise<{ id: strin
           canAct={canAct && !over && sesh.status === "open"}
         />
       )}
+
+      {/* The host, or a member who just asked to come, has earned a
+          notification: the moment to offer push (#56). */}
+      {iAmHost || mine?.status === "requested" || mine?.status === "approved" ? <PushOffer /> : null}
     </div>
   );
 }
