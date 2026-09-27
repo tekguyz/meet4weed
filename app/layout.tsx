@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
   title: APP_NAME,
   description: APP_TAGLINE,
+  // Only the landing page is indexed (#97); it overrides this. robots.txt
+  // allows crawling, so a crawler can read this on every other page.
+  robots: { index: false, follow: false },
   // The page runs under the iPhone status bar, the way it runs under Android's
   // with viewport-fit=cover. The Frame's header pads by the safe-area inset.
   appleWebApp: { statusBarStyle: "black-translucent" },

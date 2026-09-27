@@ -16,4 +16,11 @@ describe("the login page", () => {
     expect(line).toHaveTextContent(/medical cannabis/i);
     expect(line).toHaveTextContent(/21/);
   });
+
+  // Issue #97. A stranger who lands here can reach what the app is.
+  it("links back to the landing page", async () => {
+    render(await LoginPage({ searchParams: Promise.resolve({}) }));
+
+    expect(screen.getByRole("link", { name: /what is meet4weed/i })).toHaveAttribute("href", "/");
+  });
 });

@@ -336,7 +336,9 @@ replaces it.
   import, **event photos** (attendees only, never public, auto-delete at 30
   days, self-removal from any photo). Added 2026-09-23 (Plan 04b, #59):
   - **Discreet mode** — a plain app name and icon on the home screen.
-  - **A signed-out landing page.** v1 keeps one line on the login page.
+  - ~~A signed-out landing page.~~ Moved into v1 by #97 (2026-09-26): a
+    signed-out visitor on `/` sees it; every other signed-out path still goes
+    to `/login`.
   - **Add-to-calendar** — never carrying the address. A calendar entry is the
     address sitting on the device after the RSVP that unlocked it is gone,
     the same harm `docs/adr/0001-app-shell-caching-only.md` rules out.

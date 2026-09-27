@@ -29,8 +29,9 @@ Two other roles exist:
 - **Admin (the owner)** — reviews every card, watches the Claude spend, and
   later handles reports. Uses the same app, inside `/admin`.
 
-A **signed-out stranger** meets the app only through a shared link or the
-login page. They cannot see any member, sesh or address.
+A **signed-out stranger** meets the app through the landing page on `/`, a
+shared link, or the login page (#97). They cannot see any member, sesh or
+address.
 
 ## Product Purpose
 
@@ -90,8 +91,9 @@ Product truths. Each one is load-bearing; do not design around them.
   The full glossary is `CONTEXT.md`.
 - **Already ruled out:** see the list in `CLAUDE.md` (Product rules). Do not
   re-propose any of it.
-- **Deferred to v2:** direct messages, crews, discreet mode, a signed-out
-  landing page, add-to-calendar, a photo avatar, event photos.
+- **Deferred to v2:** direct messages, crews, discreet mode,
+  add-to-calendar, a photo avatar, event photos. (The signed-out landing page
+  moved into v1 with #97.)
 
 ## Brand Commitments
 

@@ -22,7 +22,16 @@ const PUBLIC_PREFIXES = [
   // The service worker caches it at install, and a visitor on /login installs
   // the worker too. Gated, it would cache the sign-in page instead (#51).
   "/offline",
+  // A crawler has no session. It must read robots.txt to see that every page
+  // but the landing page is noindex (#97).
+  "/robots.txt",
+  "/sitemap.xml",
 ];
+
+/** The landing page's internal route (#97). A signed-out visitor on exactly
+ *  `/` is rewritten to it, so the URL stays `/`. A direct request for it goes
+ *  to `/`, for everyone, so the page has one address. */
+export const LANDING_PATH = "/landing";
 
 function isPublic(pathname: string) {
   return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
@@ -61,12 +70,34 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user && !isPublic(request.nextUrl.pathname)) {
+  const { pathname } = request.nextUrl;
+
+  if (pathname === LANDING_PATH) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    return withCookies(NextResponse.redirect(url), response);
+  }
+
+  // Exactly `/`, never a prefix: no other path becomes public by accident. A
+  // member on `/` is not touched; the Frame's home decides where they go.
+  if (!user && pathname === "/") {
+    const url = request.nextUrl.clone();
+    url.pathname = LANDING_PATH;
+    return withCookies(NextResponse.rewrite(url, { request }), response);
+  }
+
+  if (!user && !isPublic(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", request.nextUrl.pathname);
-    return NextResponse.redirect(url);
+    return withCookies(NextResponse.redirect(url), response);
   }
 
   return response;
+}
+
+/** A rotated auth cookie rides on whatever response the gate returns. */
+function withCookies(target: NextResponse, source: NextResponse) {
+  for (const cookie of source.cookies.getAll()) target.cookies.set(cookie);
+  return target;
 }
