@@ -39,9 +39,11 @@ describe("serverEnv", () => {
 });
 
 describe("demoModeEnabled", () => {
-  it("is on only for exactly true", () => {
-    expect(demoModeEnabled({ DEMO_MODE_ENABLED: "true" })).toBe(true);
-    for (const value of [undefined, "", "false", "TRUE", "1", "yes"]) {
+  it("is on for true in any case, and off for anything else", () => {
+    for (const value of ["true", "TRUE", "True", " true "]) {
+      expect(demoModeEnabled({ DEMO_MODE_ENABLED: value })).toBe(true);
+    }
+    for (const value of [undefined, "", "false", "1", "yes"]) {
       expect(demoModeEnabled({ DEMO_MODE_ENABLED: value })).toBe(false);
     }
   });

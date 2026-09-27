@@ -32,7 +32,7 @@ const Schema = z.object({
   // Development only: the dev account's password for /api/dev-login. Written
   // into .env.local by the route itself when missing.
   DEV_LOGIN_PASSWORD: z.string().optional(),
-  // The demo door (#39). Off unless exactly "true". Not a secret, but read
+  // The demo door (#39). Off unless "true", in any case. Not a secret, but read
   // here like every other server setting, and never NEXT_PUBLIC_.
   DEMO_MODE_ENABLED: z.string().optional(),
 });
@@ -56,7 +56,8 @@ export function serverEnv(source: Record<string, string | undefined> = process.e
 
 /** Whether the demo door is open (#39). Reads the one flag without
  *  validating the rest, so the landing page and /login can ask it during a
- *  build that holds no secrets. Anything but "true" is off. */
+ *  build that holds no secrets. "true" in any case is on, so `TRUE` typed in
+ *  the Vercel dashboard works; anything else is off. */
 export function demoModeEnabled(source: Record<string, string | undefined> = process.env): boolean {
-  return source.DEMO_MODE_ENABLED === "true";
+  return source.DEMO_MODE_ENABLED?.trim().toLowerCase() === "true";
 }
