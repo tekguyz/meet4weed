@@ -16,8 +16,11 @@ export const config = {
     // the map would silently draw no tiles.
     // The service worker and the manifest (#51) are the same: a browser asks
     // for both signed out, and a redirect would hand it the /login page.
+    // All of /_next/ is framework plumbing, not a page. In development that
+    // includes the /_next/hmr socket: redirected to /login, it stops a
+    // signed-out page from ever starting its scripts (#97).
     // Auth cookies rotate on the request that needs them, so the matcher
     // stays broad.
-    "/((?!_next/static|_next/image|favicon.ico|mediapipe/|maplibre/|sw.js$|manifest.webmanifest$|.*\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
+    "/((?!_next/|favicon.ico|mediapipe/|maplibre/|sw.js$|manifest.webmanifest$|.*\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
   ],
 };

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FINE_PRINT } from "@/components/legal/fine-print";
 import { TAP_TEXT } from "@/components/ui/focus";
 import { APP_NAME } from "@/lib/env";
 
@@ -8,13 +9,6 @@ import { APP_NAME } from "@/lib/env";
  * needs a finished member. The name at the top goes to `/`, which sends a
  * member home and shows a stranger the landing page (#97).
  */
-const PAGES = [
-  ["/help", "Help"],
-  ["/terms", "Terms"],
-  ["/privacy", "Privacy"],
-  ["/rules", "Community rules"],
-] as const;
-
 const LINK = `${TAP_TEXT} justify-center text-sm text-ink-muted underline hover:text-ink`;
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
@@ -31,7 +25,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       <footer>
         <nav aria-label="About this app">
           <ul className="flex flex-wrap gap-x-4 gap-y-2">
-            {PAGES.map(([href, label]) => (
+            {FINE_PRINT.map(([href, label]) => (
               <li key={href}>
                 <Link href={href} className={LINK}>
                   {label}

@@ -366,8 +366,10 @@ than a member screen, but keeps every rule here.
   on a screen that is `md` wide **and** `tall` (the `tall` variant in
   `globals.css`, min-height 40rem), so Sign up stays above the fold on a
   320 × 568 phone and on a phone on its side.
-- **Sage** marks only the circle and Sign up. The closing card repeats the
-  circle with its pin, small.
+- **Sage** marks only the circle and Sign up. Sign up appears twice, in the
+  hero and in the closing card, never on one screen together: the One Voice
+  Rule holds per screen, and a long persuasion page earns a second ask at its
+  end. The closing card repeats the circle with its pin, small.
 
 ### Framework pages
 Not found, error and loading (`components/fallback/fallback-screens.tsx`,

@@ -36,9 +36,10 @@ page's structure and direction.
 - **Visual authority:** Warm Ink, tokens only, from `DESIGN.md`. The landing
   page may push further than a member screen, but not break its rules.
 - **Structural thesis:** show the hiding, do not describe it. A drawn map
-  with one crisp circle leads; four steps below explain what opens it.
-- **Focal moment:** the circle on the map, and at step 4 one pin appearing
-  inside it, off-centre.
+  with one crisp circle leads; three checks below explain what opens it,
+  then the address itself.
+- **Focal moment:** the circle on the map, and after the third check one pin
+  appearing inside it, off-centre.
 - **Implementation consequence:** the map is authored vector art in the page,
   not MapLibre and not a raster. It reads no data. Build path is code-led
   (no image generation on this machine).
@@ -67,9 +68,17 @@ page's structure and direction.
 - Top bar: wordmark left, a quiet Sign in right.
 - First viewport: the map (upper part), the headline, the who-it-is-for line,
   the sage Sign up. Sign up sits in thumb reach without scrolling at 375×667.
-- Four steps below, one idea each, tied to the map as the reader scrolls.
-- Then the two plain promises (never a sale; photos deleted), a second Sign
-  up, then the footer.
+- Three checks below, one idea each, then the address as their outcome, all
+  tied to the map as the reader scrolls. A legend under the map (Card,
+  Person, Host) fills in check by check.
+- Then three plain promises (never a sale; photos deleted; the lock screen
+  stays quiet), a closing card with the circle and pin, a second Sign up,
+  then the footer.
+
+Amended after the critique on 2026-09-26 (owner chose to fix every P1 and P2
+and to add one line saying what a sesh is): "four checks" became "three
+checks, then the address"; the check chips left the map for a legend; OMMU is
+spelled out once; the hero says what a sesh is.
 
 ## 7. Constraints and open decisions
 

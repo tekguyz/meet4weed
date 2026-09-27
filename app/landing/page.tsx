@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CircleMark } from "@/components/landing/landing-map";
+import { FINE_PRINT } from "@/components/legal/fine-print";
 import { Story } from "@/components/landing/story";
 import { buttonClass } from "@/components/ui/button";
 import { FOCUS_RING, TAP_TEXT } from "@/components/ui/focus";
@@ -33,17 +34,20 @@ export const metadata: Metadata = {
 
 const SIGN_UP = "/login?mode=sign-up";
 
-/** The three checks. Their order matches the map's legend (CHECKS). */
+/** The three checks. `label` names each one in the map's legend. */
 const CHECKS = [
   {
+    label: "Card",
     title: "Your card and face, captured live",
-    body: "You photograph your card from Florida’s Office of Medical Marijuana Use (OMMU), then a photo of you holding it while you follow a prompt picked at random. An old photo cannot pass.",
+    body: "You photograph your card from Florida’s Office of Medical Marijuana Use (OMMU), then a photo of you holding it while you follow a prompt picked at random. An old photo will not match the prompt.",
   },
   {
+    label: "Person",
     title: "A person approves every member",
     body: "Software reads the card to help, but it never approves anyone. A person looks at both photos and decides.",
   },
   {
+    label: "Host",
     title: "The host approves every guest",
     body: "Until then, a sesh shows only a shaded circle about half a mile across, never the house. The host decides who comes in.",
   },
@@ -60,15 +64,8 @@ const PROMISES = [
   },
   {
     title: "Your lock screen stays quiet",
-    body: "A notification names no member and no sesh.",
+    body: "A push notification names no member and no sesh.",
   },
-] as const;
-
-const FINE_PRINT = [
-  ["/help", "Help"],
-  ["/terms", "Terms"],
-  ["/privacy", "Privacy"],
-  ["/rules", "Community rules"],
 ] as const;
 
 const QUIET_LINK = `${TAP_TEXT} text-sm text-ink-muted underline hover:text-ink`;
@@ -81,7 +78,8 @@ function DemoSlot() {
 export default function LandingPage() {
   return (
     <div className="flex min-h-dvh flex-col">
-      {/* Without JavaScript the story never moves, so show where it ends. */}
+      {/* Without JavaScript the story never moves, so show where it ends.
+          Undoes the data-on rule in app/globals.css; change both. */}
       <noscript>
         <style>{"[data-story] [data-on=false]{opacity:1;transform:none}"}</style>
       </noscript>
@@ -96,7 +94,7 @@ export default function LandingPage() {
       </header>
 
       <main className="mx-auto w-full max-w-6xl flex-1 md:px-8 md:pt-6">
-        <Story>
+        <Story checks={CHECKS.map((check) => check.label)}>
           {/* Sign up must show without scrolling at 320 × 568 and on a phone
               on its side, so the big type waits for a tall screen. */}
           <section className="flex flex-col gap-3 px-4 pt-5 pb-12 md:px-0 md:pt-4 md:pb-20 md:tall:pt-16">

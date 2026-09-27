@@ -13,7 +13,9 @@ import { CheckLegend, LandingMap } from "./landing-map";
  * The map starts at step 0. Without JavaScript the page's <noscript> style
  * shows every layer. Under reduced motion the steps land without moving.
  */
-export function Story({ children }: { children: React.ReactNode }) {
+/** `checks` names the checks for the legend, in the order the steps tell
+ *  them. The step after the last check drops the pin. */
+export function Story({ checks, children }: { checks: readonly string[]; children: React.ReactNode }) {
   const words = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState(0);
 
@@ -46,9 +48,9 @@ export function Story({ children }: { children: React.ReactNode }) {
     <div data-story className="md:grid md:grid-cols-2 md:gap-12">
       <div className="sticky top-0 z-10 flex flex-col bg-bg md:top-8 md:self-start">
         <div className="h-[32svh] max-h-72 min-h-40 md:h-[min(72svh,36rem)] md:max-h-none">
-          <LandingMap step={step} />
+          <LandingMap step={step} pinAt={checks.length + 1} />
         </div>
-        <CheckLegend step={step} />
+        <CheckLegend checks={checks} step={step} />
       </div>
       <div ref={words}>{children}</div>
     </div>

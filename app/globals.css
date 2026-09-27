@@ -138,6 +138,7 @@ html:has([data-frame]) {
   --ease-calm: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* app/landing/page.tsx undoes this in a <noscript> style. Change both. */
 [data-story] [data-on="false"] {
   opacity: 0;
 }

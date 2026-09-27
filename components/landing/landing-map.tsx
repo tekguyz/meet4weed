@@ -33,11 +33,8 @@ function pinPath(x: number, y: number) {
   return `M${x} ${y} c -9 -11 -14 -18 -14 -25 a 14 14 0 0 1 28 0 c 0 7 -5 14 -14 25 z`;
 }
 
-/** The three checks, in the order the page tells them. The pin is the fourth
- *  step: not a check, but what the checks open. */
-export const CHECKS = ["Card", "Person", "Host"] as const;
-
-export function LandingMap({ step }: { step: number }) {
+/** `pinAt` is the step that drops the pin: the one after the last check. */
+export function LandingMap({ step, pinAt }: { step: number; pinAt: number }) {
   return (
     <div className="relative h-full w-full overflow-hidden bg-surface md:rounded-card">
       <svg
@@ -100,7 +97,7 @@ export function LandingMap({ step }: { step: number }) {
           about ½ mile
         </text>
 
-        <g data-on={step >= 4} className="landing-pin">
+        <g data-on={step >= pinAt} className="landing-pin">
           <path d={pinPath(PIN.x, PIN.y)} className="fill-ink" />
           <circle cx={PIN.x} cy={PIN.y - 25} r={5} className="fill-surface" />
         </g>
@@ -112,10 +109,10 @@ export function LandingMap({ step }: { step: number }) {
 /** The three checks under the map: a legend, not buttons. A pending check is a
  *  dashed ring; a passed one fills in. Hidden from screen readers, because the
  *  steps say the same thing in full. */
-export function CheckLegend({ step }: { step: number }) {
+export function CheckLegend({ checks, step }: { checks: readonly string[]; step: number }) {
   return (
     <ol aria-hidden="true" className="flex items-center gap-5 px-4 py-2.5 text-sm text-ink md:px-1">
-      {CHECKS.map((label, i) => (
+      {checks.map((label, i) => (
         <li key={label} className="flex items-center gap-2">
           <span className="relative size-4 rounded-full border border-dashed border-ink-muted">
             <svg data-on={step > i} viewBox="0 0 16 16" className="landing-check absolute -inset-px size-4" focusable="false">
