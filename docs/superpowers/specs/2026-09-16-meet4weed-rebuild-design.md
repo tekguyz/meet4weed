@@ -382,6 +382,14 @@ a view or a security-definer function that returns the exact location **only**
 when the caller has an `approved` RSVP or is the host. Expired members are
 excluded even if previously approved. This rule gets its own test file.
 
+### 6.2 What a sesh keeps after seven days (decided 2026-09-27, #42)
+
+Seven days after a sesh starts, the daily sweep deletes its address (street,
+unit, gate code, exact point), its bring list, its invites and its invite
+claims. The title, date, area name, fuzzy circle and **RSVPs stay**. RSVPs are
+the member's own history, the host's memory of who came, and the trail report,
+block and kick (Plan 06) need. See `docs/adr/0004-rsvps-outlive-the-seven-day-forget.md`.
+
 ---
 
 ## 7. Design direction
