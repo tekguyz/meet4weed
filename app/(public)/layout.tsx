@@ -6,7 +6,7 @@ import { APP_NAME } from "@/lib/env";
  * Help, Terms, Privacy and Community rules (issue #68). Read signed out — they
  * are public in lib/supabase/session.ts — so they sit outside the Frame, which
  * needs a finished member. The name at the top goes to `/`, which sends a
- * member home and a stranger to sign in.
+ * member home and shows a stranger the landing page (#97).
  */
 const PAGES = [
   ["/help", "Help"],

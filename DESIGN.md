@@ -348,6 +348,27 @@ Both bars pad by the safe-area insets. `frameAccess()` in `lib/member/gate.ts`
 decides which tabs show; the Frame decides nothing. The structure comes from
 the shape brief in `.impeccable/surfaces/route-me.md`.
 
+### Landing page
+The signed-out stranger's page on `/` (#97, `app/landing/page.tsx`). Persuade
+mode; the shape brief is `.impeccable/surfaces/route.md`. It may push further
+than a member screen, but keeps every rule here.
+- **The map** (`components/landing/landing-map.tsx`): authored SVG, not
+  MapLibre. Streets in Charred Rule on Ember Card, a canal as a Warm Night band
+  with two banks, one Sage-shaded circle with a crisp Sage edge and a dimension
+  line reading "about ½ mile". Never blurred, never "censored".
+- **The story** (`components/landing/story.tsx`): the map and a legend of the
+  three checks (Card, Person, Host) pin to the top on a phone and beside the
+  words from `md`. As each step reaches mid-screen, a check fills in; the
+  fourth step drops a pin inside the circle, off-centre. One slow ease-out;
+  under reduced motion the steps land without moving; without JavaScript the
+  final state shows.
+- **Type:** the one `h1` is Display at phone size and grows to `text-5xl` only
+  on a screen that is `md` wide **and** `tall` (the `tall` variant in
+  `globals.css`, min-height 40rem), so Sign up stays above the fold on a
+  320 × 568 phone and on a phone on its side.
+- **Sage** marks only the circle and Sign up. The closing card repeats the
+  circle with its pin, small.
+
 ### Framework pages
 Not found, error and loading (`components/fallback/fallback-screens.tsx`,
 built in #63) are one page column: a Display heading, one muted line, then

@@ -252,3 +252,12 @@ vibe tags. Readable only by a member who can browse.
 
 **A profile never lists seshes** — not hosted, not attended. A list of where
 someone went is a guest list, and guest lists are what this app hides.
+
+## Landing page
+
+What a signed-out visitor sees on `/`: what the app is, who it is for, and
+why it is safe. A signed-in member on `/` never sees it. Every other
+signed-out path still goes to the sign-in page.
+
+**Not the sign-in page.** The sign-in page is `/login`, a form. The landing
+page explains; it links to sign-in and sign-up and, later, to the demo.

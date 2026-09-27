@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { Banner } from "@/components/ui/banner";
+import { FOCUS_RING } from "@/components/ui/focus";
 import { safeNext } from "@/lib/auth/safe-next";
 import { APP_NAME, APP_TAGLINE } from "@/lib/env";
 import { LoginForm } from "./login-form";
@@ -34,7 +36,11 @@ export default async function LoginPage({
 
       <p className="text-xs text-ink-muted">
         Every member's card is checked by a person. {APP_NAME} is a place to meet, never a place to
-        buy or sell.
+        buy or sell.{" "}
+        {/* #97: the sign-in page is not a dead end for a stranger. */}
+        <Link href="/" className={`text-ink underline hover:text-ink-muted ${FOCUS_RING}`}>
+          What is {APP_NAME}?
+        </Link>
       </p>
     </main>
   );

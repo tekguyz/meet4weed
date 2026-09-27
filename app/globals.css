@@ -122,6 +122,60 @@ html:has([data-frame]) {
   }
 }
 
+/* Height, for pages that must fit a short screen: a phone on its side is
+   `md` wide but only 375px tall. */
+@custom-variant tall (@media (min-height: 40rem));
+
+/* ---------------------------------------------------------------------------
+   The landing page's map (#97, components/landing/landing-map.tsx). One slow,
+   calm ease; nothing bounces. A layer marked data-on="false" waits for its
+   step. Under reduced motion each step still lands, but at once: the rule at
+   the end of this file takes the transitions out. The layers are drawing, not
+   words, so nothing a reader needs ever waits on motion.
+--------------------------------------------------------------------------- */
+
+[data-story] {
+  --ease-calm: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-story] [data-on="false"] {
+  opacity: 0;
+}
+
+/* The dash exists only while the ring draws. Left on, its seam shows as a
+   nub at three o'clock. */
+.landing-ring {
+  animation: landing-ring 1.6s var(--ease-calm) backwards;
+}
+
+@keyframes landing-ring {
+  from {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+  }
+}
+
+.landing-pin,
+.landing-check {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity 700ms var(--ease-calm),
+    transform 700ms var(--ease-calm);
+}
+
+.landing-pin[data-on="false"] {
+  transform: translateY(-12px);
+}
+
+.landing-check[data-on="false"] {
+  transform: scale(0.5);
+}
+
 /* Respect the OS setting for people who never touch the toggle. */
 @media (prefers-reduced-motion: reduce) {
   *,
