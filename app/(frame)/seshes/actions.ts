@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { NOT_IN_THE_DEMO } from "@/lib/demo/door";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { editIsNewsToGuests } from "@/lib/notify/events";
@@ -26,6 +27,9 @@ const CAPACITY_BELOW_APPROVED = "M4W16";
 const REFUSED =
   "Could not post that sesh. Check your card is still current, and that you do not already have five open seshes.";
 const CHECK_FIELDS = "Check the highlighted fields.";
+/** A demo visitor's card never lapses and they never reach five open, so a
+ *  refusal is the three-sesh demo cap (#39, private.visitor_has_room). */
+const DEMO_CAP = `${NOT_IN_THE_DEMO} Demo visitors can host three seshes.`;
 /** Our own limit, not the database's — see lib/sesh/member-limits.ts. */
 const TOO_MANY_POSTS = "You have posted a lot of seshes today. Try again tomorrow.";
 
@@ -145,7 +149,9 @@ export async function createSesh(
     .select("id, fuzzy_lat, fuzzy_lng")
     .single();
 
-  if (error?.code === INSUFFICIENT_PRIVILEGE) return { ok: false, message: REFUSED };
+  if (error?.code === INSUFFICIENT_PRIVILEGE) {
+    return { ok: false, message: user.is_anonymous ? DEMO_CAP : REFUSED };
+  }
   if (error || !data) return { ok: false, message: "Could not save that. Try again." };
 
   // Two round trips, on purpose: the fuzzy point does not exist until the row

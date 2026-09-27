@@ -132,6 +132,19 @@ async function act(name: "createSesh" | "editSesh" | "cancelSesh", fd: FormData)
 }
 
 describe("createSesh", () => {
+  // Issue #39. The database caps a demo visitor at three seshes; a refusal
+  // says it is the demo, not that the card lapsed.
+  it("tells a demo visitor a refused sesh is not available in the demo", async () => {
+    getUser.mockResolvedValue({ data: { user: { id: "visitor-1", is_anonymous: true } } });
+    insertResult = { data: null, error: { code: "42501", message: "new row violates row-level security policy" } };
+
+    const result = await act("createSesh", form());
+
+    expect(result).toMatchObject({ ok: false });
+    expect((result as { message: string }).message).toMatch(/^Not available in the demo\./);
+    expect((result as { message: string }).message).toMatch(/three/);
+  });
+
   it("sends the host to their own seshes once it is saved", async () => {
     await act("createSesh", form());
 
