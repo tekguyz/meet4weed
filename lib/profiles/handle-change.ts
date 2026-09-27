@@ -4,6 +4,7 @@
  * not an error message. Shared by onboarding and Settings → Handle.
  */
 
+import { NOT_IN_THE_DEMO, NOT_IN_THE_DEMO_CODE } from "@/lib/demo/door";
 import type { ActionState } from "@/lib/forms/action-state";
 import { HANDLE_FORMAT_MESSAGE } from "@/lib/profiles/schema";
 
@@ -32,6 +33,8 @@ export function handleChangeMessage(error: { code?: string; details?: string | n
     }
     case "M4W33":
       return HANDLE_FORMAT_MESSAGE;
+    case NOT_IN_THE_DEMO_CODE:
+      return NOT_IN_THE_DEMO;
     default:
       return HANDLE_FAILED;
   }

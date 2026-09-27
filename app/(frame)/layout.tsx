@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { DemoBanner } from "@/components/demo/demo-banner";
 import { Frame } from "@/components/frame/frame";
 import { PushSync } from "@/components/notify/push-sync";
 import { amIAdmin } from "@/lib/admin/queries";
@@ -32,18 +33,23 @@ export default async function FrameLayout({ children }: { children: React.ReactN
   const [isAdmin, unread] = await Promise.all([amIAdmin(), canBrowse(access) ? myUnreadCount() : null]);
   const { tabs } = frameAccess(access, isAdmin);
   return (
-    <Frame
-      tabs={tabs}
-      unread={unread}
-      avatar={{
-        seed: profile.avatarSeed,
-        memberId: profile.id,
-        handle: profile.handle,
-        displayName: profile.displayName,
-      }}
-    >
-      <PushSync />
-      {children}
-    </Frame>
+    <>
+      {/* A visitor (#39) always knows the data is invented. */}
+      {profile.isDemo ? <DemoBanner /> : null}
+      <Frame
+        tabs={tabs}
+        unread={unread}
+        avatar={{
+          seed: profile.avatarSeed,
+          memberId: profile.id,
+          handle: profile.handle,
+          displayName: profile.displayName,
+        }}
+      >
+        {/* A visitor registers no push endpoint (#39). */}
+        {profile.isDemo ? null : <PushSync />}
+        {children}
+      </Frame>
+    </>
   );
 }

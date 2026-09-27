@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { NOT_IN_THE_DEMO, NOT_IN_THE_DEMO_CODE } from "@/lib/demo/door";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notify/notify";
@@ -34,6 +35,7 @@ const MESSAGES: Record<string, string> = {
   M4W13: "The host removed you from this sesh, so you cannot ask again.",
   M4W14: "That sesh just filled up.",
   M4W17: "You have asked to join twenty seshes today. Try again tomorrow.",
+  [NOT_IN_THE_DEMO_CODE]: NOT_IN_THE_DEMO,
 };
 
 /** Our own limit, not the database's — see lib/sesh/member-limits.ts. */
@@ -85,6 +87,11 @@ export async function askToJoin(_prev: ActionState | null, formData: FormData): 
 
   revalidatePath(`/seshes/${sesh.data}`);
   revalidatePath("/seshes/mine");
+  // Nobody approves in the demo (#39), so say so rather than leave a visitor
+  // waiting for news that never comes.
+  if (user.is_anonymous) {
+    return { ok: true, message: "Asked to join. In the demo nobody approves requests, so this one stays requested." };
+  }
   return { ok: true, message: "Asked to join. The host will let you know." };
 }
 

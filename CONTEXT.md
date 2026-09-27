@@ -261,3 +261,30 @@ signed-out path still goes to the sign-in page.
 
 **Not the sign-in page.** The sign-in page is `/login`, a form. The landing
 page explains; it links to sign-in and sign-up and, later, to the demo.
+
+## Realm
+
+The sealed population a member belongs to: **real** or **demo**. The two
+realms cannot see each other, in either direction. A real member never sees a
+demo member, sesh, RSVP or count, and nothing in the demo realm can reach a
+real member's profile or exact location.
+
+**Not "demo" alone as a noun for the population.** "Demo" also means the act
+of showing the app, so "the demo" is ambiguous.
+
+## Cast
+
+The sample members and seshes in the demo realm, written by the seed. Shared
+by every visitor and changed by none of them. The cast can never sign in.
+
+## Visitor
+
+One person's own anonymous identity inside the demo realm, created only when
+they press the demo button. A visitor sees the cast and their own rows. **A
+visitor never sees another visitor** — not their profile, seshes, RSVPs or
+bring list — and nothing a visitor does changes what the next visitor sees.
+
+A visitor is deleted, with everything they own, seven days after they arrive.
+
+**Not "tour".** That word named a visit to one shared account, which no longer
+exists.

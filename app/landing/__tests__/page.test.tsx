@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { metadata as rootMetadata } from "@/app/layout";
 import LandingPage, { metadata } from "@/app/landing/page";
 
@@ -10,6 +10,7 @@ import LandingPage, { metadata } from "@/app/landing/page";
 vi.mock("@/app/fonts", () => ({ fontClasses: "" }));
 vi.mock("@/app/globals.css", () => ({}));
 vi.mock("@/components/service-worker", () => ({ ServiceWorker: () => null }));
+vi.mock("@/app/demo-actions", () => ({ enterDemo: vi.fn() }));
 
 /** Issue #97. What a signed-out stranger gets on `/`. The proxy serves this
  *  route there; lib/supabase/__tests__/session.test.ts proves who sees it. */
@@ -100,3 +101,23 @@ it.each(["app/landing/page.tsx", "components/landing/story.tsx", "components/lan
     expect(readFileSync(resolve(process.cwd(), file), "utf8")).not.toMatch(/oklch\(|#[0-9a-fA-F]{3,8}\b|rgb\(/);
   },
 );
+
+/** Issue #39. The demo door fills the slot #97 left under Sign up. */
+describe("the landing page's demo door", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("is a form button under Sign up when the flag is on, never a link", () => {
+    vi.stubEnv("DEMO_MODE_ENABLED", "true");
+    render(<LandingPage />);
+
+    expect(screen.getByRole("button", { name: /^try the demo$/i })).toHaveAttribute("type", "submit");
+    expect(screen.queryByRole("link", { name: /demo/i })).toBeNull();
+  });
+
+  it("is not there when the flag is off", () => {
+    vi.stubEnv("DEMO_MODE_ENABLED", "");
+    render(<LandingPage />);
+
+    expect(screen.queryByRole("button", { name: /demo/i })).toBeNull();
+  });
+});

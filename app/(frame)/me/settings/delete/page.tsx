@@ -1,10 +1,24 @@
+import { redirect } from "next/navigation";
+import { NotInDemo } from "@/components/demo/not-in-demo";
 import { DeleteAccountForm } from "@/components/member/delete-account-form";
+import { getMyProfile } from "@/lib/profiles/queries";
 import { SettingsColumn } from "../settings-column";
 
 export const metadata = { title: "Delete account" };
 
 /** Issue #71. The work is in lib/account/delete.ts. */
-export default function DeleteAccountPage() {
+export default async function DeleteAccountPage() {
+  const profile = await getMyProfile();
+  if (!profile) redirect("/login");
+  // A visitor is deleted by the 7-day cleanup (#39); "Leave demo" ends the visit.
+  if (profile.isDemo) {
+    return (
+      <SettingsColumn>
+        <NotInDemo />
+      </SettingsColumn>
+    );
+  }
+
   return (
     <SettingsColumn intro="This deletes your account now. It cannot be undone.">
       <section className="flex flex-col gap-3">

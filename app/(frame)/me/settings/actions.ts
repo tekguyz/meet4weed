@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { deleteMemberAccount } from "@/lib/account/delete";
 import { confirmPassword } from "@/lib/auth/confirm-password";
+import { NOT_IN_THE_DEMO } from "@/lib/demo/door";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { avatarLook, sameLook } from "@/lib/profiles/avatar";
@@ -176,6 +177,7 @@ export async function deleteAccount(
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  if (user?.is_anonymous) return { ok: false, message: NOT_IN_THE_DEMO };
   if (!user?.email) return { ok: false, message: "Sign in again to continue." };
 
   const check = await confirmPassword(user.email, password);

@@ -15,6 +15,7 @@
     "test:integration": "vitest run supabase/tests --no-file-parallelism",
     "test:watch": "vitest",
     "db:push": "supabase db push --linked",
+    "demo:cast": "supabase db query --linked -f supabase/demo-cast.sql",
     "icons": "node scripts/make-icons.mjs",
     "fixtures:vision": "node scripts/make-vision-fixtures.mjs",
     "test:vision-live": "vitest run lib/verification/__tests__/vision.live.test.ts",

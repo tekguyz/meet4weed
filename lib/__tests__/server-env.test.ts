@@ -1,6 +1,6 @@
 /** @vitest-environment node */
 import { describe, expect, it } from "vitest";
-import { serverEnv } from "@/lib/server-env";
+import { demoModeEnabled, serverEnv } from "@/lib/server-env";
 
 const COMPLETE = {
   NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
@@ -35,5 +35,20 @@ describe("serverEnv", () => {
     expect(message).toContain("VERIFICATION_SECRET");
     expect(message).not.toContain("sb_secret_value_that_must_not_leak");
     expect(message).not.toContain("c2hvcnQ=");
+  });
+});
+
+describe("demoModeEnabled", () => {
+  it("is on for true in any case, and off for anything else", () => {
+    for (const value of ["true", "TRUE", "True", " true "]) {
+      expect(demoModeEnabled({ DEMO_MODE_ENABLED: value })).toBe(true);
+    }
+    for (const value of [undefined, "", "false", "1", "yes"]) {
+      expect(demoModeEnabled({ DEMO_MODE_ENABLED: value })).toBe(false);
+    }
+  });
+
+  it("does not need the secrets to answer", () => {
+    expect(() => demoModeEnabled({})).not.toThrow();
   });
 });

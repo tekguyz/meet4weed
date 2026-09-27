@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isAuthorizedCron } from "@/lib/cron-auth";
 import { floridaToday } from "@/lib/dates";
+import { reapDemoVisitors, shiftDemoCast } from "@/lib/demo/nightly";
 import { expiryMailerFromEnv, runExpirySweep } from "@/lib/member/expiry-sweep";
 import { reapOldNotifications, runClockNotices } from "@/lib/notify/clock";
 import { serverEnv } from "@/lib/server-env";
@@ -41,5 +42,20 @@ export async function GET(request: NextRequest) {
   const notices = await runClockNotices(db, now);
   const notificationsReaped = await reapOldNotifications(db, now);
 
-  return NextResponse.json({ ...sweep, addressesWiped: Number(wiped ?? 0), ...notices, notificationsReaped });
+  // The demo realm (#39): the cast's dates move to their offsets from today,
+  // in place, and every visitor older than seven days is deleted. Here for
+  // the same reason as everything above: no new cron route, no new secret.
+  // The reap runs last, so a notice written above for a leaving visitor
+  // goes with them.
+  const castMoved = await shiftDemoCast(db);
+  const visitorsDeleted = await reapDemoVisitors(db);
+
+  return NextResponse.json({
+    ...sweep,
+    addressesWiped: Number(wiped ?? 0),
+    ...notices,
+    notificationsReaped,
+    castMoved,
+    visitorsDeleted,
+  });
 }

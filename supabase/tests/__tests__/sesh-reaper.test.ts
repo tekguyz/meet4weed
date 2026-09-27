@@ -404,3 +404,65 @@ describe.skipIf(!configured)("the 7-day history wipe", () => {
     expect(await countOn("invites", id)).toBe(0);
   });
 });
+
+/** Issue #39. The cast's dates are shifted each night, so the oldest cast sesh
+ *  is six days past (cast_schedule refuses anything older). That keeps it on
+ *  the safe side of both wipes above. Proved here, in the one file that runs
+ *  the reaper, rather than trusted. */
+describe.skipIf(!configured)("the reapers and the demo cast", () => {
+  let service: SupabaseClient;
+  let castHost: string;
+  let castGuest: string;
+  let sesh: string;
+
+  beforeAll(async () => {
+    service = createClient(URL!, SECRET!, { auth: { persistSession: false, autoRefreshToken: false } });
+    const card = new Date(Date.now() + 200 * 86_400_000).toISOString().slice(0, 10);
+    const ids: string[] = [];
+    for (const tag of ["host", "guest"]) {
+      const { data, error } = await service.auth.admin.createUser({
+        email: `reaper-cast-${tag}-${Date.now()}@meet4weed.test`,
+        password: "Rls-probe-8f2a1c9d4b7e!",
+        email_confirm: true,
+      });
+      if (error || !data.user) throw new Error(`could not create cast ${tag}: ${error?.message}`);
+      ids.push(data.user.id);
+      await service.from("profiles").update({ status: "verified", card_expires_on: card, is_demo: true }).eq("id", data.user.id);
+    }
+    [castHost, castGuest] = ids;
+
+    const { data, error } = await service
+      .from("seshes")
+      .insert({
+        host_id: castHost,
+        title: "Cast sesh",
+        sesh_type: "chill",
+        starts_at: new Date().toISOString(),
+        capacity: 6,
+        exact_lat: TAMPA.lat,
+        exact_lng: TAMPA.lng,
+        address_line: "1 Cast Street",
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(`cast sesh insert failed: ${error.message}`);
+    sesh = data!.id as string;
+    await service.from("cast_schedule").insert({ sesh_id: sesh, day_offset: -6, local_time: "00:05" });
+    await service.from("rsvps").insert({ sesh_id: sesh, member_id: castGuest, status: "approved" });
+    await service.from("contributions").insert({ sesh_id: sesh, member_id: castGuest, kind: "item", label: "Chips" });
+  }, 60_000);
+
+  afterAll(async () => {
+    for (const id of [castHost, castGuest]) if (id) await service.auth.admin.deleteUser(id);
+  }, 60_000);
+
+  it("never reaches the oldest cast sesh the schedule allows", async () => {
+    await service.rpc("shift_demo_cast");
+    await service.rpc("sesh_address_reaper");
+
+    const { data } = await service.from("seshes").select("address_line").eq("id", sesh).single();
+    expect(data!.address_line).toBe("1 Cast Street");
+    const bring = await service.from("contributions").select("id").eq("sesh_id", sesh);
+    expect(bring.data).toHaveLength(1);
+  });
+});

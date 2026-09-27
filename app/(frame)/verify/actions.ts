@@ -11,6 +11,7 @@ export async function issueFaceChallenge(): Promise<{ ok: true; challenge: strin
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { ok: false };
+  // A demo visitor never reaches the card flow, so never the Claude call (#39).
+  if (!user || user.is_anonymous) return { ok: false };
   return { ok: true, ...issueChallenge(serverEnv().VERIFICATION_SECRET, user.id) };
 }

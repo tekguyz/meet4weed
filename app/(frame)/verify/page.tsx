@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { NotInDemo } from "@/components/demo/not-in-demo";
 import { VerifyFlow } from "@/components/verify/verify-flow";
 import { floridaToday } from "@/lib/dates";
 import { getMyProfile } from "@/lib/profiles/queries";
@@ -18,7 +19,10 @@ export default async function VerifyPage() {
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-6">
       <h1 className="text-3xl">Verify your card</h1>
-      {profile.status === "suspended" ? (
+      {/* A visitor never reaches the card flow, so never the Claude call (#39). */}
+      {profile.isDemo ? (
+        <NotInDemo />
+      ) : profile.status === "suspended" ? (
         <p className="text-sm text-danger">This account is suspended.</p>
       ) : waiting ? (
         <p className="text-sm text-ink-muted">
