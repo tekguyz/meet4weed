@@ -85,6 +85,25 @@ describe("askToJoin", () => {
     expect(result.ok).toBe(true);
   });
 
+  // Issue #39. Nobody approves in the demo, so a visitor is told so.
+  it("tells a demo visitor the request stays requested", async () => {
+    getUser.mockResolvedValue({ data: { user: { id: "visitor-1", is_anonymous: true } } });
+
+    const result = await act("askToJoin", form({ seshId: SESH }));
+
+    expect(result.ok).toBe(true);
+    expect(result.message).toMatch(/demo/i);
+    expect(result.message).toMatch(/stays requested/i);
+  });
+
+  it("tells a demo visitor a blocked action is not in the demo, in words", async () => {
+    refuse("M4W40");
+
+    const result = await act("decideRsvp", form({ rsvpId: RSVP, decision: "denied" }));
+
+    expect(result.message).toBe("Not available in the demo.");
+  });
+
   it("refuses without a real sesh, before troubling the database", async () => {
     const result = await act("askToJoin", form({ seshId: "not-a-uuid" }));
 

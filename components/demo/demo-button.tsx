@@ -21,7 +21,13 @@ export function DemoButton({ look = "button" }: { look?: "button" | "text" }) {
   return (
     <form action={action} className="flex flex-col gap-2">
       <Submit look={look} />
-      {state && !state.ok ? <Banner tone="warning">{state.message}</Banner> : null}
+      {/* Busy or closed is not a fault, so honey rather than clay; but the
+          visitor pressed and is waiting, so it is heard at once. */}
+      {state && !state.ok ? (
+        <Banner tone="warning" urgent>
+          {state.message}
+        </Banner>
+      ) : null}
     </form>
   );
 }
@@ -34,11 +40,11 @@ function Submit({ look }: { look: "button" | "text" }) {
       <button
         type="submit"
         disabled={pending}
-        className={`${TAP_TEXT} self-start text-sm text-ink-muted disabled:opacity-50`}
+        className={`${TAP_TEXT} group self-start text-sm text-ink-muted disabled:opacity-50`}
       >
         <span>
           Just looking?{" "}
-          <span className="font-semibold text-ink underline underline-offset-4">
+          <span className="font-semibold text-ink underline underline-offset-4 group-hover:text-ink-muted">
             {pending ? "Opening the demo…" : "Try the demo"}
           </span>
         </span>
