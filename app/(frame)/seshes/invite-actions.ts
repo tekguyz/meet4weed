@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { NOT_IN_THE_DEMO, NOT_IN_THE_DEMO_CODE } from "@/lib/demo/door";
 import { createClient } from "@/lib/supabase/server";
 import { serverEnv } from "@/lib/server-env";
 import type { ActionState } from "@/lib/forms/action-state";
@@ -46,6 +47,7 @@ const inviteId = z.uuid();
  *  pressing. Telling them apart is the enumeration signal. */
 const MESSAGES: Record<string, string> = {
   M4W10: "Your card is not current. Renew it and you can make links again.",
+  [NOT_IN_THE_DEMO_CODE]: NOT_IN_THE_DEMO,
   M4W19: INVITE_FAILED,
   M4W20: "You cannot make a link for that sesh.",
   M4W21: `${INVITES_PER_SESH} live links is the most for one sesh. Revoke one to make another.`,

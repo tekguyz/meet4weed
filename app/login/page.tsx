@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { DemoButton } from "@/components/demo/demo-button";
 import { Banner } from "@/components/ui/banner";
 import { FOCUS_RING } from "@/components/ui/focus";
 import { safeNext } from "@/lib/auth/safe-next";
 import { APP_NAME, APP_TAGLINE } from "@/lib/env";
+import { demoModeEnabled } from "@/lib/server-env";
 import { LoginForm } from "./login-form";
 
 export const metadata = { title: "Sign in" };
@@ -33,6 +35,10 @@ export default async function LoginPage({
           presses an invite button. It carries NO token — the token is in an
           httpOnly cookie, and a query string is exactly where it must not be. */}
       <LoginForm next={safeNext(next)} signUp={mode === "sign-up"} />
+
+      {/* #39: somebody who landed here by accident is not stuck at a form
+          they cannot use. A form button, never a link. */}
+      {demoModeEnabled() ? <DemoButton look="text" /> : null}
 
       <p className="text-xs text-ink-muted">
         Every member's card is checked by a person. {APP_NAME} is a place to meet, never a place to

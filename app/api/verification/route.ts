@@ -29,6 +29,12 @@ export async function POST(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // The one endpoint that spends money refuses every demo visitor before it
+  // reads a byte (#39). A visitor is already verified and has no card.
+  if (user?.is_anonymous) {
+    return NextResponse.json({ ok: false, error: "not_in_demo" }, { status: 403 });
+  }
+
   let form: FormData;
   try {
     form = await request.formData();

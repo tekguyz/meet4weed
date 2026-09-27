@@ -74,8 +74,10 @@ export type Profile = {
   status: MemberStatus;
   cardExpiresOn: string | null;
   attestedAt: string | null;
+  /** A demo visitor (#39): the only demo-realm identity that can sign in. */
+  isDemo: boolean;
 };
 
 /** What another member is allowed to see. Same shape minus the card fields,
  *  so a careless spread cannot leak an expiry date into a public view. */
-export type PublicProfile = Omit<Profile, "cardExpiresOn" | "attestedAt">;
+export type PublicProfile = Omit<Profile, "cardExpiresOn" | "attestedAt" | "isDemo">;

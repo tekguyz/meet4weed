@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Profile, PublicProfile } from "@/lib/profiles/schema";
 
 const COLUMNS =
-  "id, handle, display_name, bio, city, avatar_url, avatar_seed, strain_prefs, method_prefs, vibe_tags, status, card_expires_on, attested_at";
+  "id, handle, display_name, bio, city, avatar_url, avatar_seed, strain_prefs, method_prefs, vibe_tags, status, card_expires_on, attested_at, is_demo";
 
 const PUBLIC_COLUMNS =
   "id, handle, display_name, bio, city, avatar_url, avatar_seed, strain_prefs, method_prefs, vibe_tags, status";
@@ -28,6 +28,7 @@ function toProfile(row: Row): Profile {
     status: row.status as Profile["status"],
     cardExpiresOn: (row.card_expires_on as string | null) ?? null,
     attestedAt: (row.attested_at as string | null) ?? null,
+    isDemo: row.is_demo === true,
   };
 }
 

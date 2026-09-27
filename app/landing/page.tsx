@@ -1,17 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { DemoButton } from "@/components/demo/demo-button";
 import { CircleMark } from "@/components/landing/landing-map";
 import { FINE_PRINT } from "@/components/legal/fine-print";
 import { Story } from "@/components/landing/story";
 import { buttonClass } from "@/components/ui/button";
 import { FOCUS_RING, TAP_TEXT } from "@/components/ui/focus";
 import { APP_NAME } from "@/lib/env";
+import { demoModeEnabled } from "@/lib/server-env";
 
 /**
  * The landing page (#97). A signed-out visitor on exactly `/` is served this
  * route by the proxy (lib/supabase/session.ts); the URL stays `/`, and a direct
  * request here goes to `/`. It sits outside the Frame, which needs a finished
- * member. Static: it reads nothing and holds nothing about anyone.
+ * member. Static: it reads nothing and holds nothing about anyone. The one
+ * setting it reads, the demo flag (#39), is read when it is built.
  *
  * Every claim below is true in the code today. A new one is checked against
  * the code before it goes here (#97, "Allowed claims").
@@ -70,9 +73,12 @@ const PROMISES = [
 
 const QUIET_LINK = `${TAP_TEXT} text-sm text-ink-muted underline hover:text-ink`;
 
-/** #39 puts the demo button here, under Sign up. Until then it renders nothing. */
+/** The demo door (#39), under Sign up. Renders nothing when the flag is off.
+ *  The page stays static, so the flag is read when it is built; the action
+ *  reads it again on every press, so a stale button opens nothing. */
 function DemoSlot() {
-  return null;
+  if (!demoModeEnabled()) return null;
+  return <DemoButton />;
 }
 
 export default function LandingPage() {

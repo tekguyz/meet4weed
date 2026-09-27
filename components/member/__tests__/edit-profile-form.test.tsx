@@ -24,6 +24,7 @@ const PROFILE: Profile = {
   status: "verified",
   cardExpiresOn: "2027-03-01",
   attestedAt: "2026-09-01T00:00:00Z",
+  isDemo: false,
 };
 
 beforeEach(() => {

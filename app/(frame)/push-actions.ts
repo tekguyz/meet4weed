@@ -21,6 +21,9 @@ async function memberId(): Promise<string | null> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  // No push service ever holds an endpoint for a demo visitor (#39). The
+  // insert policy refuses them too, but this path writes as service_role.
+  if (user?.is_anonymous) return null;
   return user?.id ?? null;
 }
 

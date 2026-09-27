@@ -94,6 +94,7 @@ comes from:
 | `VISION_DAILY_CEILING` | Optional, default 50 Claude checks per day |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | Web push keys — `npx web-push generate-vapid-keys`. Without both, push is off and the feed still works |
 | `DEV_LAN_HOST` | Optional, dev only — this computer's LAN IP for phone testing |
+| `DEMO_MODE_ENABLED` | Optional. `true` opens the demo door (#39); anything else closes it. Server-side only, never `NEXT_PUBLIC_` |
 
 **Only the `NEXT_PUBLIC_` values may ever reach the browser.** Every other
 key is server-only: the Supabase secret key bypasses every security rule, and
@@ -135,6 +136,7 @@ so a change means editing both:
 | Password rules | same page | 8 characters minimum; lower, upper, digit, symbol |
 | Confirm signup template | Authentication → Emails | `supabase/templates/confirmation.html` |
 | Reset password template | Authentication → Emails | `supabase/templates/recovery.html` |
+| Anonymous sign-ins | Authentication → Sign In / Providers | on — the demo door (#39) needs it |
 
 ---
 
@@ -149,6 +151,7 @@ so a change means editing both:
 | `npm run test:unit` | Every vitest suite except the database security tests |
 | `npm run test:integration` | The database security tests, one file at a time |
 | `npm run db:push` | Apply new migrations to the linked hosted project |
+| `npm run demo:cast` | Apply `supabase/demo-cast.sql`, the demo cast, to the linked project. Safe to re-run |
 | `npm run admin:grant -- <email>` | Make an existing account an admin |
 | `npm run cron:run -- verification-reaper` | Run a cron job against the local dev server (also `expiry-sweep`) |
 | `npm run cron:run -- verification-reaper --https` | The same, while the HTTPS `dev-phone` server is running |
@@ -330,6 +333,25 @@ still refuses them the sesh, so they land on `/invite/held`, which says so
 and names no sesh. The day a reviewer approves the card, the sesh is there.
 
 ---
+
+## The demo
+
+A visitor presses **Try the demo** on the landing page or `/login`. The server
+makes them their own anonymous identity inside the **demo realm** and opens the
+sesh feed, full of an invented **cast** of South Florida members and seshes. The
+two realms cannot see each other, a visitor never sees another visitor, and
+each visitor is deleted seven days after arriving. Issue #39,
+[ADR 0003](docs/adr/0003-demo-visitors-over-a-shared-cast.md), and the Realm,
+Cast and Visitor entries in [`CONTEXT.md`](CONTEXT.md).
+
+- **The walls** are row-level security, in `supabase/migrations/…_demo_realm.sql`.
+- **The cast** is `supabase/demo-cast.sql`. Edit it, then `npm run demo:cast`.
+- **The door** is `app/demo-actions.ts`: a POST only, 5 visitors an hour per
+  IP and 100 an hour in total.
+- **The switch** is `DEMO_MODE_ENABLED=true` in Vercel. Off closes both buttons
+  and the action.
+- **Each night** the expiry sweep moves the cast's dates forward and deletes
+  visitors older than seven days.
 
 ## Build status
 

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { NotInDemo } from "@/components/demo/not-in-demo";
 import { ChangeHandleForm } from "@/components/member/change-handle-form";
 import { getMyProfile } from "@/lib/profiles/queries";
 import { SettingsColumn } from "../settings-column";
@@ -12,7 +13,8 @@ export default async function HandlePage() {
 
   return (
     <SettingsColumn intro="Your handle is how members find you, and it is in your profile link.">
-      <ChangeHandleForm handle={profile.handle} />
+      {/* Handles are unique across both realms (#39). */}
+      {profile.isDemo ? <NotInDemo /> : <ChangeHandleForm handle={profile.handle} />}
     </SettingsColumn>
   );
 }
