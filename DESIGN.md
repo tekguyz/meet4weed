@@ -293,7 +293,9 @@ Full-width, calm and confident.
   padding.
 - **Quiet:** Ember Raised fill, Cream Ink text. For every action that is not
   the one next step.
-- **Hover:** Sage → Sage Pressed; Quiet → Charred Rule. Colour transition only.
+- **Danger:** Ember Raised fill, Clay text. For a destructive action such as
+  Block. Never a Clay fill.
+- **Hover:** Sage → Sage Pressed; Quiet and Danger → Charred Rule. Colour transition only.
 - **Disabled:** 50% opacity.
 - **Text link:** underlined, Dusk Ink or Sage, for low-weight actions such as
   "Sign out".

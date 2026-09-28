@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { ProfileMenu } from "@/components/member/profile-menu";
 import { ProfileView } from "@/components/member/profile-view";
 import { getMyProfile, getProfileByHandle } from "@/lib/profiles/queries";
 
@@ -22,9 +23,15 @@ export default async function ProfilePage({ params }: { params: Promise<{ handle
   const profile = await getProfileByHandle(handle);
   if (!profile) notFound();
 
+  const isMe = profile.id === me.id;
+
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-6">
-      <ProfileView profile={profile} isMe={profile.id === me.id} />
+      <ProfileView
+        profile={profile}
+        isMe={isMe}
+        actions={isMe ? undefined : <ProfileMenu memberId={profile.id} handle={profile.handle} />}
+      />
     </div>
   );
 }
