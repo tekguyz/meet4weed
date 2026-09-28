@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Avatar } from "@/components/member/avatar";
 import type { PublicProfile } from "@/lib/profiles/schema";
 
@@ -11,10 +12,22 @@ import type { PublicProfile } from "@/lib/profiles/schema";
  * The card status is on PublicProfile but is not shown: whether somebody's
  * card is current is between them and the reviewer.
  */
-export function ProfileView({ profile, isMe }: { profile: PublicProfile; isMe: boolean }) {
+export function ProfileView({
+  profile,
+  isMe,
+  actions,
+}: {
+  profile: PublicProfile;
+  isMe: boolean;
+  /** The "…" menu, pinned top right. Absent on your own profile. */
+  actions?: ReactNode;
+}) {
   return (
-    <article className="flex flex-col gap-6">
-      <header className="flex min-w-0 flex-col gap-3">
+    // Once a block is done, the menu's "done" card is all that stays: the
+    // member it names is now behind the wall.
+    <article className="relative flex flex-col gap-6 [&:has(>[data-blocked])>:not([data-blocked])]:hidden">
+      {actions}
+      <header className={`flex min-w-0 flex-col gap-3 ${actions ? "pr-12" : ""}`}>
         <div className="flex min-w-0 items-center gap-4">
           <Avatar
             seed={profile.avatarSeed}
