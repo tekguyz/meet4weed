@@ -29,7 +29,9 @@ export function DemoBanner() {
             ·
           </span>
           <a href="https://tekguyz.com" className={`${BANNER_LINK} ${FOCUS_RING}`}>
-            Built by <span translate="no">TEKGUYZ</span>
+            <span>
+              Built by <span translate="no">TEKGUYZ</span>
+            </span>
           </a>
           <span aria-hidden="true" className="hidden md:inline">
             ·
