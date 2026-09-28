@@ -43,6 +43,7 @@ describe("frameHeader", () => {
     ["/me/settings/password", "Password", "/me/settings"],
     ["/me/settings/sessions", "Sessions", "/me/settings"],
     ["/me/settings/delete", "Delete account", "/me/settings"],
+    ["/me/settings/blocked", "Blocked members", "/me/settings"],
   ])("%s is titled %s with back %s", (path, title, back) => {
     expect(frameHeader(path)).toEqual({ title, back });
   });

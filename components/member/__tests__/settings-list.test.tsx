@@ -22,19 +22,10 @@ describe("SettingsList (issue #65)", () => {
       ["Password", "/me/settings/password"],
       ["Sessions", "/me/settings/sessions"],
       ["Delete account", "/me/settings/delete"],
+      ["Blocked members", "/me/settings/blocked"],
     ]) {
       expect(screen.getByRole("link", { name })).toHaveAttribute("href", href);
     }
   });
 
-  it("holds a place for blocked members that says it is coming", () => {
-    render(<SettingsList />);
-
-    for (const name of ["Blocked members"]) {
-      const row = screen.getByText(name).closest("li") as HTMLElement;
-      expect(row).toHaveTextContent(/coming soon/i);
-      // A held row does not open a page.
-      expect(row.querySelector("a")).toBeNull();
-    }
-  });
 });

@@ -1,8 +1,9 @@
-import { HeldRow, RowGroup, RowLink } from "@/components/ui/row-list";
+import { RowGroup, RowLink } from "@/components/ui/row-list";
 
 /**
  * /me/settings (issue #65): a grouped list, one row per job. Delete
- * account (issue #71) sits last under Account.
+ * account (issue #71) sits last under Account. Blocked members (issue
+ * #112) sits under Safety.
  */
 export function SettingsList() {
   return (
@@ -17,14 +18,13 @@ export function SettingsList() {
         <RowLink href="/me/settings/theme">Theme</RowLink>
         <RowLink href="/me/settings/notifications">Notifications</RowLink>
       </RowGroup>
+      <RowGroup label="Safety">
+        <RowLink href="/me/settings/blocked">Blocked members</RowLink>
+      </RowGroup>
       <RowGroup label="Account">
         <RowLink href="/me/settings/password">Password</RowLink>
         <RowLink href="/me/settings/sessions">Sessions</RowLink>
         <RowLink href="/me/settings/delete">Delete account</RowLink>
-      </RowGroup>
-      <RowGroup label="Coming soon">
-        {/* Plan 06 fills this in. */}
-        <HeldRow>Blocked members</HeldRow>
       </RowGroup>
     </div>
   );

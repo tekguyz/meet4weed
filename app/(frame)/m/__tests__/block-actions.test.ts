@@ -90,3 +90,56 @@ describe("blockMember", () => {
     }
   });
 });
+
+async function unblock(fd: FormData) {
+  const { unblockMember } = await import("@/app/(frame)/m/block-actions");
+  return unblockMember(null, fd);
+}
+
+describe("unblockMember (issue #112)", () => {
+  it("asks the database to lift the block on the member it names", async () => {
+    const result = await unblock(form({ memberId: MEMBER }));
+
+    expect(rpc).toHaveBeenCalledWith("unblock_member", { p_member: MEMBER });
+    expect(result.ok).toBe(true);
+  });
+
+  it("refreshes Me -> Blocked, so the row leaves the list", async () => {
+    await unblock(form({ memberId: MEMBER }));
+    expect(revalidatePath).toHaveBeenCalledWith("/me/settings/blocked");
+  });
+
+  it("tells nobody", async () => {
+    await unblock(form({ memberId: MEMBER }));
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it("touches only the block: no RSVP call rides along", async () => {
+    await unblock(form({ memberId: MEMBER }));
+    expect(rpc).toHaveBeenCalledTimes(1);
+  });
+
+  it("refuses a malformed id without asking the database", async () => {
+    const result = await unblock(form({ memberId: "not-a-uuid" }));
+
+    expect(rpc).not.toHaveBeenCalled();
+    expect(result.ok).toBe(false);
+  });
+
+  it("asks a signed-out caller to sign in again", async () => {
+    getUser.mockResolvedValue({ data: { user: null } });
+    const result = await unblock(form({ memberId: MEMBER }));
+
+    expect(rpc).not.toHaveBeenCalled();
+    expect(result).toEqual({ ok: false, message: "Sign in again to continue." });
+  });
+
+  it("does not refresh the list when the database says no", async () => {
+    rpc.mockResolvedValue({ error: { code: "XX000", message: "boom" } });
+    const result = await unblock(form({ memberId: MEMBER }));
+
+    expect(result.ok).toBe(false);
+    expect(result.message).not.toMatch(NO_POSTGRES_CODES);
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+});

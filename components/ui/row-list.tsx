@@ -29,16 +29,6 @@ export function RowLink({ href, children }: { href: string; children: ReactNode 
   );
 }
 
-/** A place kept for a later plan. It says so and opens nothing. */
-export function HeldRow({ children }: { children: ReactNode }) {
-  return (
-    <li className={`${ROW} text-ink-muted`}>
-      <span>{children}</span>
-      <span className="text-xs">Coming soon</span>
-    </li>
-  );
-}
-
 function Chevron() {
   return (
     <svg
