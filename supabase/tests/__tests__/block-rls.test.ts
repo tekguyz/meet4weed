@@ -377,6 +377,74 @@ describe.skipIf(!configured)("the block wall", () => {
     });
   });
 
+  describe("Me -> Blocked (issue #112)", () => {
+    const myBlocks = async (as: Member) => {
+      const { data, error } = await as.db.rpc("my_blocks");
+      if (error) throw new Error(`my_blocks failed: ${error.message}`);
+      return data as { member_id: string; handle: string; blocked_at: string }[];
+    };
+
+    it("lists the caller's blocks newest first, with the handle the wall hides", async () => {
+      await mustBlock(alice, bob);
+      await mustBlock(alice, dave);
+
+      const rows = await myBlocks(alice);
+      expect(rows.map((row) => [row.member_id, row.handle])).toEqual([
+        [dave.id, dave.handle],
+        [bob.id, bob.handle],
+      ]);
+      // The same handle is not readable through the profiles policy.
+      expect(await seesProfile(alice, bob)).toBe(false);
+    });
+
+    it("shows nobody else's blocks, not even the member who was blocked", async () => {
+      await mustBlock(alice, bob);
+      expect(await myBlocks(bob)).toEqual([]);
+      expect(await myBlocks(dave)).toEqual([]);
+    });
+
+    it("is empty once the block is lifted", async () => {
+      await mustBlock(alice, bob);
+      await unblock(alice, bob);
+      expect(await myBlocks(alice)).toEqual([]);
+    });
+
+    it("is not callable signed out", async () => {
+      const { error } = await session().rpc("my_blocks");
+      expect(error).not.toBeNull();
+    });
+
+    it("leaves every RSVP as it was on unblock, and opens both walls again", async () => {
+      const aliceHosts = await makeSesh(alice);
+      const bobHosts = await makeSesh(bob);
+      const pastAlice = await makeSesh(alice, { starts_at: hoursFromNow(-30) });
+      await rsvp(aliceHosts, bob);
+      await rsvp(bobHosts, alice);
+      await rsvp(pastAlice, bob);
+      await mustBlock(alice, bob);
+
+      const before = [
+        await statusOf(aliceHosts, bob),
+        await statusOf(bobHosts, alice),
+        await statusOf(pastAlice, bob),
+      ];
+      expect(before).toEqual(["kicked", "cancelled", "approved"]);
+
+      const { error } = await unblock(alice, bob);
+      expect(error).toBeNull();
+
+      expect([
+        await statusOf(aliceHosts, bob),
+        await statusOf(bobHosts, alice),
+        await statusOf(pastAlice, bob),
+      ]).toEqual(before);
+      expect(await seesProfile(alice, bob)).toBe(true);
+      expect(await seesProfile(bob, alice)).toBe(true);
+      expect(await seesSesh(bob, aliceHosts)).toBe(true);
+      expect(await seesSesh(alice, bobHosts)).toBe(true);
+    });
+  });
+
   describe("a third member's sesh", () => {
     it("still shows both members on the guest list, with their handles", async () => {
       const carolHosts = await makeSesh(carol);

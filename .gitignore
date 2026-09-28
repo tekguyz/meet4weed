@@ -28,3 +28,7 @@ public/maplibre/
 
 # Per-laptop Claude settings; holds the Supabase access token
 .claude/settings.local.json
+
+# Impeccable run-time files: process ids, ports, logs
+.impeccable/questions/
+.impeccable/live/

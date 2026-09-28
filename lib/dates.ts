@@ -78,3 +78,15 @@ export function floridaWallClock(at: Date): string {
   const hour = String(Number(value("hour")) % 24).padStart(2, "0");
   return `${value("year")}-${value("month")}-${value("day")}T${hour}:${value("minute")}`;
 }
+
+const FLORIDA_SHORT = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/New_York",
+  month: "short",
+  day: "numeric",
+});
+
+/** An instant as a short Florida date, like "Sep 28". For a real timestamp
+ *  (a block, say), not a calendar-day string. */
+export function floridaShortDate(at: Date): string {
+  return FLORIDA_SHORT.format(at);
+}
