@@ -99,9 +99,18 @@ Product truths. Each one is load-bearing; do not design around them.
 
 - **Name:** Meet4Weed. **Tagline in code:** "A private circle for verified
   Florida patients." (`lib/env.ts`).
-- **Voice:** plain, calm and honest. Name the reason when something fails,
-  and always offer the next step (spec §8). Never hype, never wink at
+- **Voice: fun on top of calm** (decided by the owner 2026-09-28). The app
+  should be fun and exciting to use: warm, playful, a little cheeky, with
+  small moments of delight, lively empty states and copy with some life in
+  it. Underneath, it stays plain and honest: name the reason when something
+  fails, and always offer the next step (spec §8). Never hype, never wink at
   cannabis culture.
+  - **Where the playfulness stops:** verification, the card, the address,
+    report, block, suspension, deletion and anything about data. These
+    screens stay plain and calm. A joke next to "we delete your card photo"
+    makes the promise sound less true.
+  - **The look does not change.** Warm Ink (`DESIGN.md`) stays. Fun lives in
+    the words and the small moments, not in a louder palette.
 - **Logo:** "The Sesh Circle" — six friends in a ring around a leaf, with a
   Nunito ExtraBold wordmark (spec §7, #49). Source: `scripts/logo.mjs`.
 

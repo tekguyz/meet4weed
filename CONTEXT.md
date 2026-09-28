@@ -288,3 +288,57 @@ A visitor is deleted, with everything they own, seven days after they arrive.
 
 **Not "tour".** That word named a visit to one shared account, which no longer
 exists.
+
+## Kick
+
+A host removing a guest: the RSVP becomes `kicked`. **Final and silent.** A
+kicked member cannot ask to join that sesh again, and no notification is sent;
+the guest sees it on the sesh. A kick carries no reason. A host who wants an
+admin to know why sends a report as well.
+
+## Report
+
+A member telling the admins about **a member or a sesh**. Nothing else can be
+reported — not a bring-list line, not a notification. A report has a reason
+from a fixed list and an optional short note.
+
+A report is read by a person in the **reports queue**, never acted on by the
+app itself.
+
+## Block
+
+A **two-way wall** between two members. Neither sees the other's profile or
+the seshes the other hosts, and neither can ask to join the other's sesh. The
+blocked member is never told.
+
+**Not a mute.** A one-way mute would still let the blocked person ask to come
+into your home.
+
+A block **ends any upcoming sesh the two share as host and guest**: the
+blocker's guest becomes `kicked`, or the blocker's own RSVP becomes
+`cancelled`. Past seshes do not change.
+
+A block **does not reach into a third member's sesh.** Two members who blocked
+each other can both be guests of somebody else, and each still sees the other
+on that guest list. Hiding them would lie about who is in the room.
+
+A block can be undone. Unblocking never restores a kicked or cancelled RSVP.
+
+## Reports queue
+
+The admin screen that reads reports. Its actions are **suspend** a member,
+**unsuspend** a member, **take down** a sesh, and **dismiss** a report. Every
+action writes an `admin_actions` row with a reason.
+
+The reporter is never told the outcome.
+
+## Suspend
+
+An admin setting a member's status to `suspended`. Their upcoming seshes are
+cancelled, and those guests hear it as an ordinary cancellation. Undone by
+**unsuspend**.
+
+## Take down
+
+An admin cancelling a sesh for its host. It is a cancellation, so it is final
+like any other. The host sees on the sesh that an admin did it.
