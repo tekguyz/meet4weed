@@ -1,7 +1,7 @@
 # Meet4Weed — rules for every session
 
 A private social app for verified Florida OMMU medical cannabis cardholders.
-Next.js 16.3 + hosted Supabase. Read `README.md` for setup and layout.
+Next.js 16.3 + hosted Supabase. Read `README.md` for the short version, `docs/SETUP.md` for setup, `docs/ARCHITECTURE.md` for layout.
 
 **Sources of truth, in order:** the code, then the spec
 (`docs/superpowers/specs/2026-09-16-meet4weed-rebuild-design.md`), then
