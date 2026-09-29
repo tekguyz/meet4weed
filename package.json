@@ -20,7 +20,8 @@
     "fixtures:vision": "node scripts/make-vision-fixtures.mjs",
     "test:vision-live": "vitest run lib/verification/__tests__/vision.live.test.ts",
     "admin:grant": "node --env-file=.env.local scripts/grant-admin.mjs",
-    "cron:run": "node --env-file=.env.local scripts/run-cron.mjs"
+    "cron:run": "node --env-file=.env.local scripts/run-cron.mjs",
+    "showcase": "node scripts/showcase.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.126.0",
@@ -51,6 +52,7 @@
     "@vitejs/plugin-react": "6.1.1",
     "dotenv": "17.2.3",
     "jsdom": "30.0.1",
+    "playwright-core": "1.63.0",
     "sharp": "0.35.4",
     "tailwindcss": "4.3.3",
     "typescript": "7.0.2",
