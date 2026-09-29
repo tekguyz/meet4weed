@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 300" width="1280" height="300" role="img" aria-label="Meet4Weed">
+  <rect width="1280" height="300" fill="#14120e"/>
+  <circle cx="200" cy="150" r="58" fill="none" stroke="#b4d982" stroke-width="8"/>
+  <circle cx="200" cy="150" r="20" fill="#e7b968"/>
+  <text x="300" y="155" font-family="Georgia, serif" font-size="96" fill="#b4d982">Meet4Weed</text>
+  <text x="304" y="212" font-family="Arial, sans-serif" font-size="30" fill="#f5f0e4">A private circle for verified Florida patients.</text>
+  <rect y="298" width="1280" height="2" fill="#b4d982"/>
+</svg>
