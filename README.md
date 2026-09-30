@@ -23,8 +23,9 @@
 ## Screenshots
 
 <p align="center">
-  <img src="showcase/seshes-desktop-dark.png" alt="The sesh feed" width="49%">
-  <img src="showcase/map-desktop-dark.png" alt="The sesh map" width="49%">
+  <img src="showcase/seshes-phone-dark.png" alt="The sesh feed" height="480">
+  <img src="showcase/map-phone-dark.png" alt="The sesh map" height="480">
+  <img src="showcase/sesh-phone-dark.png" alt="One sesh" height="480">
 </p>
 
 ## What it does

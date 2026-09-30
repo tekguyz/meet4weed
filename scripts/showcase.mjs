@@ -6,7 +6,7 @@
 //
 // It opens the landing page and presses "Try the demo", in one fresh browser,
 // so the data is the demo's invented cast. Each screen in light and dark,
-// desktop 1440x900, English, demo banner and dev badge hidden. The PNGs go to
+// desktop 1440x900 and phone 390x844, English, demo banner and dev badge hidden. The PNGs go to
 // `showcase/`, named for what they show and the theme. They change only when
 // someone runs this; nothing else re-takes them.
 //
@@ -25,6 +25,7 @@ const site = (process.argv[2] ?? "https://meet4weed.vercel.app").replace(/\/$/, 
 
 const OUT = "showcase";
 const DESKTOP = { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 };
+const PHONE = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true };
 const LOOK = { locale: "en-US", reducedMotion: "reduce" };
 
 // Dark is the app's default, but each theme is set by the browser's colour
@@ -45,6 +46,10 @@ const SHOTS = [
   { name: "map-desktop", open: "/seshes?view=map", settle: 4000 },
   { name: "sesh-desktop", open: [SESH] },
   { name: "member-desktop", open: [SESH, MEMBER] },
+  // Phone shots, 390x844. The README uses these: the app is phone-first.
+  { name: "seshes-phone", open: "/seshes", device: PHONE },
+  { name: "map-phone", open: "/seshes?view=map", settle: 4000, device: PHONE },
+  { name: "sesh-phone", open: [SESH], device: PHONE },
 ];
 
 // The demo banner has no hook of its own, only its label. `nextjs-portal` is
@@ -85,7 +90,7 @@ async function firstLink(page, pattern) {
 }
 
 async function shoot(browser, session, shot, theme) {
-  const context = await browser.newContext({ ...DESKTOP, ...LOOK, colorScheme: theme, storageState: session });
+  const context = await browser.newContext({ ...(shot.device ?? DESKTOP), ...LOOK, colorScheme: theme, storageState: session });
   const page = await context.newPage();
   if (typeof shot.open === "string") {
     await page.goto(site + shot.open);
