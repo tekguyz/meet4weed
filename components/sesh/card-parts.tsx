@@ -56,13 +56,13 @@ export function SeatMeter({ capacity, approved }: { capacity: number; approved: 
           ))}
         </span>
       ) : (
-        <span aria-hidden="true" className="flex items-center gap-2">
-          <span className="h-1.5 w-16 overflow-hidden rounded-full bg-surface-2">
-            <span className="block h-full rounded-full bg-secondary" style={{ width: `${(room.taken / room.capacity) * 100}%` }} />
-          </span>
-          <span className="tabular-nums">{room.count}</span>
+        <span aria-hidden="true" className="h-1.5 w-16 overflow-hidden rounded-full bg-surface-2">
+          <span className="block h-full rounded-full bg-secondary" style={{ width: `${(room.taken / room.capacity) * 100}%` }} />
         </span>
       )}
+      <span aria-hidden="true" className="tabular-nums">
+        {room.count}
+      </span>
       {room.full ? (
         <span aria-hidden="true" className="font-semibold text-secondary">
           Full

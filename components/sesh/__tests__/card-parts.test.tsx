@@ -21,6 +21,12 @@ describe("SeatMeter", () => {
     expect(screen.getByText("3 of 6 seats taken")).toBeInTheDocument();
   });
 
+  /** The dots alone did not say "people going" to anyone new to the app. */
+  it("writes the count beside the dots", () => {
+    render(<SeatMeter capacity={6} approved={3} />);
+    expect(screen.getByText("3 of 6 going")).toBeInTheDocument();
+  });
+
   it("says Full when the room is full", () => {
     render(<SeatMeter capacity={6} approved={6} />);
     expect(screen.getByText("6 of 6 seats taken. Full.")).toBeInTheDocument();
@@ -28,7 +34,7 @@ describe("SeatMeter", () => {
 
   it("writes the count beside a big sesh's bar", () => {
     render(<SeatMeter capacity={40} approved={18} />);
-    expect(screen.getByText("18 of 40")).toBeInTheDocument();
+    expect(screen.getByText("18 of 40 going")).toBeInTheDocument();
   });
 });
 

@@ -380,7 +380,8 @@ reader.
   for. Further out it is the short weekday. All Florida time, from
   `seshWhen()` in `lib/sesh/when.ts`.
 - **Seats** — one dot per seat up to 12, Honey when taken, a Dusk Ink ring
-  when free; above 12, a thin Honey bar and "18 of 40". "Full" in Honey once
+  when free; above 12, a thin Honey bar. Either way the count is written
+  beside it, "3 of 6 going": dots alone read as decoration. "Full" in Honey once
   every seat is taken. Counts only, never a name or a face. A screen reader
   hears "3 of 6 seats taken". From `seats()` in `lib/sesh/seats.ts`.
 
