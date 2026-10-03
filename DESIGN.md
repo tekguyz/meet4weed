@@ -379,7 +379,7 @@ reader.
   5 PM), "Tonight" and "Tomorrow" are Honey: they are what a scanning eye looks
   for. Further out it is the short weekday. All Florida time, from
   `seshWhen()` in `lib/sesh/when.ts`.
-- **Seats** — one dot per seat up to 12, Honey when taken, a Dusk Ink ring
+- **Seats** — a small two-person line icon starts the row, then one dot per seat up to 12, Honey when taken, a Dusk Ink ring
   when free; above 12, a thin Honey bar. Either way the count is written
   beside it, "3 of 6 going": dots alone read as decoration. "Full" in Honey once
   every seat is taken. Counts only, never a name or a face. A screen reader

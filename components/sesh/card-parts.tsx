@@ -40,12 +40,36 @@ export function WhenLine({ when }: { when: SeshWhen }) {
  * or a face, because the guest list is hidden from everyone but the Host and
  * approved guests.
  */
+/** Two friendly figures that say "people" before the dots do. Drawn in the
+ *  frame's line style (24px grid, 1.75 stroke, round ends), and never a face:
+ *  the seats carry counts only. */
+function People() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="size-4 shrink-0"
+    >
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
+      <path d="M15.5 4.6a3.5 3.5 0 0 1 0 6.8" />
+      <path d="M18 13.7a6.5 6.5 0 0 1 3.5 6.3" />
+    </svg>
+  );
+}
+
 export function SeatMeter({ capacity, approved }: { capacity: number; approved: number }) {
   const room = seats(capacity, approved);
 
   return (
     <p className="flex items-center gap-2 text-xs text-ink-muted">
       <span className="sr-only">{room.sentence}</span>
+      <People />
       {room.kind === "dots" ? (
         <span aria-hidden="true" className="flex flex-wrap gap-1">
           {room.dots.map((taken, i) => (
