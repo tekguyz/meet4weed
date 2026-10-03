@@ -112,6 +112,31 @@ export async function getSeshAddress(seshId: string): Promise<SeshAddress | null
   };
 }
 
+/** The Host as a feed card shows them (#125): Avatar and handle, never more. */
+export type SeshHost = { handle: string; displayName: string | null; avatarSeed: string | null };
+
+/** `host` is null when the profiles select policy hides the Host from the
+ *  caller. It should not, for anybody who can read the sesh, but the card then
+ *  draws no Host rather than breaking. */
+export type FeedSesh = SeshListItem & { host: SeshHost | null };
+
+/** The Host's Profile, embedded through the host_id foreign key. A plain
+ *  embed is a LEFT join: a Host the caller cannot read comes back null and the
+ *  sesh stays. `!inner` would turn the profiles policy into a feed filter.
+ *  It cannot bring a sesh back either: the seshes select policy picks the rows
+ *  (Unlisted, the block wall, a lapsed Host) before anything is embedded. */
+const FEED_HOST = "host:profiles(handle, display_name, avatar_seed)";
+
+function toHost(raw: unknown): SeshHost | null {
+  const host = raw as Row | null;
+  if (!host?.handle) return null;
+  return {
+    handle: host.handle as string,
+    displayName: (host.display_name as string | null) ?? null,
+    avatarSeed: (host.avatar_seed as string | null) ?? null,
+  };
+}
+
 /** The public feed: open seshes that have not started yet, soonest first.
  *
  *  Cancelled seshes and finished ones are filtered here. A sesh whose host's
@@ -120,7 +145,7 @@ export async function getSeshAddress(seshId: string): Promise<SeshAddress | null
  *
  *  One extra row is fetched beyond the page so the caller knows whether there
  *  is a next page without a second count query. */
-export async function listFeed(filters: FeedFilters): Promise<{ seshes: SeshListItem[]; hasMore: boolean }> {
+export async function listFeed(filters: FeedFilters): Promise<{ seshes: FeedSesh[]; hasMore: boolean }> {
   const supabase = await createClient();
 
   const limit = filters.view === "map" ? MAP_LIMIT : FEED_PAGE_SIZE;
@@ -128,7 +153,7 @@ export async function listFeed(filters: FeedFilters): Promise<{ seshes: SeshList
 
   let query = supabase
     .from("seshes")
-    .select(LIST_COLUMNS)
+    .select(`${LIST_COLUMNS}, ${FEED_HOST}`)
     .eq("status", "open")
     .gt("starts_at", new Date().toISOString())
     .order("starts_at", { ascending: true })
@@ -141,7 +166,10 @@ export async function listFeed(filters: FeedFilters): Promise<{ seshes: SeshList
 
   const { data } = await query;
   const rows = (data ?? []) as Row[];
-  return { seshes: rows.slice(0, limit).map(toListItem), hasMore: rows.length > limit };
+  return {
+    seshes: rows.slice(0, limit).map((row) => ({ ...toListItem(row), host: toHost(row.host) })),
+    hasMore: rows.length > limit,
+  };
 }
 
 export type SeshDetail = SeshListItem & {

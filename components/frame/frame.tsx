@@ -19,6 +19,9 @@ import { activeTab, frameHeader, TABS } from "./frame-paths";
  * There is ONE nav element. On a phone it is pinned to the bottom; from `md` up
  * it sits in the header. Two copies would put two "Main" landmarks in front of
  * a screen reader.
+ *
+ * From `md` up the header's row shares the pages' 1152px cap and side padding
+ * (PAGE_CAP in ./page-shape.tsx, #125), so the header and the page line up.
  */
 export function Frame({
   tabs,
@@ -48,7 +51,7 @@ export function Frame({
       </a>
 
       <header className="sticky top-0 z-20 bg-bg pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)]">
-        <div className="mx-auto flex h-14 w-full max-w-md items-center gap-2 px-4 md:max-w-3xl">
+        <div className="mx-auto flex h-14 w-full max-w-md items-center gap-2 px-4 md:max-w-6xl md:px-8">
           <div className="flex min-w-0 flex-1 items-center gap-1 md:hidden">
             {back ? (
               <Link

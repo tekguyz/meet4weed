@@ -268,7 +268,8 @@ the same cap and the same 32px side padding from `md` up. At 1440px that
 leaves an even margin each side, never a phone column in a big empty field.
 
 **Three page shapes.** A Frame page picks one; it never writes its own width.
-One shared component holds the widths, so they live in one place.
+One shared component holds the widths, so they live in one place:
+`components/frame/page-shape.tsx` (`ColumnPage`, `SplitPage`, `FeedPage`).
 
 - **Column** — one column: 448px (`max-w-md`) on a phone, 672px (`max-w-2xl`)
   from `md` up, with more room between sections. For Notifications, Settings,
@@ -283,7 +284,8 @@ One shared component holds the widths, so they live in one place.
   sticky, both showing the current page of seshes. A shared "highlighted
   sesh" ties them: pointing at or focusing a card lights its Fuzzy circle;
   clicking a circle lights its card and scrolls it into view (it does not open
-  the sesh). The List / Map switch hides at `lg`. Below `lg` the feed is a
+  the sesh). A lit card wears a 2px Honey ring; a lit circle turns Honey
+  (`--map-lit`), and the map pans to it only when it is off the edge. The List / Map switch hides at `lg`. Below `lg` the feed is a
   column with the switch, and the phone map has no new tap actions.
 
 Admin, the Landing page, sign-in, reset, confirm, invite claim and the public
