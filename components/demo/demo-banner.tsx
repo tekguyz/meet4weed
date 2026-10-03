@@ -20,7 +20,7 @@ export function DemoBanner() {
       aria-label="Demo"
       className="bg-surface-2 pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] pt-[env(safe-area-inset-top)]"
     >
-      <div className="mx-auto flex w-full max-w-md flex-col px-4 text-xs text-ink-muted md:max-w-3xl md:flex-row md:items-center md:gap-x-3">
+      <div className="mx-auto flex w-full max-w-md flex-col px-4 text-xs text-ink-muted md:max-w-6xl md:px-8 md:flex-row md:items-center md:gap-x-3">
         <p className="pt-3 md:py-3">
           <span className="font-semibold text-ink">Demo</span> — every member and sesh here is invented
         </p>
