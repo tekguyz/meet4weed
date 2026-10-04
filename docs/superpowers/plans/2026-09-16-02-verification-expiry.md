@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 >
-> **This repo's owner caps a session at 2 subagents and asks to be asked first.** Execute inline with superpowers:executing-plans unless the owner says otherwise.
+> **Subagents: one at a time by default; several at once only when their tasks do not depend on each other** (claude-config#43). Execute inline with superpowers:executing-plans unless the owner says otherwise.
 
 **Goal:** A signed-in, attested member captures their OMMU card and a live face-with-card photo, Claude reads the card and lists concerns, the owner approves or rejects from a review queue, the images are deleted on that decision, and an expired card turns the account read-only.
 

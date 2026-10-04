@@ -70,6 +70,32 @@ reason so nobody has to rediscover it.
   source of truth; there is no `supabase/schemas/` and no seed.
 - Hosted project ref: `uckylbulmbrsdjevhbct`.
 
+## Supabase account and token
+
+Moved here from the global rules on 2026-10-04 (claude-config#43).
+
+- The founder has **three Supabase accounts**. This project (`uckylbulmbrsdjevhbct`) is in
+  the same account as `squid-ink`. Checked 2026-10-04 with `supabase projects list`.
+- Claude Code reads the token from `SUPABASE_ACCESS_TOKEN` under `env` in
+  `.claude/settings.local.json`. That file is git-ignored and per laptop.
+  Never put the token in git, `.env` or a commit. An empty value falls back
+  to the saved login, which is the wrong account. Tokens are named by laptop:
+  `DELL-claude` and `ALEX-claude`.
+- **Only Claude Code reads that file.** The founder's terminal does not, so a
+  bare `supabase ...` there uses the saved login and fails with
+  `401 Unauthorized`. **Never hand the founder a bare `supabase` command.**
+  Hand `npm run db:push` or `npm run supabase -- <command>`; they read the
+  token from that file.
+  **This repo does not have them yet**: its `db:push` calls `supabase`
+  directly. Before handing the founder a Supabase command, add both scripts
+  as a small separate commit. Model: `tekguyz-command/scripts/supabase.ts`.
+- **One migration in flight at a time.** The history is linear: `db push`
+  refuses two open branches that each carry a migration.
+- When a token is new or changed, run `supabase projects list` and check
+  this project is in it. A token from another account cannot see it.
+- No Supabase MCP here. If one is added later, it is read-only and pinned to
+  `uckylbulmbrsdjevhbct`.
+
 ## Tests
 
 - **Two commands: `npm run test:unit`, then `npm run test:integration`.** Tests
@@ -105,6 +131,30 @@ reason so nobody has to rediscover it.
   (`VISION_LIVE=1 npm run test:vision-live`) are on demand only: about 1 cent
   per case.
 - Definition of done is a command that exits 0, with its output shown.
+
+### Leaked test users and sweeps
+
+Moved here from the global rules on 2026-10-04 (claude-config#43).
+
+- **A run that dies in setup leaks its users.** `afterAll` does not run when
+  `beforeAll` throws. After any red integration run, say whether a sweep is
+  needed.
+- **Never sweep the whole `@meet4weed.test` domain.** Demo users and
+  dev-login users (`dev-`) share it. Select first, read the list, then delete.
+- **New integration test emails start with `it-`**, so one sweep finds them:
+
+  ```sql
+  select email from auth.users where email like 'it-%@meet4weed.test';
+  delete from auth.users where email like 'it-%@meet4weed.test';
+  ```
+
+- **Most suites here do not use `it-` yet.** They name users by suite
+  (`rls-`, `reaper-`, `rsvp-`, `push-` and more), so the `it-` sweep misses
+  them. Until they move, delete by those suite prefixes only, after the
+  select.
+- **A reaper or sweep that deletes across the project lives in ONE test
+  file.** Files run in parallel; two files sweeping delete each other's
+  fixtures.
 
 ## Secrets and cost
 
