@@ -19,7 +19,19 @@ type Props = {
   /** Recentre on demand — what "near me" moves. */
   centre?: Point | null;
   label: string;
+  /** The circle lit from the feed list on a laptop (#125). */
+  lit?: string | null;
+  /** Clicking a circle calls this with its sesh id. Read when the map is
+   *  built: a map built without it has no circle taps at all, which is how
+   *  the phone map keeps no new tap actions. */
+  onCircleClick?: (id: string) => void;
+  /** Size classes. Defaults to h-64. */
+  className?: string;
 };
+
+/** Both lit layers draw only the circle whose id matches. */
+const LIT_LAYERS = ["circle-lit-fill", "circle-lit-line"] as const;
+const litFilter = (id: string | null | undefined) => ["==", ["get", "id"], id ?? ""];
 
 /** Every colour and style URL still lives in app/globals.css. A MapLibre
  *  style is its own JSON document that the library fetches, and its paint
@@ -58,18 +70,24 @@ function toGeoJson(circles: Circle[]) {
 
 type MapLike = {
   on(event: string, handler: (event: never) => void): unknown;
+  on(event: string, layer: string, handler: (event: never) => void): unknown;
   addSource(id: string, source: unknown): unknown;
   addLayer(layer: unknown): unknown;
   getSource(id: string): { setData(data: unknown): void } | undefined;
+  setFilter(layer: string, filter: unknown): unknown;
+  getCanvas(): { style: { cursor: string } };
+  getBounds(): { contains(at: [number, number]): boolean };
+  easeTo(options: { center: [number, number]; duration?: number }): unknown;
   setCenter(centre: [number, number]): unknown;
   remove(): void;
 };
 
 type MarkerLike = { setLngLat(at: [number, number]): MarkerLike; addTo(map: MapLike): MarkerLike; remove(): void };
 
-export function SeshMap({ circles, marker, onPick, centre, label }: Props) {
+export function SeshMap({ circles, marker, onPick, centre, label, lit = null, onCircleClick, className = "h-64" }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<MapLike | null>(null);
+  const loaded = useRef(false);
   const pin = useRef<MarkerLike | null>(null);
   const makePin = useRef<(() => MarkerLike) | null>(null);
 
@@ -77,6 +95,10 @@ export function SeshMap({ circles, marker, onPick, centre, label }: Props) {
   // would throw away the member's zoom and pan.
   const pick = useRef(onPick);
   pick.current = onPick;
+  const circleClick = useRef(onCircleClick);
+  circleClick.current = onCircleClick;
+  const litNow = useRef(lit);
+  litNow.current = lit;
 
   useEffect(() => {
     let cancelled = false;
@@ -88,6 +110,7 @@ export function SeshMap({ circles, marker, onPick, centre, label }: Props) {
       if (cancelled || !container.current) return;
 
       const accent = token("--map-accent");
+      const litColour = token("--map-lit");
 
       // MapLibre otherwise builds this address from `import.meta.url` and the
       // production build emits no chunk there, so the request fell through to
@@ -122,7 +145,36 @@ export function SeshMap({ circles, marker, onPick, centre, label }: Props) {
           source: "circles",
           paint: { "line-color": accent, "line-width": 2 },
         });
+        instance.addLayer({
+          id: "circle-lit-fill",
+          type: "fill",
+          source: "circles",
+          filter: litFilter(litNow.current),
+          paint: { "fill-color": litColour, "fill-opacity": 0.4 },
+        });
+        instance.addLayer({
+          id: "circle-lit-line",
+          type: "line",
+          source: "circles",
+          filter: litFilter(litNow.current),
+          paint: { "line-color": litColour, "line-width": 3 },
+        });
+        loaded.current = true;
       });
+
+      if (circleClick.current) {
+        instance.on("click", "circle-fill", (event: never) => {
+          const id = (event as { features?: { properties?: { id?: string } }[] }).features?.[0]?.properties?.id;
+          if (id) circleClick.current?.(id);
+        });
+        // A circle that does something looks like it.
+        instance.on("mouseenter", "circle-fill", () => {
+          instance.getCanvas().style.cursor = "pointer";
+        });
+        instance.on("mouseleave", "circle-fill", () => {
+          instance.getCanvas().style.cursor = "";
+        });
+      }
 
       if (pick.current) {
         instance.on("click", (event: never) => {
@@ -134,6 +186,7 @@ export function SeshMap({ circles, marker, onPick, centre, label }: Props) {
 
     return () => {
       cancelled = true;
+      loaded.current = false;
       pin.current?.remove();
       pin.current = null;
       map.current?.remove();
@@ -164,7 +217,23 @@ export function SeshMap({ circles, marker, onPick, centre, label }: Props) {
     if (centre) map.current?.setCenter([centre.lng, centre.lat]);
   }, [centre]);
 
+  useEffect(() => {
+    // Before load there are no layers to filter; the load handler reads litNow.
+    const instance = map.current;
+    if (!instance || !loaded.current) return;
+    for (const layer of LIT_LAYERS) instance.setFilter(layer, litFilter(lit));
+
+    // A lit circle off the map's edge lights nothing anybody can see, so the
+    // map moves to it. One already in view stays put: no needless panning.
+    const circle = circles.find((c) => c.id === lit);
+    if (circle && !instance.getBounds().contains([circle.lng, circle.lat])) {
+      const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      instance.easeTo({ center: [circle.lng, circle.lat], duration: reduce ? 0 : 400 });
+    }
+    // Only a new lit sesh moves the map, never new circles under the same one.
+  }, [lit]);
+
   return (
-    <div ref={container} role="application" aria-label={label} className="h-64 w-full rounded-card bg-surface-2" />
+    <div ref={container} role="application" aria-label={label} className={`w-full rounded-card bg-surface-2 ${className}`} />
   );
 }

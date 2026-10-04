@@ -177,7 +177,10 @@ Every value lives only in `app/globals.css`. Components use the token classes
 
 ### Secondary
 - **Honey** (`--secondary`): strain tags, the expiry banner, the "host changed
-  this sesh" notice, accents. Never a button fill. **Deep Honey** in light.
+  this sesh" notice, accents — including a sesh card's "Tonight", taken seats
+  and its type drawing's tint. Never a button fill. **Deep Honey** in light.
+  Deep Honey reaches 4.5:1 only on Paper Card, so Honey text sits on a card,
+  never on Ember Raised.
 
 ### Tertiary
 - **Clay** (`--danger`): errors, destructive actions, a rejected card's
@@ -246,18 +249,51 @@ Nothing else does — not buttons, not labels, not numbers.
 
 ## Layout
 
-A single phone-width column. Most pages are `max-w-md` (28rem) centred —
-a few short forms use `max-w-sm` (24rem) — with
-16px side padding and 40px top padding — 24px under the Frame's header, which
-already spaces the page from the top. Content stacks vertically with gaps of
-8, 12, 16 or 24px; 24px separates page sections. The admin area alone widens
-to `max-w-5xl`.
+<!-- Decided in #125. Pass 1 wrote this rule; passes 2–4 of #125 build it.
+     Until they land, a page that still uses the old copied max-w-md column is
+     stale, not a second rule. -->
 
-Spacing follows Tailwind's 4px grid. There is no custom breakpoint yet; wide
-screens show the same column centred. The spec's **Mobile** section is the
-contract for small screens: 375px base width, 44px tap targets, thumb reach,
-safe areas, no sideways scroll, and the keyboard never hides the focused field
-or its submit.
+**Phone first, and the phone does not change.** On a phone every page is one
+column, 16px side padding, 24px under the Frame's header. Content stacks with
+gaps of 8, 12, 16 or 24px; 24px separates page sections. Spacing follows
+Tailwind's 4px grid.
+
+**Two breakpoints**, Tailwind's own: `md` (768px, tablet) and `lg` (1024px,
+laptop and up). No custom breakpoint. Above 1024px the layout grows until the
+cap.
+
+**One cap: 1152px** (`max-w-6xl`), for the Frame header's inner row and every
+Frame page alike, so the header and the page line up. The Landing page uses
+the same cap and the same 32px side padding from `md` up. At 1440px that
+leaves an even margin each side, never a phone column in a big empty field.
+
+**Three page shapes.** A Frame page picks one; it never writes its own width.
+One shared component holds the widths, so they live in one place:
+`components/frame/page-shape.tsx` (`ColumnPage`, `SplitPage`, `FeedPage`).
+
+- **Column** — one column: 448px (`max-w-md`) on a phone, 672px (`max-w-2xl`)
+  from `md` up, with more room between sections. For Notifications, Settings,
+  Verify, Onboarding and Your seshes.
+- **Split** — from `lg` up, a main column and a narrower side column that stays
+  in place on scroll (sticky). Below `lg` it is one column, main first. For the
+  sesh page (story left; the action, "Hosted by" and the address right),
+  Profile and Me (below the top band: bio and vibe tags left, city and
+  preferences right), and the new and edit sesh forms (form left, a larger
+  location picker right).
+- **Feed** — from `lg` up, the list on the left and the map on the right,
+  sticky, both showing the current page of seshes. A shared "highlighted
+  sesh" ties them: pointing at or focusing a card lights its Fuzzy circle;
+  clicking a circle lights its card and scrolls it into view (it does not open
+  the sesh). A lit card wears a 2px Honey ring; a lit circle turns Honey
+  (`--map-lit`), and the map pans to it only when it is off the edge. The List / Map switch hides at `lg`. Below `lg` the feed is a
+  column with the switch, and the phone map has no new tap actions.
+
+Admin, the Landing page, sign-in, reset, confirm, invite claim and the public
+pages (Help and the rest) keep their own widths.
+
+The spec's **Mobile** section is the contract for small screens: 375px base
+width, 44px tap targets, thumb reach, safe areas, no sideways scroll, and the
+keyboard never hides the focused field or its submit.
 
 Filter chips scroll sideways inside their own row; the page never does.
 
@@ -320,6 +356,34 @@ Full-width, calm and confident.
   Raised and 12px.
   A form-wide error is an `urgent` Banner, which is announced at once
   (`role="alert"`) instead of waiting its turn.
+
+### Sesh card parts
+Built in #125 (`components/sesh/sesh-type-art.tsx`,
+`components/sesh/card-parts.tsx`). A sesh never has a photo and its guest list
+is hidden, so these parts give a card its life. The feed card and the sesh page
+share them. Each shows a picture and reads one plain sentence to a screen
+reader.
+- **Type drawing** — one authored vector scene per sesh type, in the Landing
+  map's hand: round-capped Dusk Ink lines on Ember Card shapes, one soft tint
+  (Honey or Sage at 15%), on an Ember Raised band. Chill is a sofa under one
+  lamp; Smoke circle a ring of friends round a wisp; Movie night a glowing
+  screen over seat rows; Game night a hand of cards and two dice; Outdoors a
+  low sun, a palm, ground and water; Creative a palette and a brush. No people,
+  no faces, no leaf. The scene fits whole in any band; its ground, rows and
+  water run on to the band's edges. A screen reader hears the type's name
+  ("Movie night"), never a description of the art.
+- **Date block** — a calendar tile in Ember Raised: the month in Dusk Ink
+  caps over a big day number in Inter 600 (numbers are never Fraunces). It is
+  hidden from a screen reader; the line beside it reads the date out.
+- **When line** — "Tonight · 8:00 PM ET" beside the tile. "Today" (before
+  5 PM), "Tonight" and "Tomorrow" are Honey: they are what a scanning eye looks
+  for. Further out it is the short weekday. All Florida time, from
+  `seshWhen()` in `lib/sesh/when.ts`.
+- **Seats** — a small two-person line icon starts the row, then one dot per seat up to 12, Honey when taken, a Dusk Ink ring
+  when free; above 12, a thin Honey bar. Either way the count is written
+  beside it, "3 of 6 going": dots alone read as decoration. "Full" in Honey once
+  every seat is taken. Counts only, never a name or a face. A screen reader
+  hears "3 of 6 seats taken". From `seats()` in `lib/sesh/seats.ts`.
 
 ### Inputs / Fields
 - **Style:** Ember Card fill, 1px Charred Rule border, control radius, 12px ×

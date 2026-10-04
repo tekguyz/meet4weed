@@ -5,14 +5,22 @@ import { SeshMap, type Circle, type Point } from "@/components/sesh/sesh-map";
 import { Banner } from "@/components/ui/banner";
 import { FOCUS_RING } from "@/components/ui/focus";
 
-type Props = { circles: Circle[] };
+type Props = {
+  circles: Circle[];
+  /** Laptop only (#125): the circle lit from the list, and what a circle
+   *  click does. The phone map gets neither, so it gains no tap actions. */
+  lit?: string | null;
+  onCircleClick?: (id: string) => void;
+  /** Laptop: fill the sticky side column instead of a fixed 256px. */
+  tall?: boolean;
+};
 
 /** The map view, plus the only thing on it that can ask where a member is.
  *
  *  Nothing here runs on load. An app built around not leaking location does
  *  not open by asking for the member's — the map centres on whatever the
  *  filtered results cover, and works fully without ever being told. */
-export function FeedMap({ circles }: Props) {
+export function FeedMap({ circles, lit = null, onCircleClick, tall = false }: Props) {
   const [centre, setCentre] = useState<Point | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [asking, setAsking] = useState(false);
@@ -38,8 +46,15 @@ export function FeedMap({ circles }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <SeshMap circles={circles} centre={centre} label="Seshes near you, as circles" />
+    <div className={`flex flex-col gap-3 ${tall ? "h-full" : ""}`}>
+      <SeshMap
+        circles={circles}
+        centre={centre}
+        label="Seshes near you, as circles"
+        lit={lit}
+        onCircleClick={onCircleClick}
+        className={tall ? "min-h-0 flex-1" : undefined}
+      />
 
       <div className="flex items-center gap-3">
         <button

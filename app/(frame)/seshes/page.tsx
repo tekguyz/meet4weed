@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { FeedControls } from "@/components/sesh/feed-controls";
-import { FeedMap } from "@/components/sesh/feed-map";
+import { FeedBoard } from "@/components/sesh/feed-board";
 import { WhereYouStand } from "@/components/member/where-you-stand";
 import { buttonClass } from "@/components/ui/button";
 import { amIAdmin } from "@/lib/admin/queries";
@@ -10,19 +10,9 @@ import { frameAccess, memberAccess } from "@/lib/member/gate";
 import { standing } from "@/lib/member/standing";
 import { getMyProfile } from "@/lib/profiles/queries";
 import { feedEmptyState, feedHref, parseFeedFilters, type FeedEmptyState, type SearchParams } from "@/lib/sesh/feed-filters";
-import { listFeed, type SeshListItem } from "@/lib/sesh/queries";
-import { SESH_TYPE_LABELS } from "@/lib/sesh/schema";
+import { listFeed } from "@/lib/sesh/queries";
 import { getMyVerification } from "@/lib/verification/status";
-import { FOCUS_RING, TAP_TEXT } from "@/components/ui/focus";
-
-const WHEN = new Intl.DateTimeFormat("en-US", {
-  timeZone: "America/New_York",
-  weekday: "short",
-  month: "short",
-  day: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-});
+import { TAP_TEXT } from "@/components/ui/focus";
 
 export default async function SeshesPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const profile = await getMyProfile();
@@ -42,54 +32,40 @@ export default async function SeshesPage({ searchParams }: { searchParams: Promi
   const filters = parseFeedFilters(await searchParams);
   const { seshes, hasMore } = await listFeed(filters);
 
+  const paging =
+    filters.view === "list" && (filters.page > 1 || hasMore) ? (
+      <nav className="flex justify-between gap-3" aria-label="More seshes">
+        {filters.page > 1 ? (
+          <Link href={feedHref({ ...filters, page: filters.page - 1 })} className={`${TAP_TEXT} text-sm text-primary underline`}>
+            Previous
+          </Link>
+        ) : (
+          <span />
+        )}
+        {hasMore ? (
+          <Link href={feedHref({ ...filters, page: filters.page + 1 })} className={`${TAP_TEXT} text-sm text-primary underline`}>
+            Next
+          </Link>
+        ) : null}
+      </nav>
+    ) : null;
+
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-6">
-      <h1 className="text-3xl">Seshes</h1>
-
-      {mine.kind === "verified" ? null : <WhereYouStand standing={mine} />}
-
-      <FeedControls filters={filters} />
-
-      {seshes.length === 0 ? (
-        <EmptyFeed {...feedEmptyState(filters, access === "full")} />
-      ) : filters.view === "map" ? (
-        <FeedMap
-          circles={seshes
-            .filter((sesh) => sesh.fuzzyLat !== null && sesh.fuzzyLng !== null)
-            .map((sesh) => ({
-              id: sesh.id,
-              lat: sesh.fuzzyLat!,
-              lng: sesh.fuzzyLng!,
-              radiusM: sesh.fuzzyRadiusM,
-            }))}
-        />
-      ) : (
-        <ul className="flex flex-col gap-3">
-          {seshes.map((sesh) => (
-            <li key={sesh.id}>
-              <FeedCard sesh={sesh} />
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {filters.view === "list" && (filters.page > 1 || hasMore) ? (
-        <nav className="flex justify-between gap-3" aria-label="More seshes">
-          {filters.page > 1 ? (
-            <Link href={feedHref({ ...filters, page: filters.page - 1 })} className={`${TAP_TEXT} text-sm text-primary underline`}>
-              Previous
-            </Link>
-          ) : (
-            <span />
-          )}
-          {hasMore ? (
-            <Link href={feedHref({ ...filters, page: filters.page + 1 })} className={`${TAP_TEXT} text-sm text-primary underline`}>
-              Next
-            </Link>
-          ) : null}
-        </nav>
-      ) : null}
-    </div>
+    <FeedBoard
+      seshes={seshes}
+      view={filters.view}
+      viewerId={profile.id}
+      now={new Date().toISOString()}
+      header={
+        <>
+          <h1 className="text-3xl">Seshes</h1>
+          {mine.kind === "verified" ? null : <WhereYouStand standing={mine} />}
+          <FeedControls filters={filters} />
+        </>
+      }
+      footer={paging}
+      empty={seshes.length === 0 ? <EmptyFeed {...feedEmptyState(filters, access === "full")} /> : undefined}
+    />
   );
 }
 
@@ -101,27 +77,5 @@ function EmptyFeed({ message, action }: FeedEmptyState) {
         {action.label}
       </Link>
     </div>
-  );
-}
-
-function FeedCard({ sesh }: { sesh: SeshListItem }) {
-  const left = Math.max(sesh.capacity - sesh.approvedCount, 0);
-
-  return (
-    // The whole card opens the sesh: a card is a big, easy tap target.
-    <Link href={`/seshes/${sesh.id}`} className={`flex flex-col gap-1 rounded-card bg-surface p-4 ${FOCUS_RING}`}>
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-lg">{sesh.title}</h2>
-        <span className="shrink-0 rounded-control bg-surface-2 px-2 py-1 text-xs text-ink-muted">
-          {SESH_TYPE_LABELS[sesh.seshType]}
-        </span>
-      </div>
-      <p className="text-sm text-ink-muted">{WHEN.format(new Date(sesh.startsAt))} ET</p>
-      <p className="text-sm text-ink-muted">
-        {sesh.areaName ? `${sesh.areaName} · ` : ""}
-        {left === 0 ? "full" : `${left} spot${left === 1 ? "" : "s"} left`}
-      </p>
-      {sesh.description ? <p className="line-clamp-2 text-sm text-ink">{sesh.description}</p> : null}
-    </Link>
   );
 }

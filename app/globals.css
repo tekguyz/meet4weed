@@ -204,9 +204,12 @@ html:has([data-frame]) {
   /* MapLibre paints in its own style document, so it cannot take a token
      class. sRGB, because a map style is not CSS and does not read oklch(). */
   --map-accent: #b4d982;
+  /* The circle lit from the feed list (#125): Honey. */
+  --map-lit: #e7b968;
 }
 
 .light {
   --map-style: url("https://tiles.openfreemap.org/styles/positron");
   --map-accent: #5f7f36;
+  --map-lit: #a9761f;
 }

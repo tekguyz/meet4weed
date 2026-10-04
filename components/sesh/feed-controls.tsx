@@ -62,7 +62,8 @@ export function FeedControls({ filters }: { filters: FeedFilters }) {
         </button>
       </form>
 
-      <div className="flex gap-2">
+      {/* From lg up the list and the map show side by side (#125). */}
+      <div className="flex gap-2 lg:hidden">
         <Link
           href={feedHref({ ...filters, view: "list", page: 1 })}
           aria-current={filters.view === "list" ? "true" : undefined}
