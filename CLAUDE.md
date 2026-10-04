@@ -93,8 +93,12 @@ Moved here from the global rules on 2026-10-04 (claude-config#43).
   refuses two open branches that each carry a migration.
 - When a token is new or changed, run `supabase projects list` and check
   this project is in it. A token from another account cannot see it.
-- No Supabase MCP here. If one is added later, it is read-only and pinned to
-  `uckylbulmbrsdjevhbct`.
+- **Supabase MCP: on, read-only, this project only** (claude-config#44).
+  `.mcp.json` pins it to `uckylbulmbrsdjevhbct` with `read_only=true` and signs in
+  with the same `SUPABASE_ACCESS_TOKEN`, so no browser login is needed.
+  `.claude/settings.json` approves it. Use it to look: tables, SQL reads,
+  logs, advisors. A write is refused. Schema changes still go through a
+  migration file and `npm run db:push`.
 
 ## Tests
 
