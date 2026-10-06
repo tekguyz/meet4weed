@@ -223,3 +223,12 @@ Default five: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`
 ### Domain docs
 
 Single-context: `CONTEXT.md` + `docs/adr/` at the repo root, created lazily as terms/decisions resolve. See `docs/agents/domain.md`.
+
+## Status work
+
+- Run the global `status-sync` skill.
+- Never create `STATUS.md` or `docs/KNOWN_GAPS.md` here. This repo has neither on purpose.
+- `## Product rules` ends with "Already ruled out — do not re-propose". Never raise an item from that list as a finding or a next step.
+- There is no doc-check script. Say `Checks: none exist`. Never imply one passed.
+- Never open a migration, a test file or a component for a status sync. The commit bodies say what changed.
+- Name a secret as set or missing. Never print its value.
