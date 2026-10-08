@@ -3,6 +3,7 @@ import Link from "next/link";
 import { DemoButton } from "@/components/demo/demo-button";
 import { CircleMark } from "@/components/landing/landing-map";
 import { FINE_PRINT } from "@/components/legal/fine-print";
+import { CHECKS, PROMISES } from "@/components/landing/copy";
 import { Story } from "@/components/landing/story";
 import { buttonClass } from "@/components/ui/button";
 import { FOCUS_RING, TAP_TEXT } from "@/components/ui/focus";
@@ -36,40 +37,6 @@ export const metadata: Metadata = {
 };
 
 const SIGN_UP = "/login?mode=sign-up";
-
-/** The three checks. `label` names each one in the map's legend. */
-const CHECKS = [
-  {
-    label: "Card",
-    title: "Your card and face, captured live",
-    body: "You photograph your card from Florida’s Office of Medical Marijuana Use (OMMU), then a photo of you holding it while you follow a prompt picked at random. An old photo will not match the prompt.",
-  },
-  {
-    label: "Person",
-    title: "A person approves every member",
-    body: "Software reads the card to help, but it never approves anyone. A person looks at both photos and decides.",
-  },
-  {
-    label: "Host",
-    title: "The host approves every guest",
-    body: "Until then, a sesh shows only a shaded circle about half a mile across, never the house. The host decides who comes in.",
-  },
-] as const;
-
-const PROMISES = [
-  {
-    title: "Never a sale",
-    body: `${APP_NAME} is a place to meet. Nothing is sold through it, ever.`,
-  },
-  {
-    title: "Your photos are deleted",
-    body: "Card and face photos are deleted when the reviewer decides, and within 7 days at most.",
-  },
-  {
-    title: "Your lock screen stays quiet",
-    body: "A push notification names no member and no sesh.",
-  },
-] as const;
 
 const QUIET_LINK = `${TAP_TEXT} text-sm text-ink-muted underline hover:text-ink`;
 
