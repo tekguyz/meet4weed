@@ -35,7 +35,7 @@ is the index that says where each one lives; this table is the short version.
   `STATUS` and `AMENDED DURING EXECUTION` blocks that record what actually
   shipped.
 - **Plans 03 onward:** GitHub Issues. A plan is a parent issue and its tickets
-  are children. See [`docs/agents/issue-tracker.md`](docs/agents/issue-tracker.md).
+  are children.
 
 ---
 

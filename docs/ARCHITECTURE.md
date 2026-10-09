@@ -59,7 +59,6 @@ supabase/migrations/  every schema change, in order
 supabase/templates/   branded auth emails, mirrored in the dashboard
 supabase/tests/       database security tests
 docs/PLANS.md         which plan covers which build-order steps, and where it lives
-docs/agents/          issue tracker, triage labels and domain-doc conventions
 docs/superpowers/     the design spec, and Plans 01-02 as files
 ```
 

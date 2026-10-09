@@ -1,7 +1,7 @@
 # Meet4Weed — domain language
 
 The words this codebase uses, and what each one means here. Created lazily as
-terms resolve, per `docs/agents/domain.md`. If a name below and a name in the
+terms resolve. If a name below and a name in the
 code disagree, the code is wrong.
 
 Rules and their reasons live in `CLAUDE.md`. This file is only vocabulary.
