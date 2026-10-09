@@ -48,45 +48,13 @@ session started in that repo.
 
 ## Starting the next plan
 
-In a fresh session, three commands, **in this order and in that one window**:
+Brainstorm, then a plan, in one session. See `claude-config/WORKFLOW.md`.
+Give the brainstorm a short paragraph: which build-order steps the plan
+covers, and what has changed since this table was written. The repo supplies
+the rest.
 
-```
-/grill-with-docs
-/to-spec
-/to-tickets
-```
-
-**Never `/clear` or compact between them.** Each one builds on what the last
-one settled, and a cleared window loses it.
-
-The grilling comes **first**, on the idea, before any spec is written. This
-file used to say the opposite — spec first, grill the spec after — which
-contradicted the global `CLAUDE.md` workflow. The global file wins; corrected
-2026-09-22.
-
-Grilling is not optional on a real plan. Plan 03's grilling found a
-fuzzy-circle design that could be averaged back to a member's house. It earns
-its turn.
-
-With `/grill-with-docs`, give a short paragraph saying which build-order steps
-the plan covers and anything that has changed since this table was written. The
-skills read the repo themselves — `CLAUDE.md`, `CONTEXT.md`, the spec, the
-closed issues — so the paragraph only has to supply what the repo cannot know.
-
-Then `/clear`, and `/implement` one ticket at a time. `/implement` runs `/tdd`
-inside it and closes with `/code-review`; neither is typed by hand.
-
-`to-spec` and `to-tickets` can only be typed by the owner; they refuse to be
-invoked by a model.
-
-**Not every job is a plan.** The three-command flow is for a build-order step
-that is still one line in the spec. A bug goes to `/diagnosing-bugs`, work you
-did not create goes to `/triage`, and a small obvious fix goes straight to
-`/implement`. Global `CLAUDE.md` § Workflow lists the rest.
-
-**Skip `/to-tickets` when the plan turns out to be one feature.** One spec
-issue with named passes beats a pile of thin tickets that each need their own
-branch, PR and review. The grilling is what tells you which one it is.
+Do not skip the brainstorm on a real plan. Plan 03's grilling found a
+fuzzy-circle design that could be averaged back to a member's house.
 
 ## One hard-won rule
 
