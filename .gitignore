@@ -32,3 +32,6 @@ public/maplibre/
 # Impeccable run-time files: process ids, ports, logs
 .impeccable/questions/
 .impeccable/live/
+
+# Next.js rewrites this on every dev or build run (Next default: ignored)
+next-env.d.ts
