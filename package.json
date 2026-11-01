@@ -9,7 +9,7 @@
     "prebuild": "node scripts/copy-mediapipe.mjs && node scripts/copy-maplibre-worker.mjs",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "test": "node -e \"console.error('Do not run the aggregate test command. Use: npm run test:unit, then npm run test:integration. See CLAUDE.md.'); process.exit(1)\"",
     "test:unit": "vitest run --exclude \"supabase/**\"",
     "test:integration": "vitest run supabase/tests --no-file-parallelism",
